@@ -408,7 +408,8 @@ function renderInbox(s: State): string {
   const dayLine = s.dayLine ? `<div class="day-line">🌤️ ${esc(s.dayLine)}</div>` : '';
   if (!sorted.length) return `${dayLine}${banner}<div class="card empty">收件匣是空的。<br>這種時刻通常撐不過一個小時。</div>`;
   const openable = sorted.filter((i) => !sceneRoomFor(EVENTS[i.eventId]));
-  if (openUid === null || (openUid !== -1 && !openable.some((i) => i.uid === openUid))) openUid = openable[0]?.uid ?? -1;
+  // 預設全部收合,由玩家自己展開
+  if (openUid === null || !openable.some((i) => i.uid === openUid)) openUid = -1;
   let order = 0;
   const rows = sorted.map((it) => {
     const isNew = !rendered.has(it.uid);
@@ -1079,7 +1080,10 @@ function render(): void {
   const prevModal = app.querySelector('.modal') as HTMLElement | null;
   const modalTop = prevModal && key === lastModal ? prevModal.scrollTop : 0;
   const pageY = window.scrollY;
+  const stageTop = app.querySelector('.stage')?.scrollTop ?? 0;
   app.innerHTML = html;
+  const stage = app.querySelector('.stage');
+  if (stage) stage.scrollTop = stageTop;
   const nextModal = app.querySelector('.modal') as HTMLElement | null;
   if (nextModal) nextModal.scrollTop = modalTop;
   window.scrollTo(0, pageY);
@@ -1258,7 +1262,16 @@ app.addEventListener('click', (e) => {
       const it = s?.inbox.find((i) => i.uid === u);
       const room = it ? sceneRoomFor(EVENTS[it.eventId]) : undefined;
       if (room) { void goPlace(room, () => { dialogUid = u; dialogResult = false; dialogText = null; }); return; }
-      openUid = openUid === u ? -1 : u; render(); return;
+      // 展開/收合會改變上方卡片的高度:重畫後把被點的那張卡拉回原本的位置,畫面才不會跳
+      const head = () => app.querySelector<HTMLElement>(`.mail-head[data-uid="${u}"]`);
+      const before = head()?.getBoundingClientRect().top;
+      openUid = openUid === u ? -1 : u; render();
+      const after = head()?.getBoundingClientRect().top;
+      if (before !== undefined && after !== undefined && before !== after) {
+        const scroller = app.querySelector('.stage');
+        if (scroller) scroller.scrollTop += after - before; else window.scrollBy(0, after - before);
+      }
+      return;
     }
     case 'dialog-next': {
       const nextIt = place !== 'pantry' && dialogResult ? s?.inbox.find((i) => sceneRoomFor(EVENTS[i.eventId]) === place) : undefined;
