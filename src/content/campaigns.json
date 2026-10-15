@@ -1,0 +1,132 @@
+{
+ "mechanics": [
+  {
+   "id": "signin",
+   "name": "累積簽到",
+   "desc": "每天登入就能領。簡單、沒負擔,但也沒什麼新鮮感。",
+   "fun": 35,
+   "need": 0,
+   "minLevel": 1
+  },
+  {
+   "id": "lottery",
+   "name": "全服抽獎",
+   "desc": "人人有機會,但中不中全靠運氣。",
+   "fun": 45,
+   "need": 1,
+   "minLevel": 1
+  },
+  {
+   "id": "dungeon",
+   "name": "限時副本",
+   "desc": "新關卡加限定掉落,玩法有變化,要花時間調平衡。",
+   "fun": 62,
+   "need": 2,
+   "minLevel": 2
+  },
+  {
+   "id": "tower",
+   "name": "爬塔競賽",
+   "desc": "排行榜加高難度,核心玩家愛,但需要很多天天上線的時間。",
+   "fun": 72,
+   "need": 3,
+   "hated": true,
+   "minLevel": 3
+  }
+ ],
+ "rewards": [
+  {
+   "id": "shard",
+   "name": "角色碎片",
+   "desc": "收集用,湊滿才有感覺。",
+   "appeal": 50,
+   "minLevel": 1
+  },
+  {
+   "id": "skin",
+   "name": "限定造型",
+   "desc": "只有活動拿得到,有收藏價值。",
+   "appeal": 68,
+   "minLevel": 2
+  },
+  {
+   "id": "material",
+   "name": "強化素材",
+   "desc": "實用但平淡,像是發了一包飼料。",
+   "appeal": 42,
+   "minLevel": 1
+  },
+  {
+   "id": "ticket",
+   "name": "免費十連抽券",
+   "desc": "玩家最直覺的快樂。",
+   "appeal": 78,
+   "minLevel": 3
+  }
+ ],
+ "bundles": [
+  {
+   "id": "none",
+   "name": "不賣商品",
+   "desc": "純福利活動,玩家開心,但不會多花錢。",
+   "desire": 10,
+   "minLevel": 1
+  },
+  {
+   "id": "starter",
+   "name": "超值入門禮包",
+   "desc": "價格親民,新手老手都買得下手。",
+   "desire": 42,
+   "minLevel": 1
+  },
+  {
+   "id": "skinpack",
+   "name": "限定造型禮包",
+   "desc": "跟活動獎勵搭配,收藏玩家會心動。",
+   "desire": 66,
+   "minLevel": 2
+  },
+  {
+   "id": "deluxe",
+   "name": "豪華尊爵禮包",
+   "desc": "高價、高內容。玩家信任不夠時容易被罵割韭菜。",
+   "desire": 78,
+   "risky": true,
+   "minLevel": 4
+  }
+ ],
+ "promos": [
+  {
+   "id": "none",
+   "name": "不特別宣傳",
+   "desc": "只靠玩家自己發現。",
+   "reach": 20,
+   "ap": 0,
+   "minLevel": 1
+  },
+  {
+   "id": "notice",
+   "name": "遊戲內公告",
+   "desc": "會看公告的人都會知道。",
+   "reach": 45,
+   "ap": 0,
+   "minLevel": 1
+  },
+  {
+   "id": "social",
+   "name": "社群貼文",
+   "desc": "官方粉專加官方論壇一起發。",
+   "reach": 60,
+   "ap": 1,
+   "minLevel": 2
+  },
+  {
+   "id": "streamer",
+   "name": "實況主合作",
+   "desc": "觸及最廣,但要花時間聯絡與對稿。",
+   "reach": 82,
+   "ap": 2,
+   "minLevel": 3
+  }
+ ]
+}

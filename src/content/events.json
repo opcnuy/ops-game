@@ -1,0 +1,5087 @@
+[
+ {
+  "id": "e_boss_campaign",
+  "kind": "老闆",
+  "from": "林總",
+  "day": 1,
+  "title": "「下週要有個活動,營收拉三成」",
+  "body": "「我們下週要有個活動,營收拉個三成,你規劃一下。對了,不要花太多錢,但要讓玩家覺得我們很大方。」\n(到右邊「規劃活動」開始企劃。)",
+  "deadline": 3,
+  "ignore": {
+   "effects": {
+    "boss": -6
+   },
+   "result": "林總在群組問:「活動進度?」你還沒打開企劃檔。"
+  },
+  "options": [
+   {
+    "label": "收到,馬上規劃",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": 2
+      },
+      "result": "你點頭如搗蒜,同時在心裡問:三成是怎麼來的?"
+     }
+    ]
+   },
+   {
+    "label": "請教三成的依據",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": -1
+      },
+      "result": "林總沉默三秒:「業界平均。」你決定不再追問。"
+     }
+    ]
+   }
+  ],
+  "brief": "老闆要你辦個活動,讓玩家多花 30% 的錢。"
+ },
+ {
+  "id": "e_adhoc_roi",
+  "kind": "數據",
+  "from": "林總",
+  "day": 2,
+  "weight": 2,
+  "title": "「上禮拜活動到底賺不賺?」",
+  "body": "現在是上午十一點。林總:「下午開會要講,你幫我抓個數字。」附註:他沒說要看哪個期間。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "boss": -6
+   },
+   "result": "會議上林總說「數據還在整理」,眼神掃過你。"
+  },
+  "options": [
+   {
+    "label": "快速抓個大概的數字",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.55,
+      "effects": {
+       "boss": 4
+      },
+      "result": "數字大致正確,林總在會議上講得很自信。",
+      "habit": {
+       "sloppy_report": 1,
+       "rushed": 1
+      }
+     },
+     {
+      "p": 0.45,
+      "effects": {
+       "boss": -7
+      },
+      "result": "會議上有人問起分母,你才發現抓錯期間。",
+      "habit": {
+       "sloppy_report": 1,
+       "rushed": 1
+      },
+      "followUp": {
+       "eventId": "r_numbers",
+       "afterDays": 0
+      }
+     }
+    ],
+    "tag": "quick"
+   },
+   {
+    "label": "認真做完整分析",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": 6
+      },
+      "result": "你花了整個下午,林總只在會議上用了其中一張圖。但那張圖很漂亮。"
+     }
+    ]
+   },
+   {
+    "label": "回覆「需要到明天」",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": -2
+      },
+      "result": "林總:「那我先說『分析中』。」"
+     }
+    ]
+   }
+  ],
+  "minDay": 2,
+  "brief": "老闆下午開會,臨時要你報上次活動賺不賺。"
+ },
+ {
+  "id": "e_vendor_anomaly",
+  "kind": "原廠",
+  "from": "原廠窗口",
+  "day": 4,
+  "weight": 2,
+  "title": "原廠:在線人數有一段凹下去了",
+  "body": "「看到貴區某時段的在線人數有明顯下滑,請說明原因,謝謝。」附一張紅框圈起來的曲線圖。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "boss": -5,
+    "trust": -2
+   },
+   "result": "原廠又寄了一封信,副本欄位多了三個你不認識的人。"
+  },
+  "options": [
+   {
+    "label": "自己查日誌與數據",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.65,
+      "effects": {
+       "trust": 3,
+       "boss": 3
+      },
+      "result": "是例行維護與公告時間重疊。你附上時間軸,原廠回:「了解。」"
+     },
+     {
+      "p": 0.35,
+      "effects": {
+       "boss": -2
+      },
+      "result": "查了半天沒結論,只能回「持續追蹤」。"
+     }
+    ]
+   },
+   {
+    "label": "請技術協助查詢",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "工程師:「我看一下。」(這句話的意思是明天。)",
+      "followUp": {
+       "eventId": "e_tech_busy",
+       "afterDays": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "回覆「屬正常波動」",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.4,
+      "effects": {
+       "boss": 1
+      },
+      "result": "原廠沒有再追問。",
+      "habit": {
+       "sloppy_report": 1
+      }
+     },
+     {
+      "p": 0.6,
+      "effects": {
+       "boss": -8,
+       "trust": -2
+      },
+      "result": "原廠翻出同期對照圖,語氣變得非常客氣。",
+      "habit": {
+       "sloppy_report": 1
+      },
+      "followUp": {
+       "eventId": "r_vendor_push",
+       "afterDays": 0
+      }
+     }
+    ]
+   }
+  ],
+  "minDay": 4,
+  "brief": "遊戲原廠發現在線人數突然掉了一段,要你解釋。"
+ },
+ {
+  "id": "e_tech_busy",
+  "kind": "技術",
+  "from": "工程師 阿宏",
+  "title": "技術:「那個查詢要跑一晚」",
+  "body": "「資料庫現在被活動統計佔住了,這個要排隊。你可以等,或是先用抽樣的看看。」",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "trust": -1
+   },
+   "result": "查詢結果出來時已經沒人在等。"
+  },
+  "options": [
+   {
+    "label": "耐心等結果",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": 1
+      },
+      "result": "隔天結果出爐:是時區設定的小問題。"
+     }
+    ]
+   },
+   {
+    "label": "先用抽樣資料判斷",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "effects": {
+       "trust": 2
+      },
+      "result": "抽樣就看出問題了,你省下一天。"
+     },
+     {
+      "p": 0.4,
+      "effects": {
+       "boss": -2
+      },
+      "result": "抽樣有偏差,結論要重講。"
+     }
+    ]
+   }
+  ],
+  "brief": "工程師說查資料要排隊,得等一晚。"
+ },
+ {
+  "id": "e_gacha_complaint",
+  "kind": "客訴",
+  "from": "玩家論壇",
+  "weight": 2,
+  "minDay": 3,
+  "title": "「抽卡機率好像不對」",
+  "body": "三位玩家貼出自己的抽卡紀錄,認為實際機率低於公告。討論串已經 200 則回覆,而且還在長。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "trust": -6,
+    "retention": -1
+   },
+   "result": "討論串變成 600 則,標題多了「求回應」。",
+   "habit": {
+    "ignored_players": 1
+   }
+  },
+  "options": [
+   {
+    "label": "公布完整機率驗證報告",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "effects": {
+       "trust": 8,
+       "retention": 1
+      },
+      "result": "報告很清楚,討論串轉為「營運好認真」。",
+      "habit": {
+       "transparency": 1
+      },
+      "followUp": {
+       "eventId": "r_media",
+       "afterDays": 0
+      }
+     },
+     {
+      "p": 0.3,
+      "effects": {
+       "trust": -3
+      },
+      "result": "報告裡有個小數點被指出,新一輪討論開始。",
+      "habit": {
+       "transparency": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "先發安撫公告,說會調查",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": 2
+      },
+      "result": "公告寫「持續關注」,玩家寫「持續觀望」。",
+      "followUp": {
+       "eventId": "e_gacha_followup",
+       "afterDays": 2
+      }
+     }
+    ]
+   },
+   {
+    "label": "不回應,看看會不會自己沉",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "討論串自己沉了。",
+      "habit": {
+       "ignored_players": 1
+      }
+     },
+     {
+      "p": 0.5,
+      "effects": {
+       "trust": -8,
+       "retention": -2
+      },
+      "result": "有人做了統計圖,被轉到別的平台。",
+      "habit": {
+       "ignored_players": 1
+      }
+     }
+    ]
+   }
+  ],
+  "brief": "玩家懷疑抽卡機率被偷偷調低,正在論壇吵。"
+ },
+ {
+  "id": "e_gacha_followup",
+  "kind": "客訴",
+  "from": "玩家論壇",
+  "title": "「公告說會調查,結果呢?」",
+  "body": "安撫公告發出兩天了。有玩家整理了時間軸:「第 0 天:說會調查。第 2 天:沒有下文。」",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "trust": -7
+   },
+   "result": "時間軸更新到「第 3 天:沒有下文」,按讚數破千。"
+  },
+  "options": [
+   {
+    "label": "公布調查結果與改善方式",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": 5
+      },
+      "result": "有交代就好,玩家要的常常只是這個。"
+     }
+    ]
+   }
+  ],
+  "brief": "你說過會調查,玩家在問結果。"
+ },
+ {
+  "id": "e_tech_deadline",
+  "kind": "技術",
+  "from": "工程師 阿宏",
+  "title": "技術:「提早上線?可以,但是……」",
+  "body": "老闆想把活動提早上線。阿宏看著排程表,沉默了很久:「提早兩天?可以。但我不保證不會有事。」",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "trust": 0,
+    "boss": -1
+   },
+   "result": "排程維持原樣,阿宏默默加了一個備註。"
+  },
+  "options": [
+   {
+    "label": "同意提早,風險自己扛",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": 3
+      },
+      "setFlag": "rushedTech",
+      "result": "林總很滿意。阿宏在筆記本上寫了什麼,你沒看到。",
+      "habit": {
+       "rushed": 1,
+       "yes_man": 1
+      },
+      "followUp": {
+       "eventId": "r_qa",
+       "afterDays": 0
+      }
+     }
+    ]
+   },
+   {
+    "label": "堅持原時程",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": -3
+      },
+      "result": "阿宏點頭,像是鬆了一口氣。林總的表情則沒有。",
+      "habit": {
+       "pushback": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "一起排優先順序,砍掉不必要的功能",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": 2,
+       "boss": 1
+      },
+      "result": "你們把 8 個功能砍到 5 個。最後一個是林總想要的。"
+     }
+    ]
+   }
+  ],
+  "brief": "活動要提早上線,工程師擔心來不及測試。"
+ },
+ {
+  "id": "e_bug_after_launch",
+  "kind": "技術",
+  "from": "客服回報",
+  "title": "活動上線後的 bug",
+  "body": "玩家回報:領獎按鈕點了沒反應。工程師說其實有反應,只是要等 40 秒。玩家等 5 秒就點第二次,然後領了兩次,或是零次。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "trust": -7,
+    "players": -3
+   },
+   "result": "客服電話響個不停。"
+  },
+  "options": [
+   {
+    "label": "公告加補償,道歉先行",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": 3
+      },
+      "result": "補償到位,玩家說「好吧,下次別這樣」。"
+     }
+    ]
+   },
+   {
+    "label": "請技術緊急熱修",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "effects": {
+       "trust": 4
+      },
+      "result": "熱修成功,玩家以為本來就這樣設計的。"
+     },
+     {
+      "p": 0.4,
+      "effects": {
+       "trust": -3
+      },
+      "result": "修好一個,另一個冒出來。"
+     }
+    ]
+   }
+  ],
+  "brief": "活動上線後,領獎按鈕出問題了。"
+ },
+ {
+  "id": "e_social_meme",
+  "kind": "輿情",
+  "from": "社群監控",
+  "weight": 3,
+  "title": "迷因:「獎勵 = 泡麵加衛生紙」",
+  "body": "玩家做了一張迷因圖,嘲諷最近的活動獎勵。轉發 1.2k。留言區有人說「營運是不是沒玩過自己的遊戲」。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "trust": -3
+   },
+   "result": "迷因變成固定梗,每次公告底下都有人留。",
+   "habit": {
+    "ignored_players": 1
+   }
+  },
+  "options": [
+   {
+    "label": "官方幽默回應",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "effects": {
+       "trust": 6,
+       "players": 2
+      },
+      "result": "「泡麵是有誠意的」這句被截圖,反而被大量轉發。",
+      "followUp": {
+       "eventId": "r_viral",
+       "afterDays": 0
+      }
+     },
+     {
+      "p": 0.5,
+      "effects": {
+       "trust": -4
+      },
+      "result": "被解讀為嘲諷玩家。"
+     }
+    ]
+   },
+   {
+    "label": "認真整理玩家想要什麼",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": 2
+      },
+      "reveal": "reward",
+      "result": "你把留言分類:大家其實很清楚自己想要什麼。"
+     }
+    ]
+   },
+   {
+    "label": "不理會",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": -1
+      },
+      "result": "迷因沒有消失,但至少你沒有火上加油。",
+      "habit": {
+       "ignored_players": 1
+      }
+     }
+    ]
+   }
+  ],
+  "brief": "玩家做圖嘲笑活動獎勵太小氣。"
+ },
+ {
+  "id": "e_adhoc_chart",
+  "kind": "雜務",
+  "from": "企劃同事",
+  "weight": 3,
+  "title": "「順便幫我拉個留存」",
+  "body": "「欸可以順便拉一下留存嗎?要分新舊玩家、分平台、分渠道、近 7 天近 30 天,明天要。」你說的順便,是整個下午。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "boss": -1
+   },
+   "result": "同事:「喔沒事,我自己看看。」(他不會自己看。)"
+  },
+  "options": [
+   {
+    "label": "全部做完",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": 2
+      },
+      "result": "同事收到後只說了「感謝」。三天後他又來了。",
+      "habit": {
+       "overtime": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "只給最重要的兩張",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "effects": {
+       "boss": 1
+      },
+      "result": "兩張就夠了,他本來也只會看一張。"
+     },
+     {
+      "p": 0.3,
+      "effects": {
+       "boss": -2
+      },
+      "result": "同事:「不是這個維度啦。」"
+     }
+    ],
+    "tag": "quick"
+   },
+   {
+    "label": "請他自己查",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": -1
+      },
+      "result": "同事:「好喔……」(你聽出了什麼。)"
+     }
+    ]
+   }
+  ],
+  "brief": "同事臨時要你拉一堆數據報表。"
+ },
+ {
+  "id": "e_server_lag",
+  "kind": "技術",
+  "from": "玩家回報",
+  "weight": 2,
+  "minDay": 2,
+  "title": "晚間尖峰伺服器卡頓",
+  "body": "遊戲內世界頻道刷滿了「轉圈圈 ×50」。官方論壇出現新標題:「是不是又要補償了」。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "trust": -8,
+    "retention": -3
+   },
+   "result": "隔天上線人數明顯少了一圈。",
+   "habit": {
+    "ignored_players": 1
+   }
+  },
+  "options": [
+   {
+    "label": "公告道歉並補償",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "effects": {
+       "trust": 5,
+       "players": 1
+      },
+      "result": "補償剛好夠大家開心,又不會被下次期待。",
+      "habit": {
+       "transparency": 1
+      },
+      "followUp": {
+       "eventId": "r_abuse",
+       "afterDays": 0
+      }
+     },
+     {
+      "p": 0.5,
+      "effects": {
+       "trust": 5,
+       "players": 1
+      },
+      "result": "補償剛好夠大家開心,又不會被下次期待。",
+      "habit": {
+       "transparency": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "先公告「維護處理中」",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "effects": {
+       "trust": 2
+      },
+      "result": "有交代就好。"
+     },
+     {
+      "p": 0.5,
+      "effects": {
+       "trust": -3
+      },
+      "result": "「處理中」被解讀成「不知道」。"
+     }
+    ]
+   },
+   {
+    "label": "等技術處理完再說",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.4,
+      "result": "二十分鐘就好了,沒人記得。",
+      "habit": {
+       "ignored_players": 1
+      }
+     },
+     {
+      "p": 0.6,
+      "effects": {
+       "trust": -6,
+       "retention": -2
+      },
+      "result": "兩小時後才有人想起公告。",
+      "habit": {
+       "ignored_players": 1
+      }
+     }
+    ]
+   }
+  ],
+  "brief": "遊戲尖峰時段卡頓,玩家在抱怨。"
+ },
+ {
+  "id": "e_competitor",
+  "kind": "輿情",
+  "from": "社群監控",
+  "weight": 2,
+  "minDay": 3,
+  "title": "競品開了週年慶,送 100 抽",
+  "body": "老闆在群組貼了連結,後面附一個 😐。論壇有人留言:「人家送一百抽。」",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "players": -3
+   },
+   "result": "你的玩家在下一次維護後,多了一些跑去別人家的。"
+  },
+  "options": [
+   {
+    "label": "緊急跟檔加碼福利",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "effects": {
+       "players": 3,
+       "boss": 3,
+       "trust": -1
+      },
+      "result": "有撐住。代價是下次玩家期待你也送一百抽。",
+      "habit": {
+       "overtime": 1
+      },
+      "followUp": {
+       "eventId": "r_clash",
+       "afterDays": 0
+      }
+     },
+     {
+      "p": 0.5,
+      "effects": {
+       "players": 3,
+       "boss": 3,
+       "trust": -1
+      },
+      "result": "有撐住。代價是下次玩家期待你也送一百抽。",
+      "habit": {
+       "overtime": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "強調自家獨有的特色",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "effects": {
+       "players": 2
+      },
+      "result": "老玩家被喚醒了:「對,我們這裡有。」"
+     },
+     {
+      "p": 0.5,
+      "result": "公告很棒,但沒有 100 抽那麼有魅力。"
+     }
+    ]
+   },
+   {
+    "label": "不理會",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "競品的聲量兩天後就過了。"
+     },
+     {
+      "p": 0.5,
+      "effects": {
+       "players": -4,
+       "retention": -2
+      },
+      "result": "玩家短暫轉移,有些沒再回來。"
+     }
+    ]
+   }
+  ],
+  "brief": "對手遊戲在送大禮,玩家可能跑掉。",
+  "minLevel": 2
+ },
+ {
+  "id": "e_vendor_report",
+  "kind": "原廠",
+  "from": "原廠窗口",
+  "day": 15,
+  "weight": 1,
+  "minDay": 5,
+  "title": "原廠要求提交本月營運檢討",
+  "body": "「下週請提交本月營運檢討,並附改善計畫。」格式是他們的,欄位 47 個,其中 12 個是你沒有的資料。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "boss": -6
+   },
+   "result": "原廠催了第二次,收件人多了你的老闆。"
+  },
+  "options": [
+   {
+    "label": "逐欄認真填寫",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": 4
+      },
+      "result": "47 個欄位全部有填。其中 12 個你用了「待補」。"
+     }
+    ]
+   },
+   {
+    "label": "只填重點欄位",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "effects": {
+       "boss": 1
+      },
+      "result": "原廠沒有細看,收件確認。",
+      "habit": {
+       "sloppy_report": 1
+      }
+     },
+     {
+      "p": 0.4,
+      "effects": {
+       "boss": -3
+      },
+      "result": "被退回補件,原因:「欄位 23 空白」。",
+      "habit": {
+       "sloppy_report": 1
+      }
+     }
+    ],
+    "tag": "quick"
+   }
+  ],
+  "brief": "原廠要你交一份格式很多的月報。"
+ },
+ {
+  "id": "e_refund",
+  "kind": "客訴",
+  "from": "客服信箱",
+  "weight": 2,
+  "minDay": 3,
+  "title": "家長來信:孩子誤刷三個禮包",
+  "body": "信很長,情緒很重。內容大意:「孩子趁我睡著,用我的手機買了三個禮包,請問怎麼處理?」",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "trust": -5
+   },
+   "result": "對方在社群發了文,標題是「遊戲公司對家長不理不睬」。",
+   "habit": {
+    "ignored_players": 1
+   }
+  },
+  "options": [
+   {
+    "label": "依政策協助申請退款流程",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": 5
+      },
+      "result": "這件事沒有成功不成功,只有處理得好不好。你選了好好處理。",
+      "habit": {
+       "transparency": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "轉給客服,附上說明",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": 1
+      },
+      "result": "客服接手了。回覆晚了一天,但有回。"
+     }
+    ]
+   },
+   {
+    "label": "回覆「無法處理」",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": -8
+      },
+      "result": "這封回信被截圖轉發了 3000 次。",
+      "habit": {
+       "ignored_players": 1
+      }
+     }
+    ]
+   }
+  ],
+  "brief": "家長說小孩亂買禮包,想退款。"
+ },
+ {
+  "id": "e_cheater",
+  "kind": "數據",
+  "from": "後台數據",
+  "weight": 2,
+  "minDay": 4,
+  "title": "某帳號 24 小時獲得 500 倍資源",
+  "body": "你在後台看到一個帳號,一天內拿到了超過正常的資源。要嘛是天選之人,要嘛是漏洞。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "trust": -5,
+    "players": -2
+   },
+   "result": "資源開始在市場流通,有人說「營運是不是睡著了」。"
+  },
+  "options": [
+   {
+    "label": "查證後再決定處置",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "effects": {
+       "trust": 4,
+       "boss": 2
+      },
+      "result": "是漏洞,已修補;你順手加了監控。"
+     },
+     {
+      "p": 0.3,
+      "effects": {
+       "boss": -2
+      },
+      "result": "查了一圈,發現是原廠補償的發放錯誤。"
+     }
+    ]
+   },
+   {
+    "label": "先凍結帳號",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "effects": {
+       "trust": 1
+      },
+      "result": "確實是作弊,事情簡單處理掉了。"
+     },
+     {
+      "p": 0.5,
+      "effects": {
+       "trust": -5
+      },
+      "result": "被凍結的是大額玩家,客服電話被打爆。",
+      "followUp": {
+       "eventId": "r_appeal",
+       "afterDays": 0
+      }
+     }
+    ]
+   },
+   {
+    "label": "先觀察",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "只是個案,事情自己過去了。"
+     },
+     {
+      "p": 0.5,
+      "effects": {
+       "players": -2,
+       "trust": -4
+      },
+      "result": "資源通膨開始了。"
+     }
+    ]
+   }
+  ],
+  "brief": "後台看到有帳號的資源多得不正常。",
+  "minLevel": 2
+ },
+ {
+  "id": "e_boss_idea",
+  "kind": "老闆",
+  "from": "林總",
+  "weight": 2,
+  "minDay": 3,
+  "title": "「全服送一隻限定神話角色!」",
+  "body": "「我想到一個點子,玩家一定爆炸開心!」你看了一眼營收曲線,開始思考這是誰的錢。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "boss": -3
+   },
+   "result": "林總:「我昨天說的那個點子?」"
+  },
+  "options": [
+   {
+    "label": "用資料說服他",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "effects": {
+       "boss": 3,
+       "trust": 1
+      },
+      "result": "你展示三個類似案例,林總:「嗯……有道理。」",
+      "habit": {
+       "pushback": 1
+      }
+     },
+     {
+      "p": 0.3,
+      "effects": {
+       "boss": -4
+      },
+      "result": "林總:「你這是質疑我嗎?」",
+      "habit": {
+       "pushback": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "照辦",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": 3,
+       "trust": -3,
+       "players": 3
+      },
+      "result": "短期很爆炸,長期玩家問下次還送什麼。",
+      "habit": {
+       "yes_man": 1
+      },
+      "followUp": {
+       "eventId": "r_finance",
+       "afterDays": 0
+      }
+     }
+    ]
+   },
+   {
+    "label": "提出折衷:抽獎送",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": 1,
+       "trust": 1
+      },
+      "result": "不是全服,但至少有人得到了。林總勉強接受。"
+     }
+    ]
+   }
+  ],
+  "brief": "老闆想把最稀有的角色免費送給所有人。"
+ },
+ {
+  "id": "e_data_dup",
+  "kind": "雜務",
+  "from": "原廠與後台",
+  "weight": 2,
+  "minDay": 2,
+  "title": "兩份報表的「日活躍」差了 4%",
+  "body": "一份來自後台,一份來自原廠。兩邊都很確定自己對,而你是那個需要說明差異的人。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "boss": -2
+   },
+   "result": "兩份報表同時出現在同一次會議。"
+  },
+  "options": [
+   {
+    "label": "追查口徑差異",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 0.8,
+      "effects": {
+       "boss": 2,
+       "trust": 1
+      },
+      "result": "原來是時區與去重規則不同,你寫進備註。",
+      "habit": {
+       "overtime": 1
+      }
+     },
+     {
+      "p": 0.2,
+      "result": "追到一半被其他事打斷,但差異沒人再問。",
+      "habit": {
+       "overtime": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "兩份都附註,交給主管判斷",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": 0
+      },
+      "result": "你的備註很詳細,沒人看。"
+     }
+    ]
+   },
+   {
+    "label": "挑一份交差",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "沒人發現。",
+      "habit": {
+       "sloppy_report": 1
+      }
+     },
+     {
+      "p": 0.5,
+      "effects": {
+       "boss": -5
+      },
+      "result": "另一份剛好是對方在用的。",
+      "habit": {
+       "sloppy_report": 1
+      }
+     }
+    ]
+   }
+  ],
+  "brief": "兩份報表的玩家人數對不上。"
+ },
+ {
+  "id": "e_holiday",
+  "kind": "老闆",
+  "from": "林總",
+  "day": 12,
+  "weight": 1,
+  "minDay": 6,
+  "title": "「月底週年慶,你先交個規劃」",
+  "body": "範圍:未定。預算:未定。時程:下週。你有的資訊:週年慶三個字。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "boss": -5
+   },
+   "result": "林總:「週年慶規劃呢?」"
+  },
+  "options": [
+   {
+    "label": "先交一個大綱",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": 2
+      },
+      "result": "大綱只有五行,但林總看起來很滿意。"
+     }
+    ]
+   },
+   {
+    "label": "先要求釐清範圍與預算",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "effects": {
+       "boss": 3
+      },
+      "result": "林總意識到自己還沒想清楚,給了你一個明確方向。",
+      "habit": {
+       "pushback": 1
+      }
+     },
+     {
+      "p": 0.5,
+      "effects": {
+       "boss": -3
+      },
+      "result": "林總:「你先做,我再看。」",
+      "habit": {
+       "pushback": 1
+      }
+     }
+    ]
+   }
+  ],
+  "brief": "老闆要週年慶規劃,但什麼都沒說清楚。"
+ },
+ {
+  "id": "e_weekly",
+  "kind": "雜務",
+  "from": "林總",
+  "title": "週五了,週報請記得交",
+  "body": "林總在群組寫:「週報大家記得交喔 :)」那個笑臉的意思是:今天內。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "boss": -6
+   },
+   "result": "週報沒交,林總的表情從笑臉變成句點。"
+  },
+  "options": [
+   {
+    "label": "認真撰寫",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": 3
+      },
+      "result": "週報很完整。有人看到的機率是 40%。"
+     }
+    ]
+   },
+   {
+    "label": "複製上週,改日期",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "effects": {
+       "boss": 1
+      },
+      "result": "沒人發現。",
+      "habit": {
+       "sloppy_report": 1
+      }
+     },
+     {
+      "p": 0.3,
+      "effects": {
+       "boss": -8
+      },
+      "result": "被發現連上週的錯字都一樣。",
+      "habit": {
+       "sloppy_report": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "不交",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": -6
+      },
+      "result": "你的名字出現在未繳名單。"
+     }
+    ]
+   }
+  ],
+  "brief": "週五了,要交本週工作報告。"
+ },
+ {
+  "id": "e_audit",
+  "kind": "原廠",
+  "from": "原廠稽核窗口",
+  "weight": 2,
+  "minDay": 6,
+  "minDifficulty": "hard",
+  "title": "原廠稽核:抽查三個月前的活動紀錄",
+  "body": "「依合約規定,將抽查貴區過去活動的設定、公告與發放紀錄,請於兩日內提供。」其中一筆,是你上任前的活動。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "boss": -9,
+    "trust": -2
+   },
+   "result": "原廠改為正式發函,收件人欄位寫了老闆的全名。"
+  },
+  "options": [
+   {
+    "label": "全部調出來,逐筆核對",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": 4,
+       "trust": 1
+      },
+      "result": "全部對得上,原廠:「感謝配合。」你發現其中一筆公告的錯字是前任留下的。"
+     }
+    ]
+   },
+   {
+    "label": "只提供摘要",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "effects": {
+       "boss": 1
+      },
+      "result": "原廠接受了摘要。"
+     },
+     {
+      "p": 0.5,
+      "effects": {
+       "boss": -5
+      },
+      "result": "原廠:「請補充原始紀錄。」"
+     }
+    ]
+   },
+   {
+    "label": "回覆「資料已歸檔,需要時間」",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": -4
+      },
+      "result": "原廠:「那我們三天後再來問。」"
+     }
+    ]
+   }
+  ],
+  "brief": "原廠要抽查你之前的活動紀錄。",
+  "minLevel": 4
+ },
+ {
+  "id": "e_conflict",
+  "kind": "老闆",
+  "from": "林總 vs 原廠",
+  "weight": 2,
+  "minDay": 5,
+  "minDifficulty": "hard",
+  "title": "兩邊的要求互相衝突",
+  "body": "林總:「這季營收一定要衝。」原廠:「請降低玩家的花錢壓力,近期客訴偏多。」兩邊都說這是上級指示,而且都說「請盡快回覆」。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "boss": -5,
+    "trust": -3
+   },
+   "result": "兩邊各自又寄了一封信,而且都把你列為收件人。"
+  },
+  "options": [
+   {
+    "label": "整理雙方訴求,做一份折衷簡報",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "effects": {
+       "boss": 3,
+       "trust": 2
+      },
+      "result": "你找到一個兩邊都勉強能接受的方案。"
+     },
+     {
+      "p": 0.4,
+      "effects": {
+       "boss": -3
+      },
+      "result": "兩邊都覺得你偏向對方。"
+     }
+    ]
+   },
+   {
+    "label": "照林總的方向走",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": 3,
+       "trust": -4
+      },
+      "result": "老闆滿意,但玩家感覺到被催促營收。",
+      "habit": {
+       "yes_man": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "照原廠的方向走",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": -4,
+       "trust": 4
+      },
+      "result": "玩家鬆了一口氣,林總的表情則相反。"
+     }
+    ]
+   }
+  ],
+  "brief": "老闆要你多賺錢,原廠要你少催玩家花錢。",
+  "minLevel": 4
+ },
+ {
+  "id": "e_streamer_oops",
+  "kind": "輿情",
+  "from": "社群監控",
+  "weight": 2,
+  "minDay": 4,
+  "minDifficulty": "hard",
+  "title": "合作實況主在直播中失言",
+  "body": "你合作的實況主在直播中說了不當的話。玩家開始把你們的遊戲名稱和他的名字一起貼在標題上。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "trust": -6,
+    "players": -2
+   },
+   "result": "「營運是不是不在乎」成為討論串的標題。"
+  },
+  "options": [
+   {
+    "label": "發公告表態並暫停合作",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": 2,
+       "players": -1
+      },
+      "result": "討論很快轉向。你損失了一些曝光,但保住了信譽。"
+     }
+    ]
+   },
+   {
+    "label": "先私下聯繫了解狀況",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "effects": {
+       "trust": 1
+      },
+      "result": "對方迅速道歉,事情降溫。"
+     },
+     {
+      "p": 0.5,
+      "effects": {
+       "trust": -4
+      },
+      "result": "在你聯繫的時候,輿論已經先跑掉了。"
+     }
+    ]
+   },
+   {
+    "label": "沉默等風頭過去",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.4,
+      "result": "風頭自己過去了。"
+     },
+     {
+      "p": 0.6,
+      "effects": {
+       "trust": -7
+      },
+      "result": "沉默被解讀為默許。"
+     }
+    ]
+   }
+  ],
+  "brief": "合作的實況主說錯話,玩家把你們牽在一起罵。",
+  "minLevel": 3
+ },
+ {
+  "id": "e_double_crisis",
+  "kind": "技術",
+  "from": "客服主管",
+  "weight": 2,
+  "minDay": 6,
+  "minDifficulty": "normal",
+  "title": "伺服器不穩,客服同時爆量",
+  "body": "尖峰時間伺服器掉線,客服信箱一小時進來 300 封。兩件事都很急,而你只有一個人。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "trust": -8,
+    "retention": -3,
+    "boss": -3
+   },
+   "result": "兩邊都沒顧到,公司內部群組開始有人問「營運在哪」。"
+  },
+  "options": [
+   {
+    "label": "先處理伺服器公告",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": 3,
+       "retention": -1
+      },
+      "result": "公告穩住了玩家,客服信箱則留到明天。"
+     }
+    ]
+   },
+   {
+    "label": "先處理客服範本回覆",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": 2
+      },
+      "result": "客服有了統一說法,伺服器則靠工程師自己撐過去。"
+     }
+    ]
+   },
+   {
+    "label": "兩邊都顧",
+    "ap": 4,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "effects": {
+       "trust": 6,
+       "boss": 2
+      },
+      "result": "你熬了一個晚上,隔天沒人記得,但數字記得。",
+      "habit": {
+       "overtime": 1
+      }
+     },
+     {
+      "p": 0.4,
+      "effects": {
+       "trust": -2
+      },
+      "result": "兩邊都顧,結果兩邊都只做到一半。",
+      "habit": {
+       "overtime": 1
+      }
+     }
+    ]
+   }
+  ],
+  "brief": "伺服器不穩,客服信箱同時爆滿。",
+  "minLevel": 3
+ },
+ {
+  "id": "e_budget_cut",
+  "kind": "老闆",
+  "from": "林總",
+  "weight": 2,
+  "minDay": 8,
+  "minDifficulty": "normal",
+  "title": "財務通知:下季預算砍 20%",
+  "body": "林總:「財務說活動預算要縮。你重新評估一下,不要影響成績。」這句話本身有一點矛盾。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "boss": -4
+   },
+   "result": "林總:「評估呢?」"
+  },
+  "options": [
+   {
+    "label": "提出精簡版活動計畫",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": 3
+      },
+      "result": "你把五個活動砍成三個,每個都更聚焦。"
+     }
+    ]
+   },
+   {
+    "label": "用數據爭取預算",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 0.4,
+      "effects": {
+       "boss": 5,
+       "players": 2
+      },
+      "result": "預算保住了一半,林總說你很有膽量。",
+      "habit": {
+       "pushback": 1
+      }
+     },
+     {
+      "p": 0.6,
+      "effects": {
+       "boss": -4
+      },
+      "result": "財務沒被說服,林總被問了兩次。",
+      "habit": {
+       "pushback": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "直接照辦",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "players": -2,
+       "retention": -1
+      },
+      "result": "活動變少了,玩家有感,你也有感。",
+      "habit": {
+       "yes_man": 1
+      }
+     }
+    ]
+   }
+  ],
+  "brief": "公司要砍活動預算。",
+  "minLevel": 3
+ },
+ {
+  "id": "e_patch_typo",
+  "kind": "輿情",
+  "from": "社群監控",
+  "title": "公告打錯字",
+  "brief": "公告把「限時三天」打成「限時三年」。",
+  "body": "公告把「限時三天」打成「限時三年」。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "trust": -3
+   },
+   "result": "玩家天天在公告下留言:「我在等三年。」"
+  },
+  "options": [
+   {
+    "label": "發更正公告",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "更正了。迷因還在。",
+      "effects": {
+       "trust": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "順勢玩梗",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "result": "「三年」成了本季名場面。",
+      "effects": {
+       "trust": 4,
+       "players": 1
+      }
+     },
+     {
+      "p": 0.4,
+      "result": "有人認真問三年獎勵。",
+      "effects": {
+       "trust": -3
+      }
+     }
+    ]
+   },
+   {
+    "label": "偷偷改掉",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "沒人發現。"
+     },
+     {
+      "p": 0.5,
+      "result": "截圖早就存了。",
+      "effects": {
+       "trust": -4
+      }
+     }
+    ]
+   }
+  ],
+  "weight": 2
+ },
+ {
+  "id": "e_maint_overrun",
+  "kind": "技術",
+  "from": "工程師",
+  "title": "維護拖太久",
+  "brief": "說好維護 4 小時,現在第 6 小時。",
+  "body": "說好維護 4 小時,現在第 6 小時。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "trust": -7,
+    "retention": -2
+   },
+   "result": "玩家陸續離開論壇,去看別的遊戲。"
+  },
+  "options": [
+   {
+    "label": "公告延長並補償",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "玩家接受了。",
+      "effects": {
+       "trust": 3
+      }
+     }
+    ]
+   },
+   {
+    "label": "只更新公告時間",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "還行。",
+      "effects": {
+       "trust": 0
+      }
+     },
+     {
+      "p": 0.5,
+      "result": "被說敷衍。",
+      "effects": {
+       "trust": -3
+      }
+     }
+    ]
+   },
+   {
+    "label": "等結束再說",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "剛好結束了。"
+     },
+     {
+      "p": 0.5,
+      "result": "玩家炸鍋。",
+      "effects": {
+       "trust": -6,
+       "retention": -2
+      },
+      "habit": {
+       "ignored_players": 1
+      }
+     }
+    ]
+   }
+  ],
+  "weight": 2,
+  "minDay": 2
+ },
+ {
+  "id": "e_ugc",
+  "kind": "輿情",
+  "from": "玩家論壇",
+  "title": "玩家畫的圖超好看",
+  "brief": "有玩家自己畫了活動主圖,比官方的還好看。",
+  "body": "有玩家自己畫了活動主圖,比官方的還好看。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": "畫師被別家挖走了。"
+  },
+  "options": [
+   {
+    "label": "聯繫合作",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "result": "雙方都開心。",
+      "effects": {
+       "trust": 5,
+       "players": 1
+      }
+     },
+     {
+      "p": 0.3,
+      "result": "版權要先過法務。",
+      "effects": {
+       "boss": -2
+      }
+     }
+    ]
+   },
+   {
+    "label": "官方轉發並標註",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "畫師很開心。",
+      "effects": {
+       "trust": 3
+      }
+     }
+    ]
+   },
+   {
+    "label": "不處理",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "就這樣過去了。"
+     }
+    ]
+   }
+  ],
+  "weight": 2,
+  "minDay": 3
+ },
+ {
+  "id": "e_legal",
+  "kind": "雜務",
+  "from": "法務",
+  "title": "條款要你確認",
+  "brief": "法務寄來 14 頁新條款,今天要回覆。",
+  "body": "法務寄來 14 頁新條款,今天要回覆。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "boss": -4
+   },
+   "result": "法務直接找了你老闆。"
+  },
+  "options": [
+   {
+    "label": "逐段確認",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "確認完了。",
+      "effects": {
+       "boss": 2,
+       "trust": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "只看重點",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "result": "沒出事。",
+      "effects": {
+       "boss": 1
+      },
+      "habit": {
+       "sloppy_report": 1
+      }
+     },
+     {
+      "p": 0.3,
+      "result": "漏看一段,被退回。",
+      "effects": {
+       "boss": -4
+      },
+      "habit": {
+       "sloppy_report": 1
+      },
+      "followUp": {
+       "eventId": "r_legal",
+       "afterDays": 0
+      }
+     }
+    ],
+    "tag": "quick"
+   },
+   {
+    "label": "回覆「OK」",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "僥倖過關。",
+      "habit": {
+       "sloppy_report": 1
+      }
+     },
+     {
+      "p": 0.5,
+      "result": "有一條要改。",
+      "effects": {
+       "boss": -7
+      },
+      "habit": {
+       "sloppy_report": 1
+      },
+      "followUp": {
+       "eventId": "r_legal",
+       "afterDays": 0
+      }
+     }
+    ]
+   }
+  ],
+  "weight": 2,
+  "minDay": 4,
+  "minLevel": 2
+ },
+ {
+  "id": "e_new_hire",
+  "kind": "雜務",
+  "from": "新人",
+  "title": "新人在問問題",
+  "brief": "新人問你日報怎麼填。你也不太確定標準答案。",
+  "body": "新人問你日報怎麼填。你也不太確定標準答案。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": "新人自己摸索,寫了三種格式。"
+  },
+  "options": [
+   {
+    "label": "花時間教他",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "他很感激。以後可以請他幫忙。",
+      "effects": {
+       "boss": 2
+      }
+     }
+    ]
+   },
+   {
+    "label": "丟文件給他",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "他看了。大概。"
+     }
+    ]
+   },
+   {
+    "label": "叫他看前輩的",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "他看了三份,得出三種格式。"
+     }
+    ]
+   }
+  ],
+  "weight": 1,
+  "minDay": 3
+ },
+ {
+  "id": "e_rank_dispute",
+  "kind": "客訴",
+  "from": "玩家論壇",
+  "title": "排行榜差 1 分",
+  "brief": "第 3、4 名只差 1 分,獎勵差很多,第 4 名在抗議。",
+  "body": "第 3、4 名只差 1 分,獎勵差很多,第 4 名在抗議。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "trust": -4
+   },
+   "result": "抗議串愈長愈高。"
+  },
+  "options": [
+   {
+    "label": "公布結算紀錄",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "result": "玩家服氣了。",
+      "effects": {
+       "trust": 4
+      },
+      "habit": {
+       "transparency": 1
+      }
+     },
+     {
+      "p": 0.3,
+      "result": "紀錄顯示慢了 0.3 秒。",
+      "effects": {
+       "trust": -2
+      }
+     }
+    ]
+   },
+   {
+    "label": "補發安慰獎",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "第 3 名也來問了。",
+      "effects": {
+       "trust": 1
+      },
+      "habit": {
+       "precedent": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "依規則回覆",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "result": "事情結束。"
+     },
+     {
+      "p": 0.4,
+      "result": "玩家覺得被敷衍。",
+      "effects": {
+       "trust": -4
+      }
+     }
+    ]
+   }
+  ],
+  "weight": 2,
+  "minDay": 4
+ },
+ {
+  "id": "e_vip",
+  "kind": "客訴",
+  "from": "大額玩家",
+  "title": "大額玩家想要特別待遇",
+  "brief": "花很多錢的玩家私訊:「我該有專屬補償吧?」",
+  "body": "花很多錢的玩家私訊:「我該有專屬補償吧?」",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "boss": -2
+   },
+   "result": "他把截圖貼到群組。"
+  },
+  "options": [
+   {
+    "label": "婉拒並說明公平",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "result": "他理解了。",
+      "effects": {
+       "trust": 3
+      }
+     },
+     {
+      "p": 0.4,
+      "result": "他覺得沒面子。",
+      "effects": {
+       "boss": -3
+      }
+     }
+    ]
+   },
+   {
+    "label": "私下給小補償",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "其他玩家還是知道了。",
+      "effects": {
+       "trust": -3
+      }
+     }
+    ]
+   },
+   {
+    "label": "轉給主管",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "主管看起來不太開心。",
+      "effects": {
+       "boss": -1
+      }
+     }
+    ]
+   }
+  ],
+  "weight": 2,
+  "minDay": 5,
+  "minLevel": 2
+ },
+ {
+  "id": "e_streamer_inbound",
+  "kind": "輿情",
+  "from": "實況主",
+  "title": "實況主主動來合作",
+  "brief": "實況主想合作直播,但要一個專屬造型。",
+  "body": "實況主想合作直播,但要一個專屬造型。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": "他轉去直播別的遊戲。"
+  },
+  "options": [
+   {
+    "label": "洽談條件",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "result": "談成了,新玩家來了。",
+      "effects": {
+       "players": 3,
+       "trust": 1
+      }
+     },
+     {
+      "p": 0.4,
+      "result": "條件談不攏。",
+      "effects": {
+       "boss": -2
+      }
+     }
+    ]
+   },
+   {
+    "label": "先看他的口碑",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "風評不錯,放心了。",
+      "effects": {
+       "players": 2
+      }
+     },
+     {
+      "p": 0.5,
+      "result": "風評有點爭議,婉拒。"
+     }
+    ]
+   },
+   {
+    "label": "婉拒",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "沒有後續。"
+     }
+    ]
+   }
+  ],
+  "weight": 2,
+  "minDay": 3,
+  "minLevel": 2
+ },
+ {
+  "id": "e_translation",
+  "kind": "雜務",
+  "from": "外語玩家",
+  "title": "翻譯出包",
+  "brief": "外語公告把「限時活動」翻成「限量處刑」。",
+  "body": "外語公告把「限時活動」翻成「限量處刑」。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "trust": -2
+   },
+   "result": "外語論壇出現新迷因。"
+  },
+  "options": [
+   {
+    "label": "馬上更正",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "已修正。",
+      "effects": {
+       "trust": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "當作彩蛋",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "外語玩家覺得很有趣。",
+      "effects": {
+       "trust": 3
+      }
+     },
+     {
+      "p": 0.5,
+      "result": "被說不尊重。",
+      "effects": {
+       "trust": -3
+      }
+     }
+    ]
+   },
+   {
+    "label": "重新審稿",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "流程變更嚴謹。",
+      "effects": {
+       "boss": 1,
+       "trust": 1
+      }
+     }
+    ]
+   }
+  ],
+  "weight": 1,
+  "minDay": 4
+ },
+ {
+  "id": "e_store_rating",
+  "kind": "數據",
+  "from": "應用商店",
+  "title": "商店評分下降",
+  "brief": "商店評分從 4.4 掉到 4.1,最新評論都在抱怨登入。",
+  "body": "商店評分從 4.4 掉到 4.1,最新評論都在抱怨登入。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "players": -2
+   },
+   "result": "新玩家看到低分,不下載了。"
+  },
+  "options": [
+   {
+    "label": "整理問題給工程師",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "三個主要問題整理好了。",
+      "effects": {
+       "trust": 2
+      }
+     }
+    ]
+   },
+   {
+    "label": "請玩家重新評價",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "分數略升。",
+      "effects": {
+       "players": 1
+      }
+     },
+     {
+      "p": 0.5,
+      "result": "被說買好評。",
+      "effects": {
+       "trust": -4
+      }
+     }
+    ]
+   },
+   {
+    "label": "先不處理",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "分數自己回升。"
+     },
+     {
+      "p": 0.5,
+      "result": "繼續下滑。",
+      "effects": {
+       "players": -2
+      }
+     }
+    ]
+   }
+  ],
+  "weight": 2,
+  "minDay": 3
+ },
+ {
+  "id": "e_reward_expired",
+  "kind": "客訴",
+  "from": "玩家",
+  "title": "獎勵過期了",
+  "brief": "玩家忘記領獎,獎勵過期,寫了三封信求補發。",
+  "body": "玩家忘記領獎,獎勵過期,寫了三封信求補發。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "trust": -2
+   },
+   "result": "玩家第四封信很委屈。"
+  },
+  "options": [
+   {
+    "label": "依規則婉拒",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "他不開心,但沒再寫了。",
+      "effects": {
+       "trust": -1
+      }
+     }
+    ]
+   },
+   {
+    "label": "一次性補發",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "他很感動。但消息傳開了。",
+      "effects": {
+       "trust": 2
+      },
+      "habit": {
+       "precedent": 1
+      }
+     }
+    ]
+   }
+  ],
+  "weight": 2,
+  "minDay": 3
+ },
+ {
+  "id": "e_leak",
+  "kind": "技術",
+  "from": "美術同事",
+  "title": "新角色圖外流",
+  "brief": "美術不小心把下一期角色圖傳到公開頻道。",
+  "body": "美術不小心把下一期角色圖傳到公開頻道。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "boss": -4
+   },
+   "result": "圖已經滿天飛。"
+  },
+  "options": [
+   {
+    "label": "立刻刪除並請求別擴散",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "result": "大致控制住了。",
+      "effects": {
+       "trust": 1
+      }
+     },
+     {
+      "p": 0.4,
+      "result": "還是流出去了。",
+      "effects": {
+       "trust": -2
+      }
+     }
+    ]
+   },
+   {
+    "label": "順勢提前宣傳",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "話題熱了。",
+      "effects": {
+       "players": 3,
+       "boss": 2
+      }
+     },
+     {
+      "p": 0.5,
+      "result": "原廠不開心。",
+      "effects": {
+       "boss": -4
+      }
+     }
+    ]
+   },
+   {
+    "label": "假裝沒發生",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "沒人注意。"
+     },
+     {
+      "p": 0.5,
+      "result": "老闆從別人那聽到。",
+      "effects": {
+       "boss": -6
+      }
+     }
+    ]
+   }
+  ],
+  "weight": 1,
+  "minDay": 5,
+  "minLevel": 3
+ },
+ {
+  "id": "e_tool_broken",
+  "kind": "技術",
+  "from": "工程師",
+  "title": "後台工具壞了",
+  "brief": "報表工具壞了,資料要手動撈。",
+  "body": "報表工具壞了,資料要手動撈。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "boss": -2
+   },
+   "result": "老闆問:今天的數據呢?"
+  },
+  "options": [
+   {
+    "label": "等工程師修好",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "修好時已經是下午。"
+     }
+    ]
+   },
+   {
+    "label": "自己用備用方法撈",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "撈到了。",
+      "effects": {
+       "boss": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "跟老闆說今天沒數據",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "老闆皺了眉。",
+      "effects": {
+       "boss": -2
+      }
+     }
+    ]
+   }
+  ],
+  "weight": 2,
+  "minDay": 2
+ },
+ {
+  "id": "e_survey",
+  "kind": "數據",
+  "from": "問卷結果",
+  "title": "玩家問卷出爐",
+  "brief": "問卷最多票的意見是「讓我跳過新手教學」。",
+  "body": "問卷最多票的意見是「讓我跳過新手教學」。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": "問卷放著沒人看。"
+  },
+  "options": [
+   {
+    "label": "做成簡報給老闆",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "老闆覺得你有想法。",
+      "effects": {
+       "boss": 3
+      }
+     }
+    ]
+   },
+   {
+    "label": "偷偷納入規劃",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "result": "玩家覺得被傾聽。",
+      "effects": {
+       "retention": 1
+      }
+     },
+     {
+      "p": 0.4,
+      "result": "沒什麼感覺。"
+     }
+    ]
+   },
+   {
+    "label": "先放著",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "等有空再說。"
+     }
+    ]
+   }
+  ],
+  "weight": 1,
+  "minDay": 4
+ },
+ {
+  "id": "e_marketing",
+  "kind": "老闆",
+  "from": "行銷部",
+  "title": "行銷想買廣告",
+  "brief": "行銷想花錢投廣告找新玩家,問你要買哪種人。",
+  "body": "行銷想花錢投廣告找新玩家,問你要買哪種人。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "boss": -1
+   },
+   "result": "行銷自己決定了。"
+  },
+  "options": [
+   {
+    "label": "提供留存好的玩家分群",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "投放很準。",
+      "effects": {
+       "boss": 3,
+       "players": 3
+      },
+      "habit": {
+       "overtime": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "給大概方向",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "有一些效果。",
+      "effects": {
+       "players": 2
+      }
+     },
+     {
+      "p": 0.5,
+      "result": "買來的人很快就走。",
+      "effects": {
+       "players": -1,
+       "boss": -1
+      }
+     }
+    ]
+   },
+   {
+    "label": "說這不是我的部門",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "行銷皺眉。",
+      "effects": {
+       "boss": -2
+      }
+     }
+    ]
+   }
+  ],
+  "weight": 2,
+  "minDay": 5,
+  "minLevel": 2
+ },
+ {
+  "id": "e_guild",
+  "kind": "客訴",
+  "from": "玩家公會",
+  "title": "兩個公會吵架",
+  "brief": "兩個大公會在世界頻道吵了兩小時,起因是一條不清楚的活動規則。",
+  "body": "兩個大公會在世界頻道吵了兩小時,起因是一條不清楚的活動規則。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "trust": -4
+   },
+   "result": "吵架被錄影上傳。"
+  },
+  "options": [
+   {
+    "label": "公告釐清規則",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "result": "吵架結束。",
+      "effects": {
+       "trust": 4
+      },
+      "habit": {
+       "transparency": 1
+      }
+     },
+     {
+      "p": 0.3,
+      "result": "釐清的說法又被吵。",
+      "effects": {
+       "trust": -2
+      }
+     }
+    ]
+   },
+   {
+    "label": "私下調解",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "兩邊都給面子。",
+      "effects": {
+       "trust": 3
+      }
+     },
+     {
+      "p": 0.5,
+      "result": "沒談成。"
+     }
+    ]
+   },
+   {
+    "label": "禁言雙方",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "被說太強硬。",
+      "effects": {
+       "trust": -5
+      }
+     }
+    ]
+   }
+  ],
+  "weight": 2,
+  "minDay": 4,
+  "minLevel": 2
+ },
+ {
+  "id": "e_giftcode",
+  "kind": "技術",
+  "from": "社群監控",
+  "title": "禮包序號外流",
+  "brief": "官方禮包序號被貼在社群,但只有前 500 人能用。",
+  "body": "官方禮包序號被貼在社群,但只有前 500 人能用。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "trust": -6
+   },
+   "result": "後面的人領不到,開始抱怨。"
+  },
+  "options": [
+   {
+    "label": "公告說明並補償",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "玩家理解了。",
+      "effects": {
+       "trust": 3
+      }
+     }
+    ]
+   },
+   {
+    "label": "停用這批序號",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "result": "事情結束。",
+      "effects": {
+       "trust": 1
+      }
+     },
+     {
+      "p": 0.4,
+      "result": "有人已兌換,覺得不公平。",
+      "effects": {
+       "trust": -4
+      }
+     }
+    ]
+   },
+   {
+    "label": "不理",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "沒人再提。"
+     },
+     {
+      "p": 0.5,
+      "result": "討論串一直長。",
+      "effects": {
+       "trust": -6
+      },
+      "habit": {
+       "ignored_players": 1
+      }
+     }
+    ]
+   }
+  ],
+  "weight": 2,
+  "minDay": 4,
+  "minLevel": 2
+ },
+ {
+  "id": "e_seasonal",
+  "kind": "老闆",
+  "from": "林總",
+  "title": "連假要有活動",
+  "brief": "下週連假,老闆覺得該有活動。沒人記得上次有沒有辦。",
+  "body": "下週連假,老闆覺得該有活動。沒人記得上次有沒有辦。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "boss": -2
+   },
+   "result": "老闆自己提了一個大活動。"
+  },
+  "options": [
+   {
+    "label": "做簡版連假活動",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "簡單但實用。",
+      "effects": {
+       "boss": 3,
+       "players": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "用資料說明不必辦",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "老闆被說服。",
+      "effects": {
+       "boss": 2
+      },
+      "habit": {
+       "pushback": 1
+      }
+     },
+     {
+      "p": 0.5,
+      "result": "老闆不太開心。",
+      "effects": {
+       "boss": -3
+      },
+      "habit": {
+       "pushback": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "辦大型活動",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "大家都很累,但效果好。",
+      "effects": {
+       "boss": 4
+      },
+      "habit": {
+       "overtime": 1
+      }
+     }
+    ]
+   }
+  ],
+  "weight": 2,
+  "minDay": 5,
+  "minLevel": 2
+ },
+ {
+  "id": "c_report_mismatch",
+  "kind": "原廠",
+  "from": "原廠窗口",
+  "title": "日報數字對不上",
+  "brief": "你的日報數字跟後台差了一個小數點。",
+  "body": "你的日報數字跟後台差了一個小數點。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "boss": -6
+   },
+   "result": "原廠寄信給你老闆。"
+  },
+  "options": [
+   {
+    "label": "承認並更正",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "更正了。",
+      "effects": {
+       "boss": -1
+      }
+     }
+    ]
+   },
+   {
+    "label": "重查近一週日報",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "找到另外兩處錯誤。",
+      "effects": {
+       "boss": 3
+      }
+     }
+    ]
+   },
+   {
+    "label": "說是系統問題",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.4,
+      "result": "暫時過關。"
+     },
+     {
+      "p": 0.6,
+      "result": "原廠查過了,沒問題。",
+      "effects": {
+       "boss": -6
+      }
+     }
+    ]
+   }
+  ],
+  "trigger": {
+   "habit": "sloppy_report",
+   "min": 2
+  },
+  "hint": "你最近填日報很草率。"
+ },
+ {
+  "id": "c_ignored_wave",
+  "kind": "客訴",
+  "from": "玩家論壇",
+  "title": "玩家連署:營運不回應",
+  "brief": "有玩家整理「營運已讀不回」紀錄,800 人連署。",
+  "body": "有玩家整理「營運已讀不回」紀錄,800 人連署。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "trust": -8,
+    "retention": -2
+   },
+   "result": "連署上了新聞。"
+  },
+  "options": [
+   {
+    "label": "公開回應並承諾改進",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "result": "玩家願意再信一次。",
+      "effects": {
+       "trust": 6,
+       "retention": 1
+      },
+      "habit": {
+       "transparency": 1
+      }
+     },
+     {
+      "p": 0.3,
+      "result": "承諾被質疑。",
+      "effects": {
+       "trust": -2
+      }
+     }
+    ]
+   },
+   {
+    "label": "逐一回覆連署串",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "玩家很感動。",
+      "effects": {
+       "trust": 8
+      },
+      "habit": {
+       "overtime": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "低調處理",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.4,
+      "result": "事情降溫。"
+     },
+     {
+      "p": 0.6,
+      "result": "連署數增加。",
+      "effects": {
+       "trust": -6
+      }
+     }
+    ]
+   }
+  ],
+  "trigger": {
+   "habit": "ignored_players",
+   "min": 2
+  },
+  "hint": "你最近幾次沒有回應玩家。"
+ },
+ {
+  "id": "c_yes_man",
+  "kind": "老闆",
+  "from": "林總",
+  "title": "「既然你都能做」",
+  "brief": "老闆:活動規模加倍,時程提前,預算不變,明天要。",
+  "body": "老闆:活動規模加倍,時程提前,預算不變,明天要。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "boss": -4
+   },
+   "result": "老闆自己找別人做。"
+  },
+  "options": [
+   {
+    "label": "談判,說明做不到",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "老闆接受了折衷。",
+      "effects": {
+       "boss": 2,
+       "trust": 1
+      },
+      "habit": {
+       "pushback": 1
+      }
+     },
+     {
+      "p": 0.5,
+      "result": "老闆不開心。",
+      "effects": {
+       "boss": -4
+      }
+     }
+    ]
+   },
+   {
+    "label": "答應下來",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "你的名字被寫進「可以找他」清單。",
+      "effects": {
+       "boss": 2,
+       "trust": -3
+      },
+      "habit": {
+       "overtime": 2
+      }
+     }
+    ]
+   },
+   {
+    "label": "提出分階段方案",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "雙方都鬆口氣。",
+      "effects": {
+       "boss": 1,
+       "trust": 1
+      }
+     }
+    ]
+   }
+  ],
+  "trigger": {
+   "habit": "yes_man",
+   "min": 3
+  },
+  "hint": "你最近都一口答應,老闆覺得你什麼都能做。"
+ },
+ {
+  "id": "c_pushback_label",
+  "kind": "老闆",
+  "from": "同事",
+  "title": "聽說你很難搞",
+  "brief": "有人說你每件事都要談條件,也有人說你說的都對。",
+  "body": "有人說你每件事都要談條件,也有人說你說的都對。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "boss": -3
+   },
+   "result": "傳聞越傳越遠。"
+  },
+  "options": [
+   {
+    "label": "主動找老闆溝通",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "result": "老闆理解了。",
+      "effects": {
+       "boss": 3
+      }
+     },
+     {
+      "p": 0.3,
+      "result": "老闆笑而不語。",
+      "effects": {
+       "boss": -1
+      }
+     }
+    ]
+   },
+   {
+    "label": "用成果證明",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "成果會說話。",
+      "effects": {
+       "boss": 2,
+       "trust": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "不理會",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "傳聞自己消失。"
+     },
+     {
+      "p": 0.5,
+      "result": "氣氛變尷尬。",
+      "effects": {
+       "boss": -3
+      }
+     }
+    ]
+   }
+  ],
+  "trigger": {
+   "habit": "pushback",
+   "min": 3
+  },
+  "hint": "你最近多次提出不同意見。"
+ },
+ {
+  "id": "c_rush_bug",
+  "kind": "技術",
+  "from": "玩家回報",
+  "title": "公告日期寫錯了",
+  "brief": "公告寫「10/32」。這個日期不存在。",
+  "body": "公告寫「10/32」。這個日期不存在。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "trust": -5
+   },
+   "result": "玩家一直問那天有沒有活動。"
+  },
+  "options": [
+   {
+    "label": "發更正公告",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "更正完成。",
+      "effects": {
+       "trust": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "順勢辦彩蛋活動",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "玩家覺得有趣。",
+      "effects": {
+       "trust": 4
+      }
+     },
+     {
+      "p": 0.5,
+      "result": "被說不認真。",
+      "effects": {
+       "trust": -3
+      }
+     }
+    ]
+   },
+   {
+    "label": "偷偷改掉",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.4,
+      "result": "沒人發現。"
+     },
+     {
+      "p": 0.6,
+      "result": "截圖早就傳開。",
+      "effects": {
+       "trust": -5
+      }
+     }
+    ]
+   }
+  ],
+  "trigger": {
+   "habit": "rushed",
+   "min": 2
+  },
+  "hint": "你最近趕工,省了確認步驟。"
+ },
+ {
+  "id": "c_burnout",
+  "kind": "雜務",
+  "from": "你自己",
+  "title": "你有點累了",
+  "brief": "你把「老闆」打成「老鼠」。這是一個訊號。",
+  "body": "你把「老闆」打成「老鼠」。這是一個訊號。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "boss": -2
+   },
+   "result": "你繼續硬撐。"
+  },
+  "options": [
+   {
+    "label": "請半天假休息",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "休息後清醒多了。"
+     }
+    ]
+   },
+   {
+    "label": "硬撐",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "撐過去了。這次。"
+     },
+     {
+      "p": 0.5,
+      "result": "你把信寄給錯的人。",
+      "effects": {
+       "boss": -3
+      }
+     }
+    ]
+   },
+   {
+    "label": "請同事分擔",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "result": "同事答應了。"
+     },
+     {
+      "p": 0.3,
+      "result": "同事也很忙。",
+      "effects": {
+       "boss": -1
+      }
+     }
+    ]
+   }
+  ],
+  "trigger": {
+   "habit": "overtime",
+   "min": 3
+  },
+  "hint": "你最近一直加班熬夜。"
+ },
+ {
+  "id": "c_transparency",
+  "kind": "輿情",
+  "from": "玩家論壇",
+  "title": "玩家整理了營運回應",
+  "brief": "玩家把你的公告整理成長文:「這家營運有在認真」。",
+  "body": "玩家把你的公告整理成長文:「這家營運有在認真」。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": "貼文自己飛了一陣子。"
+  },
+  "options": [
+   {
+    "label": "感謝並回饋",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "玩家很開心。",
+      "effects": {
+       "trust": 3,
+       "players": 2
+      }
+     }
+    ]
+   },
+   {
+    "label": "低調轉發",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "效果不錯。",
+      "effects": {
+       "trust": 2
+      }
+     }
+    ]
+   },
+   {
+    "label": "請玩家多提意見",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "你得到了線索。",
+      "effects": {
+       "trust": 2
+      },
+      "reveal": "reward"
+     }
+    ]
+   }
+  ],
+  "trigger": {
+   "habit": "transparency",
+   "min": 2
+  },
+  "hint": "你最近願意公開說明,玩家看到了。"
+ },
+ {
+  "id": "c_precedent",
+  "kind": "客訴",
+  "from": "玩家論壇",
+  "title": "「他有補發,那我的呢?」",
+  "brief": "玩家翻出之前補發的案例,三十人排隊要求同樣待遇。",
+  "body": "玩家翻出之前補發的案例,三十人排隊要求同樣待遇。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "trust": -5
+   },
+   "result": "排隊的人越來越多。"
+  },
+  "options": [
+   {
+    "label": "訂出明確補發規則",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "有規則就好談。",
+      "effects": {
+       "trust": 4,
+       "boss": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "全部補發",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "財務在問:這要送多少?",
+      "effects": {
+       "trust": 2,
+       "boss": -3
+      }
+     }
+    ]
+   },
+   {
+    "label": "一律不補",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "玩家很生氣。",
+      "effects": {
+       "trust": -6
+      }
+     }
+    ]
+   }
+  ],
+  "trigger": {
+   "habit": "precedent",
+   "min": 2
+  },
+  "hint": "你之前開過補發的先例。"
+ },
+ {
+  "id": "c_report_late",
+  "kind": "雜務",
+  "from": "林總",
+  "title": "日報資料夾在長大",
+  "brief": "老闆很客氣地問:日報為什麼堆那麼多?",
+  "body": "老闆很客氣地問:日報為什麼堆那麼多?",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "boss": -5
+   },
+   "result": "老闆不再客氣。"
+  },
+  "options": [
+   {
+    "label": "今天補完",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "補完了。",
+      "effects": {
+       "boss": 1
+      },
+      "reports": -2
+     }
+    ]
+   },
+   {
+    "label": "承諾明天補",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "老闆勉強接受。",
+      "effects": {
+       "boss": -1
+      }
+     },
+     {
+      "p": 0.5,
+      "result": "老闆不太相信。",
+      "effects": {
+       "boss": -4
+      }
+     }
+    ]
+   },
+   {
+    "label": "抱怨日報太瑣碎",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "老闆沒說話。",
+      "effects": {
+       "boss": -3
+      }
+     }
+    ]
+   }
+  ],
+  "trigger": {
+   "habit": "late_reports",
+   "min": 4
+  },
+  "hint": "日報已經累積很多份沒填。"
+ },
+ {
+  "id": "c_backlog",
+  "kind": "老闆",
+  "from": "林總",
+  "title": "待辦清單在長大",
+  "brief": "老闆發現你有好幾件事拖到逾期。",
+  "body": "老闆發現你有好幾件事拖到逾期。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "boss": -5
+   },
+   "result": "老闆自己整理了一份清單,標題是「你的待辦」。"
+  },
+  "options": [
+   {
+    "label": "今天一次清掉",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": 3
+      },
+      "result": "清單歸零。老闆沒說話,但看起來滿意。"
+     }
+    ]
+   },
+   {
+    "label": "排優先順序給老闆看",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "effects": {
+       "boss": 1
+      },
+      "result": "老闆點頭:「這樣我比較放心。」"
+     },
+     {
+      "p": 0.3,
+      "effects": {
+       "boss": -2
+      },
+      "result": "老闆:「為什麼這個排在後面?」"
+     }
+    ]
+   },
+   {
+    "label": "說最近事情太多",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.4,
+      "result": "老闆勉強接受。"
+     },
+     {
+      "p": 0.6,
+      "effects": {
+       "boss": -4
+      },
+      "result": "老闆:「大家都很多。」"
+     }
+    ]
+   }
+  ],
+  "trigger": {
+   "habit": "procrastinate",
+   "min": 3
+  },
+  "hint": "你最近有好幾件事拖到逾期。"
+ },
+ {
+  "id": "r_media",
+  "kind": "輿情",
+  "from": "媒體記者",
+  "title": "記者想追問機率的事",
+  "brief": "有記者看到你們的機率報告,想問幾個問題。",
+  "body": "有記者看到你們的機率報告,想問幾個問題。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "trust": -2
+   },
+   "result": "記者自己寫了一篇,你沒機會說明。"
+  },
+  "options": [
+   {
+    "label": "接受採訪說明",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "result": "說明得很清楚,報導很正面。",
+      "effects": {
+       "trust": 5,
+       "players": 2
+      }
+     },
+     {
+      "p": 0.3,
+      "result": "被斷章取義,標題有點難看。",
+      "effects": {
+       "trust": -2
+      }
+     }
+    ]
+   },
+   {
+    "label": "提供書面回覆",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "書面回覆很穩,沒出事。",
+      "effects": {
+       "trust": 2
+      }
+     }
+    ]
+   },
+   {
+    "label": "婉拒",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "對方沒再追問。"
+     },
+     {
+      "p": 0.5,
+      "result": "記者寫了「官方不回應」。",
+      "effects": {
+       "trust": -3
+      }
+     }
+    ]
+   }
+  ],
+  "hint": "因為你公開了驗證報告。"
+ },
+ {
+  "id": "r_viral",
+  "kind": "輿情",
+  "from": "玩家論壇",
+  "title": "迷因爆紅了",
+  "brief": "那張嘲諷獎勵的迷因爆紅,玩家問官方要不要出個小活動。",
+  "body": "那張嘲諷獎勵的迷因爆紅,玩家問官方要不要出個小活動。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {},
+   "result": "熱度過了,沒人再提。"
+  },
+  "options": [
+   {
+    "label": "趁勢辦小活動",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "小活動很受歡迎,新玩家進來了。",
+      "effects": {
+       "players": 4,
+       "boss": 2
+      },
+      "habit": {
+       "overtime": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "官方發圖回應",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "玩家覺得官方很有梗。",
+      "effects": {
+       "trust": 3,
+       "players": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "看看就好",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "熱度自己退了。"
+     }
+    ]
+   }
+  ],
+  "hint": "因為你幽默回應了那張迷因。"
+ },
+ {
+  "id": "r_qa",
+  "kind": "技術",
+  "from": "QA 測試",
+  "title": "提早上線版本有嚴重 bug",
+  "brief": "QA 說:提早上線的那個版本,有一個嚴重 bug。",
+  "body": "QA 說:提早上線的那個版本,有一個嚴重 bug。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "trust": -4
+   },
+   "result": "沒人處理,版本帶著 bug 排進上線。"
+  },
+  "options": [
+   {
+    "label": "請老闆同意延後",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "延後了,但避免了一場事故。",
+      "effects": {
+       "boss": -1,
+       "trust": 2
+      }
+     }
+    ]
+   },
+   {
+    "label": "請工程師加班修",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "result": "修好了。",
+      "effects": {
+       "trust": 1
+      }
+     },
+     {
+      "p": 0.4,
+      "result": "修好一個,冒出另一個。",
+      "effects": {
+       "trust": -3,
+       "boss": -2
+      }
+     }
+    ]
+   },
+   {
+    "label": "照常上線",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "運氣好,沒事。"
+     },
+     {
+      "p": 0.5,
+      "result": "上線後 bug 爆了。",
+      "effects": {
+       "trust": -6,
+       "players": -2
+      }
+     }
+    ]
+   }
+  ],
+  "hint": "因為你同意提早上線。"
+ },
+ {
+  "id": "r_finance",
+  "kind": "雜務",
+  "from": "財務部",
+  "title": "財務在問成本",
+  "brief": "財務問:全服送神話角色,這要算進多少成本?給我數字。",
+  "body": "財務問:全服送神話角色,這要算進多少成本?給我數字。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "boss": -3
+   },
+   "result": "財務直接問了你老闆。"
+  },
+  "options": [
+   {
+    "label": "做成本估算",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "算出來的數字讓老闆沉默了一下。",
+      "effects": {
+       "boss": 2
+      }
+     }
+    ]
+   },
+   {
+    "label": "請老闆自己回答",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "老闆有點不開心。",
+      "effects": {
+       "boss": -1
+      }
+     }
+    ]
+   },
+   {
+    "label": "回說還在評估",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "財務說:那我等。",
+      "effects": {
+       "boss": -2
+      }
+     }
+    ]
+   }
+  ],
+  "hint": "因為你照老闆的點子辦了。"
+ },
+ {
+  "id": "r_numbers",
+  "kind": "數據",
+  "from": "財務部",
+  "title": "有人質疑你的數字",
+  "brief": "有人質疑你剛才給老闆的那組數字。",
+  "body": "有人質疑你剛才給老闆的那組數字。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "boss": -4
+   },
+   "result": "質疑越傳越遠。"
+  },
+  "options": [
+   {
+    "label": "補一份驗證",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "補了驗證,質疑平息。",
+      "effects": {
+       "boss": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "承認抓太快",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "坦白反而沒被追究。",
+      "effects": {
+       "boss": -2
+      }
+     }
+    ]
+   },
+   {
+    "label": "說是口徑不同",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "對方接受了。"
+     },
+     {
+      "p": 0.5,
+      "result": "對方不接受。",
+      "effects": {
+       "boss": -4
+      }
+     }
+    ]
+   }
+  ],
+  "hint": "因為你剛剛快速抓了數字。"
+ },
+ {
+  "id": "r_vendor_push",
+  "kind": "原廠",
+  "from": "原廠窗口",
+  "title": "原廠要你附數據",
+  "brief": "原廠對「屬正常波動」的回覆不滿意,要求附上數據。",
+  "body": "原廠對「屬正常波動」的回覆不滿意,要求附上數據。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "boss": -5
+   },
+   "result": "原廠改發給你老闆。"
+  },
+  "options": [
+   {
+    "label": "補上數據",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "數據補上了,原廠沒再追問。",
+      "effects": {
+       "boss": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "解釋是例行維護",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "對方接受。"
+     },
+     {
+      "p": 0.5,
+      "result": "對方又丟回來一堆問題。",
+      "effects": {
+       "boss": -3
+      }
+     }
+    ]
+   },
+   {
+    "label": "不回覆",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "原廠很不高興。",
+      "effects": {
+       "boss": -5
+      }
+     }
+    ]
+   }
+  ],
+  "hint": "因為你只回覆「屬正常波動」。"
+ },
+ {
+  "id": "r_abuse",
+  "kind": "數據",
+  "from": "後台數據",
+  "title": "有人開小帳號領補償",
+  "brief": "有人開了一堆小帳號,專門領這次的補償。",
+  "body": "有人開了一堆小帳號,專門領這次的補償。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "trust": -3
+   },
+   "result": "補償被領得七七八八。"
+  },
+  "options": [
+   {
+    "label": "加上領取限制",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "限制加上了,後面的人不會被影響。",
+      "effects": {
+       "trust": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "追查名單",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "result": "抓到一批,處理掉了。",
+      "effects": {
+       "trust": 3
+      }
+     },
+     {
+      "p": 0.4,
+      "result": "名單查了一半,線索斷了。"
+     }
+    ]
+   },
+   {
+    "label": "先放著",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "沒再擴大。"
+     },
+     {
+      "p": 0.5,
+      "result": "越來越多人跟進。",
+      "effects": {
+       "trust": -3
+      }
+     }
+    ]
+   }
+  ],
+  "hint": "因為你發了補償。"
+ },
+ {
+  "id": "r_appeal",
+  "kind": "客訴",
+  "from": "玩家",
+  "title": "被凍結的玩家來申訴",
+  "brief": "被凍結帳號的玩家來申訴,說自己沒有作弊。",
+  "body": "被凍結帳號的玩家來申訴,說自己沒有作弊。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "trust": -4
+   },
+   "result": "玩家把這件事貼到社群。"
+  },
+  "options": [
+   {
+    "label": "重新審查",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "result": "確認他是被誤判,解凍並道歉。",
+      "effects": {
+       "trust": 3
+      }
+     },
+     {
+      "p": 0.3,
+      "result": "維持原判,他接受了說明。"
+     }
+    ]
+   },
+   {
+    "label": "回覆維持處置",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "玩家很不滿。",
+      "effects": {
+       "trust": -2
+      }
+     }
+    ]
+   },
+   {
+    "label": "轉給客服",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "客服說:你們是不是沒講清楚?",
+      "effects": {
+       "boss": -1
+      }
+     }
+    ]
+   }
+  ],
+  "hint": "因為你先凍結了那個帳號。"
+ },
+ {
+  "id": "r_clash",
+  "kind": "雜務",
+  "from": "企劃同事",
+  "title": "活動撞期了",
+  "brief": "你緊急跟檔的活動,跟原本排好的活動時間撞到了。",
+  "body": "你緊急跟檔的活動,跟原本排好的活動時間撞到了。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "boss": -2
+   },
+   "result": "兩邊都做不好。"
+  },
+  "options": [
+   {
+    "label": "調整時程",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "時程錯開,都保住了。",
+      "effects": {
+       "boss": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "兩個一起辦",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "兩檔都上了,你整個人快散了。",
+      "effects": {
+       "players": 2
+      },
+      "habit": {
+       "overtime": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "取消其中一個",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "砍掉一檔,有人不高興。",
+      "effects": {
+       "boss": -2,
+       "trust": -1
+      }
+     }
+    ]
+   }
+  ],
+  "hint": "因為你緊急跟檔了。"
+ },
+ {
+  "id": "r_legal",
+  "kind": "雜務",
+  "from": "法務",
+  "title": "有一條要改",
+  "brief": "法務追問:你剛才說「看過了」的那幾段,有一條要改。",
+  "body": "法務追問:你剛才說「看過了」的那幾段,有一條要改。",
+  "deadline": 1,
+  "ignore": {
+   "effects": {
+    "boss": -4
+   },
+   "result": "法務直接找了你老闆。"
+  },
+  "options": [
+   {
+    "label": "立刻處理",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "改好了,法務簽核通過。",
+      "effects": {
+       "boss": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "請法務直接標出來",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "標出來了,下次小心。"
+     }
+    ]
+   },
+   {
+    "label": "回覆晚點處理",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "法務很不滿。",
+      "effects": {
+       "boss": -3
+      }
+     }
+    ]
+   }
+  ],
+  "hint": "因為你沒有逐段確認。"
+ },
+ {
+  "id": "c_blame",
+  "kind": "雜務",
+  "from": "其他部門同事",
+  "title": "「日報怎麼寫成是我的問題?」",
+  "brief": "有同事看到你的日報,覺得你把問題推給了他。",
+  "body": "有同事看到你的日報,覺得你把問題推給了他。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {
+    "boss": -3,
+    "trust": 0
+   },
+   "result": "對方直接去找了你老闆。"
+  },
+  "options": [
+   {
+    "label": "當面說清楚",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "effects": {
+       "boss": 1
+      },
+      "result": "講開了,對方沒再追究。"
+     },
+     {
+      "p": 0.3,
+      "effects": {
+       "boss": -2
+      },
+      "result": "越講越僵。"
+     }
+    ]
+   },
+   {
+    "label": "改寫日報並道歉",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": 1
+      },
+      "result": "你更正了日報,對方消氣了。"
+     }
+    ]
+   },
+   {
+    "label": "假裝沒看到",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.4,
+      "result": "事情不了了之。"
+     },
+     {
+      "p": 0.6,
+      "effects": {
+       "boss": -4
+      },
+      "result": "對方在群組點名你。"
+     }
+    ]
+   }
+  ],
+  "trigger": {
+   "habit": "blame",
+   "min": 2
+  },
+  "hint": "因為你的日報最近都在推責任。"
+ },
+ {
+  "id": "i_tea",
+  "kind": "插曲",
+  "from": "同事 小美",
+  "title": "下午茶",
+  "brief": "同事在問:要不要一起訂下午茶?",
+  "body": "同事在問:要不要一起訂下午茶?",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": ""
+  },
+  "options": [
+   {
+    "label": "一起訂",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "大家吃得很開心,有人說你人很好。",
+      "effects": {
+       "boss": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "我請客",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "result": "你請客,今天沒人有意見。",
+      "effects": {
+       "boss": 2
+      }
+     },
+     {
+      "p": 0.4,
+      "result": "你請客,但最後帳單比想的貴。"
+     }
+    ]
+   },
+   {
+    "label": "不用了",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "你繼續盯著螢幕,同事笑你太認真。"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "i_bug_name",
+  "kind": "插曲",
+  "from": "工程師 阿宏",
+  "title": "bug 取名字",
+  "brief": "阿宏把一個 bug 取名叫「小明」,問你要不要幫它建單。",
+  "body": "阿宏把一個 bug 取名叫「小明」,問你要不要幫它建單。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": ""
+  },
+  "options": [
+   {
+    "label": "幫小明建單",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "小明被登記在案,阿宏很得意。",
+      "effects": {
+       "trust": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "叫他自己建",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "阿宏說:「好吧,小明很可憐。」"
+     }
+    ]
+   },
+   {
+    "label": "我也想取一個",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "你們給下一個 bug 取名叫「小華」。"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "i_thanks",
+  "kind": "插曲",
+  "from": "玩家來信",
+  "title": "一封感謝信",
+  "brief": "有玩家寄信說,這款遊戲陪他度過了一段低潮。",
+  "body": "有玩家寄信說,這款遊戲陪他度過了一段低潮。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": ""
+  },
+  "options": [
+   {
+    "label": "認真回信",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "他回了一個大大的謝謝,說會繼續玩下去。",
+      "effects": {
+       "trust": 2,
+       "retention": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "轉給同事看",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "大家看了都有點感動。",
+      "effects": {
+       "boss": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "收進資料夾",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "你把信放進資料夾「今天也要加油」。"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "i_quote",
+  "kind": "插曲",
+  "from": "林總",
+  "title": "老闆金句",
+  "brief": "林總在群組貼了一句金句:「數據會說話。」沒人知道他在回應什麼。",
+  "body": "林總在群組貼了一句金句:「數據會說話。」沒人知道他在回應什麼。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": ""
+  },
+  "options": [
+   {
+    "label": "按讚",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "林總很滿意。",
+      "effects": {
+       "boss": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "回「收到」",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "這是萬用的回答。"
+     }
+    ]
+   },
+   {
+    "label": "已讀不回",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "result": "沒事。"
+     },
+     {
+      "p": 0.3,
+      "result": "林總在群組問:有人看到嗎?",
+      "effects": {
+       "boss": -1
+      }
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "i_gossip",
+  "kind": "插曲",
+  "from": "茶水間",
+  "title": "茶水間八卦",
+  "brief": "你在茶水間聽到,隔壁同業好像在籌備一檔大活動。",
+  "body": "你在茶水間聽到,隔壁同業好像在籌備一檔大活動。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": ""
+  },
+  "options": [
+   {
+    "label": "多聽幾句",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "你聽到玩家好像不太喜歡某種玩法。",
+      "reveal": "hated"
+     }
+    ]
+   },
+   {
+    "label": "聽聽就好",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "八卦聽過就算,你端著咖啡走了。"
+     }
+    ]
+   },
+   {
+    "label": "上網查查看",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "查到一點線索,玩家最近特別想要的東西。",
+      "reveal": "reward"
+     },
+     {
+      "p": 0.5,
+      "result": "查了半天,什麼也沒查到。"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "i_notice",
+  "kind": "插曲",
+  "from": "後台通知",
+  "title": "奇怪的通知",
+  "brief": "後台跳出一個你從沒見過的通知:「您的帳號即將升級」。",
+  "body": "後台跳出一個你從沒見過的通知:「您的帳號即將升級」。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": ""
+  },
+  "options": [
+   {
+    "label": "點開看看",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "只是個廣告。"
+     },
+     {
+      "p": 0.5,
+      "result": "是個無關緊要的系統公告。"
+     }
+    ]
+   },
+   {
+    "label": "截圖問工程師",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "阿宏回:「不要點。」你慶幸自己問了。"
+     }
+    ]
+   },
+   {
+    "label": "假裝沒看到",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "通知過了一會兒就消失了。"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "i_newbie",
+  "kind": "插曲",
+  "from": "新人",
+  "title": "新人迷路了",
+  "brief": "新人在樓層裡轉了三圈,走過來問你廁所在哪。",
+  "body": "新人在樓層裡轉了三圈,走過來問你廁所在哪。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": ""
+  },
+  "options": [
+   {
+    "label": "帶他去",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "你多了一個朋友。",
+      "effects": {
+       "boss": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "指個方向",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "他說了聲謝謝,看起來更迷茫了。"
+     }
+    ]
+   },
+   {
+    "label": "介紹其他同事帶",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "同事很熱情地帶他去了。"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "i_wall",
+  "kind": "插曲",
+  "from": "玩家投稿",
+  "title": "角色卡進牆裡",
+  "brief": "玩家貼出遊戲裡的截圖:角色卡在牆裡,留言區笑成一片。",
+  "body": "玩家貼出遊戲裡的截圖:角色卡在牆裡,留言區笑成一片。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": ""
+  },
+  "options": [
+   {
+    "label": "官方轉發",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "result": "官方的幽默被玩家稱讚。",
+      "effects": {
+       "trust": 2,
+       "players": 1
+      }
+     },
+     {
+      "p": 0.4,
+      "result": "有人說:好笑歸好笑,可以修了吧?",
+      "effects": {
+       "trust": -1
+      }
+     }
+    ]
+   },
+   {
+    "label": "記下來給工程師",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "你把截圖丟進技術群組,阿宏回了一個哭笑不得的表情。"
+     }
+    ]
+   },
+   {
+    "label": "笑一下就好",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "你偷笑了三秒,繼續工作。"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "i_copier",
+  "kind": "插曲",
+  "from": "影印機",
+  "title": "影印機卡紙",
+  "brief": "影印機卡紙了,所有人都在看你。",
+  "body": "影印機卡紙了,所有人都在看你。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": ""
+  },
+  "options": [
+   {
+    "label": "動手修",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "修好了,同事鼓掌。",
+      "effects": {
+       "boss": 1
+      }
+     },
+     {
+      "p": 0.5,
+      "result": "越修越糟,墨粉沾到袖子。"
+     }
+    ]
+   },
+   {
+    "label": "叫總務來",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "總務五分鐘後出現,像英雄一樣。"
+     }
+    ]
+   },
+   {
+    "label": "假裝很忙",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "你專心盯著螢幕,有人嘆了口氣去修了。"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "i_lunch",
+  "kind": "插曲",
+  "from": "同事",
+  "title": "午餐大事",
+  "brief": "大家在討論中午吃什麼,意見分成三派。",
+  "body": "大家在討論中午吃什麼,意見分成三派。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": ""
+  },
+  "options": [
+   {
+    "label": "提議抽籤",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "抽籤結果是吃麵,有人很不滿意。"
+     }
+    ]
+   },
+   {
+    "label": "說我都可以",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "這是最難回答的答案。"
+     }
+    ]
+   },
+   {
+    "label": "我帶便當",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "你的便當被同事偷吃了一口。"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "i_lucky",
+  "kind": "插曲",
+  "from": "玩家論壇",
+  "title": "十連全金",
+  "brief": "有玩家十連抽全出金,貼文炫耀,留言一片羨慕嫉妒。",
+  "body": "有玩家十連抽全出金,貼文炫耀,留言一片羨慕嫉妒。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": ""
+  },
+  "options": [
+   {
+    "label": "官方恭喜",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "玩家很開心,留言區氣氛不錯。",
+      "effects": {
+       "trust": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "提醒機率是公平的",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "你再次說明了機率。",
+      "effects": {
+       "trust": 1
+      },
+      "habit": {
+       "transparency": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "不介入",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "貼文自己熱了一陣子。"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "i_senior",
+  "kind": "插曲",
+  "from": "前輩",
+  "title": "前輩的經驗談",
+  "brief": "資深前輩路過,說:「做營運最重要的是睡眠。」",
+  "body": "資深前輩路過,說:「做營運最重要的是睡眠。」",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": ""
+  },
+  "options": [
+   {
+    "label": "認真記下來",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "你把這句話貼在螢幕邊。"
+     }
+    ]
+   },
+   {
+    "label": "追問還有嗎",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "result": "他說:「第二是,別在週五上線。」",
+      "effects": {
+       "boss": 1
+      }
+     },
+     {
+      "p": 0.4,
+      "result": "他說:「沒了,去睡吧。」"
+     }
+    ]
+   },
+   {
+    "label": "笑一笑",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "前輩點點頭走了。"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "i_coffee",
+  "kind": "插曲",
+  "from": "咖啡機",
+  "title": "咖啡機壞了",
+  "brief": "咖啡機壞了,大家的表情都很沉重。",
+  "body": "咖啡機壞了,大家的表情都很沉重。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": ""
+  },
+  "options": [
+   {
+    "label": "自己帶咖啡來",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "你分了同事一杯,今天人氣很高。",
+      "effects": {
+       "boss": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "動手修咖啡機",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "result": "修好了!你成了今天的英雄。",
+      "effects": {
+       "boss": 2
+      }
+     },
+     {
+      "p": 0.4,
+      "result": "咖啡噴了你一身。"
+     }
+    ]
+   },
+   {
+    "label": "喝水就好",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "你對著水杯嘆氣。"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "i_cat",
+  "kind": "插曲",
+  "from": "窗外",
+  "title": "窗台上有隻貓",
+  "brief": "有隻貓跳上對面大樓的窗台,整層樓的人都在偷看。",
+  "body": "有隻貓跳上對面大樓的窗台,整層樓的人都在偷看。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": ""
+  },
+  "options": [
+   {
+    "label": "拍張照",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "照片被同事轉去當群組頭像。"
+     }
+    ]
+   },
+   {
+    "label": "繼續工作",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "你盯著螢幕,但腦袋裡還是那隻貓。"
+     }
+    ]
+   },
+   {
+    "label": "告訴大家",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "五分鐘內,全辦公室都站起來了。"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "i_birthday",
+  "kind": "插曲",
+  "from": "同事",
+  "title": "有人生日",
+  "brief": "今天有同事生日,大家在偷偷準備蛋糕。",
+  "body": "今天有同事生日,大家在偷偷準備蛋糕。",
+  "deadline": 2,
+  "ignore": {
+   "effects": {},
+   "result": ""
+  },
+  "options": [
+   {
+    "label": "一起湊錢",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "蛋糕很甜,壽星很感動。",
+      "effects": {
+       "boss": 1
+      }
+     }
+    ]
+   },
+   {
+    "label": "負責拖住壽星",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "result": "你成功拖住他十分鐘。"
+     },
+     {
+      "p": 0.3,
+      "result": "你演技太差,壽星全都知道了。"
+     }
+    ]
+   },
+   {
+    "label": "寫張卡片",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "你寫了一張很短的卡片,壽星說很有你的風格。"
+     }
+    ]
+   }
+  ]
+ }
+]
