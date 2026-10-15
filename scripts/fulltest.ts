@@ -4,6 +4,9 @@ import {
 } from '../src/engine';
 import { SKILLS, prereqMet } from '../src/skills';
 import { LEVELS } from '../src/profile';
+import variants from '../src/content/variants.json';
+import optLabels from '../src/content/optlabels.json';
+import extra from '../src/content/extraOptions.json';
 import type { Difficulty, EventKind, Mode, State } from '../src/types';
 
 let failures = 0;
@@ -60,6 +63,21 @@ for (const k of SKILLS) {
   if (k.tier === 1 && !prereqMet(k, [])) fail(`起點技能 ${k.id} 不應有前置`);
 }
 if (LEVELS.some((l, i) => i > 0 && l.xp <= LEVELS[i - 1].xp)) fail('職級經驗門檻沒有遞增');
+// 變體文字、選項措辭、額外選項:id 與選項數量要對得上,機率要加總為 1
+for (const [id, alts] of Object.entries(variants as Record<string, { title?: string; brief?: string; body?: string }[]>)) {
+  if (!EVENTS[id]) fail(`variants 有不存在的事件:${id}`);
+  for (const a of alts) if (!a.brief && !a.body) fail(`variants ${id} 有一筆沒有文字`);
+}
+for (const [id, perOpt] of Object.entries(optLabels as Record<string, string[][]>)) {
+  const ev = EVENTS[id];
+  if (!ev) { fail(`optlabels 有不存在的事件:${id}`); continue; }
+  if (perOpt.length !== ev.options.length) fail(`optlabels ${id} 選項數量 ${perOpt.length} ≠ ${ev.options.length}`);
+  perOpt.forEach((alts, i) => alts.forEach((l) => { if (ev.options.some((o) => o.label === l)) fail(`optlabels ${id} 選項 ${i} 的變體和原文相同:${l}`); }));
+}
+for (const [kind, opts] of Object.entries(extra.pools as Record<string, { label: string; outcomes: { p: number }[] }[]>)) {
+  if (!KINDS.includes(kind as EventKind)) fail(`extraOptions 種類不合法:${kind}`);
+  for (const o of opts) if (Math.abs(sum(o.outcomes.map((x) => x.p)) - 1) > 0.001) fail(`extraOptions ${kind}/${o.label} 機率加總 ≠ 1`);
+}
 console.log(`內容檢查:${ids.size} 個事件、${SKILLS.length} 個技能、${LEVELS.length} 個職級`);
 
 /* ---------- 2. 大量隨機對局的不變量 ---------- */

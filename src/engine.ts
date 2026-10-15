@@ -4,6 +4,7 @@ import eventsData from './content/events.json';
 import campaignData from './content/campaigns.json';
 import variantData from './content/variants.json';
 import optLabelData from './content/optlabels.json';
+import extraData from './content/extraOptions.json';
 import type {
   EventOption, InboxItem,
   Campaign, CampaignContent, DaySummary, Difficulty, Effects, GameEvent, Goal, GoalKey, Mode, Outcome, PlanSel, State,
@@ -326,10 +327,10 @@ const SKILL_OPTIONS: { skill: string; match: (ev: GameEvent) => boolean; opt: Ev
   },
 ];
 
-/** 這個事件目前可選的所有選項(原本的加上技能解鎖的) */
-/** 種子產生器:同一件事每次渲染都得到同樣的亂數 */
-function seeded(v: number): () => number {
-  let a = (v || 1) >>> 0;
+/** 偽隨機:同一件事每次渲染都得到同樣的結果。salt 讓不同用途互不影響 */
+const SALT = { shuffle: 0x9e3779b1, bonus: 0x51ed270b, label: 0x1b873593 };
+function seeded(v: number, salt: number): () => number {
+  let a = ((v ^ salt) || 1) >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) >>> 0;
     let t = a;
@@ -339,113 +340,43 @@ function seeded(v: number): () => number {
   };
 }
 
-interface EventText { from: string; title: string; brief?: string; body: string }
+/** 只有「第一次出現」的事才有說法與選項的變化;升級催辦的事維持原樣 */
+const varies = (item?: InboxItem): item is InboxItem & { v: number } => item?.v !== undefined && !item.stage;
+
+/** 0 = 原版,k>0 = 第 k 個變體 */
+const variantIndex = (rnd: number, n: number): number => Math.floor(rnd * (n + 1));
+
+export interface EventText { from: string; title: string; brief?: string; body: string }
 const VARIANTS = variantData as unknown as Record<string, Partial<EventText>[]>;
+const OPT_LABELS = optLabelData as Record<string, string[][]>;
+const EXTRA = extraData as unknown as { chance: number; pools: Partial<Record<GameEvent['kind'], EventOption[]>> };
 
 /** 事件顯示的文字:同一種事件會有幾種不同的說法 */
 export function eventText(ev: GameEvent, item?: InboxItem): EventText {
   const alts = VARIANTS[ev.id];
-  const base: EventText = { from: ev.from, title: ev.title, brief: ev.brief, body: ev.body };
-  if (!alts?.length || item?.v === undefined || item.stage) return base;
-  const k = item.v % (alts.length + 1);
-  return k === 0 ? base : { ...base, ...alts[k - 1] };
+  const alt = alts?.length && varies(item) ? alts[variantIndex(seeded(item.v, 0)(), alts.length) - 1] : undefined;
+  return { from: ev.from, title: ev.title, brief: ev.brief, body: ev.body, ...alt };
 }
-
-/** 各類事件偶爾會多出來的選項(每件事最多一個,約三成機率) */
-const EXTRA_OPTIONS: Partial<Record<GameEvent['kind'], EventOption[]>> = {
-  客訴: [
-    { label: '請客服主管親自回電', ap: 1, outcomes: [
-      { p: 0.65, effects: { trust: 2 }, result: '對方聽到真人的聲音,語氣明顯緩和了。' },
-      { p: 0.35, effects: { boss: -1 }, result: '電話講了四十分鐘,問題還是原來的問題。' },
-    ] },
-    { label: '在公告區留言,公開說明處理方式', ap: 1, outcomes: [
-      { p: 1, effects: { trust: 1, boss: 1 }, result: '其他玩家看到你有回應,討論串的火氣小了一些。' },
-    ] },
-  ],
-  輿情: [
-    { label: '先私訊當事人了解想法', ap: 1, outcomes: [
-      { p: 0.6, effects: { trust: 2 }, result: '對方沒想到官方會私訊,態度軟化了不少。' },
-      { p: 0.4, effects: { trust: -1 }, result: '私訊被截圖貼上去,標題是「官方很緊張」。' },
-    ] },
-    { label: '丟給社群小編,請他自由發揮', ap: 0, outcomes: [
-      { p: 0.5, effects: { trust: 2 }, result: '小編的回覆又好笑又得體,轉發數破千。' },
-      { p: 0.5, effects: { trust: -2, boss: -1 }, result: '小編的玩笑開過頭了,你被請去解釋。' },
-    ] },
-  ],
-  技術: [
-    { label: '拉工程師開個十分鐘的短會', ap: 1, outcomes: [
-      { p: 0.7, effects: { boss: 1, trust: 1 }, result: '大家把問題攤開來講,十分鐘就有了共識。' },
-      { p: 0.3, effects: { boss: -1 }, result: '短會開成了一小時,最後還是沒結論。' },
-    ] },
-    { label: '先貼個「處理中」的狀態,再慢慢查', ap: 0, outcomes: [
-      { p: 0.6, effects: { trust: 1 }, result: '玩家看到有在處理,稍微安心了些。' },
-      { p: 0.4, effects: { trust: -1 }, result: '狀態貼了半天,玩家覺得只是在拖。' },
-    ] },
-  ],
-  老闆: [
-    { label: '先問問前輩以前怎麼處理', ap: 1, outcomes: [
-      { p: 0.7, effects: { boss: 2 }, result: '前輩給了一個你沒想過的角度,報告時老闆點頭了。' },
-      { p: 0.3, effects: { boss: -1 }, result: '前輩說「那時候情況不一樣」,然後講了半小時往事。' },
-    ] },
-    { label: '用一頁簡報整理選項給他挑', ap: 1, outcomes: [
-      { p: 0.75, effects: { boss: 3 }, result: '老闆很喜歡有選擇的感覺,當場拍板。' },
-      { p: 0.25, effects: { boss: -2 }, result: '老闆:「我不是要選項,我是要答案。」' },
-    ] },
-  ],
-  原廠: [
-    { label: '約個電話會議當面講清楚', ap: 1, outcomes: [
-      { p: 0.65, effects: { trust: 1, boss: 2 }, result: '當面說明後,原廠窗口的語氣友善了許多。' },
-      { p: 0.35, effects: { boss: -1 }, result: '電話裡又多了兩個新的要求。' },
-    ] },
-  ],
-  數據: [
-    { label: '請資料分析同事幫忙看一眼', ap: 1, outcomes: [
-      { p: 0.7, effects: { boss: 2 }, result: '同事一眼看出你漏掉的篩選條件,數字穩多了。' },
-      { p: 0.3, effects: { boss: 0 }, result: '同事也在趕報表,只回了你一個「等等」的貼圖。' },
-    ] },
-  ],
-  雜務: [
-    { label: '排進明天早上的第一件事', ap: 0, outcomes: [
-      { p: 0.6, effects: { boss: 0 }, result: '你把它寫進待辦清單,暫時安心了。' },
-      { p: 0.4, effects: { boss: -1 }, result: '明天早上又有新的事,這件事被擠到了後面。' },
-    ] },
-    { label: '請同事順手幫個忙', ap: 1, outcomes: [
-      { p: 0.7, effects: { boss: 1 }, result: '同事爽快答應,你欠了一杯飲料。' },
-      { p: 0.3, effects: { boss: -1 }, result: '同事笑著說「我也在忙」,你自己還是得做。' },
-    ] },
-  ],
-};
 
 /** 這件事實際顯示的選項,以及它在 eventOptions 裡的原始編號(順序會被打散) */
 export function itemOptions(s: State, ev: GameEvent, item: InboxItem): { opt: EventOption; index: number }[] {
-  const alts = (optLabelData as Record<string, string[][]>)[ev.id];
+  const labels = OPT_LABELS[ev.id];
   const all = eventOptions(s, ev, item).map((opt, index) => {
-    const a = alts?.[index];
-    // 選項措辭也有不同版本(升級催辦的事維持原樣);同一件事的每個選項各自抽
-    if (a?.length && item.v !== undefined && !item.stage && index < ev.options.length) {
-      const k = Math.floor(seeded(item.v ^ (0x1b873593 + index * 7919))() * (a.length + 1));
-      if (k > 0) return { opt: { ...opt, label: a[k - 1] }, index };
-    }
-    return { opt, index };
+    const alts = labels?.[index];
+    const k = alts?.length && varies(item) && index < ev.options.length
+      ? variantIndex(seeded(item.v, SALT.label + index * 7919)(), alts.length) : 0;
+    return { opt: k ? { ...opt, label: alts![k - 1] } : opt, index };
   });
-  if (item.v === undefined) return all;
-  const rnd = seeded(item.v ^ 0x9e3779b1);
-  for (let i = all.length - 1; i > 0; i--) {
-    const j = Math.floor(rnd() * (i + 1));
-    [all[i], all[j]] = [all[j], all[i]];
-  }
-  return all;
+  return item.v === undefined ? all : shuffleWith(seeded(item.v, SALT.shuffle), all);
 }
 
+/** 這個事件目前可選的所有選項(原本的、偶爾多出來的、技能解鎖的) */
 export function eventOptions(s: State, ev: GameEvent, item?: InboxItem): EventOption[] {
-  const extra = SKILL_OPTIONS.filter((x) => hasSkill(s, x.skill) && x.match(ev)).map((x) => ({ ...x.opt, fromSkill: x.skill }));
-  const bonus: EventOption[] = [];
-  const pool = EXTRA_OPTIONS[ev.kind];
-  if (pool?.length && item?.v !== undefined && !item.stage) {
-    const rnd = seeded(item.v ^ 0x51ed270b);
-    if (rnd() < 0.3) bonus.push(pool[Math.floor(rnd() * pool.length)]);
-  }
-  return [...ev.options, ...bonus, ...extra];
+  const skillOpts = SKILL_OPTIONS.filter((x) => hasSkill(s, x.skill) && x.match(ev)).map((x) => ({ ...x.opt, fromSkill: x.skill }));
+  const pool = EXTRA.pools[ev.kind];
+  const rnd = pool?.length && varies(item) ? seeded(item.v, SALT.bonus) : null;
+  const bonus = rnd && rnd() < EXTRA.chance ? [pool![Math.floor(rnd() * pool!.length)]] : [];
+  return [...ev.options, ...bonus, ...skillOpts];
 }
 
 /** 選項實際花費:技能減免,以及逾期後再次催辦的事 +1 */
@@ -940,14 +871,16 @@ export interface ReportQuiz {
   options: ReportOption[];
 }
 
-function shuffle<T>(s: State, a: T[]): T[] {
+function shuffleWith<T>(rnd: () => number, a: T[]): T[] {
   const r = [...a];
   for (let i = r.length - 1; i > 0; i--) {
-    const j = Math.floor(rand(s) * (i + 1));
+    const j = Math.floor(rnd() * (i + 1));
     [r[i], r[j]] = [r[j], r[i]];
   }
   return r;
 }
+
+const shuffle = <T,>(s: State, a: T[]): T[] => shuffleWith(() => rand(s), a);
 
 const pct = (n: number): string => `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
 
