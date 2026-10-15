@@ -7,7 +7,7 @@ import { createFadeCanvas, dissolve } from './scene/fade';
 import { storageKey } from './storage';
 import {
   CAMPAIGN_TARGET, CONTENT, DIFFS, EVENTS, computeRunXp, GOAL_INFO, STORY_DAYS, chooseOption, clearSave, doAction, endDay,
-  HABITS, find, goalMet, goalValue, hasSkill, makeReport, submitReport, estimateLift, eventOptions, load, newGame, optionCost, planCampaign, planCost, save, spendToday, weekdayLabel,
+  HABITS, find, goalMet, goalValue, hasSkill, makeReport, submitReport, estimateLift, itemOptions, eventText, load, newGame, optionCost, planCampaign, planCost, save, spendToday, weekdayLabel,
 } from './engine';
 import type { ActionKind, ReportQuiz } from './engine';
 import { LEVELS, SP_PER_LEVEL, availableSp, levelFor, loadProfile, nextLevel, saveProfile } from './profile';
@@ -21,7 +21,7 @@ const app = document.getElementById('app') as HTMLDivElement;
 let S: State | null = load();
 let profile = loadProfile();
 let screen: 'start' | 'game' | 'skills' = 'start';
-type ModalKind = 'none' | 'planner' | 'summary' | 'intro' | 'confirm-end' | 'settings' | 'gamemenu' | 'report';
+type ModalKind = 'none' | 'planner' | 'summary' | 'intro' | 'confirm-end' | 'settings' | 'gamemenu' | 'report' | 'rank';
 let modal: ModalKind = 'none';
 let summary: DaySummary | null = null;
 let toast = '';
@@ -198,7 +198,7 @@ function xpPercent(xp: number): number {
 function renderProfile(): string {
   const cur = levelFor(profile.xp);
   const nxt = nextLevel(profile.xp);
-  return `<div class="profile"><div class="pt"><b>${cur.title}</b><span>Lv ${cur.lv}</span></div>
+  return `<div class="profile"><button class="pt" data-act="open-rank" title="看職級詳情"><b>${cur.title}</b><span>Lv ${cur.lv} ›</span></button>
     <div class="xpbar"><span style="--to:${xpPercent(profile.xp)}%"></span></div>
     <small>${nxt ? `再 ${nxt.xp - profile.xp} 經驗升為「${nxt.title}」` : '已達最高職級'} · 已完成 ${profile.runs} 局</small>
     <button class="skills-btn" data-act="skills">${sceneOn() ? '📓 技能筆記本' : '🧠 技能'}${availableSp(profile) > 0 ? ` <em>${availableSp(profile)} 點可用</em>` : ` <small>已學 ${profile.skills.length} 個</small>`}</button></div>`;
@@ -238,6 +238,24 @@ function renderGameMenu(): string {
   </div></div>`;
 }
 
+function renderRank(): string {
+  const cur = levelFor(profile.xp);
+  const nxt = nextLevel(profile.xp);
+  const rows = LEVELS.map((l) => {
+    const state = l.lv < cur.lv ? 'done' : l.lv === cur.lv ? 'now' : 'next';
+    return `<div class="rank-row ${state}"><div class="rt"><b>${state === 'done' ? '✅ ' : state === 'now' ? '▶ ' : '🔒 '}${l.title}</b><span>Lv ${l.lv}${l.xp ? ` · ${l.xp} 經驗` : ''}</span></div>
+      <ul>${l.unlocks.map((u) => `<li>${esc(u)}</li>`).join('')}</ul></div>`;
+  }).join('');
+  return `<div class="modal-bg"><div class="modal rank-modal">
+    <div class="modal-head"><h2>🏅 職級:${cur.title}</h2><button class="x" data-act="close-rank" aria-label="關閉">✕</button></div>
+    <div class="xpbar"><span style="--to:${xpPercent(profile.xp)}%"></span></div>
+    <p class="muted">經驗 ${profile.xp}${nxt ? ` · 再 ${nxt.xp - profile.xp} 升為「${nxt.title}」` : ' · 已達最高職級'} · 已完成 ${profile.runs} 局</p>
+    ${rows}
+    <p class="muted">每局結束依表現獲得經驗;難度越高,經驗倍率越大。升級可得技能點。</p>
+    <div class="actions"><button class="primary" data-act="close-rank">關閉</button></div>
+  </div></div>`;
+}
+
 function renderSettings(): string {
   const seg = <T extends string>(items: [T, string][], cur: T, act: string, attr: string) =>
     `<div class="seg">${items.map(([v, l]) => `<button class="${cur === v ? 'sel' : ''}" data-act="${act}" data-${attr}="${v}">${l}</button>`).join('')}</div>`;
@@ -265,8 +283,8 @@ function renderStartScene(): string {
   const sp = availableSp(profile);
   return `<div class="scene-ui start-scene">
     <div class="wall-ui">
-      <div class="wall-left"><div class="cal badge" title="${nxt ? `再 ${nxt.xp - profile.xp} 經驗升為「${nxt.title}」` : '已達最高職級'}">
-        <span>${cur.title}</span><b>Lv ${cur.lv}</b><div class="xpbar mini"><span style="--to:${xpPercent(profile.xp)}%"></span></div></div></div>
+      <div class="wall-left"><button class="cal badge" data-act="open-rank" title="${nxt ? `再 ${nxt.xp - profile.xp} 經驗升為「${nxt.title}」` : '已達最高職級'}(點開看職級詳情)">
+        <span>${cur.title}</span><b>Lv ${cur.lv}</b><div class="xpbar mini"><span style="--to:${xpPercent(profile.xp)}%"></span></div></button></div>
       <div class="wall-mid"></div>
       <div class="wall-right"><div class="wall-btns"><button class="ghost" data-act="open-settings">⚙️ 設定</button></div></div>
     </div>
@@ -287,7 +305,7 @@ function renderStartScene(): string {
       <button data-act="skills"><span>📓 技能</span><span class="cost">${sp > 0 ? `${sp} 點可用` : `已學 ${profile.skills.length}`}</span></button>
       <button class="primary" data-act="start-game"><span>${has ? '開始新遊戲' : '開始遊戲'} ▶</span><span class="cost">${modeSel === 'story' ? '劇情' : '無限'} · ${DIFFS[difficulty].label}</span></button>
     </div>
-  </div>${modal === 'settings' ? renderSettings() : ''}`;
+  </div>${modal === 'settings' ? renderSettings() : modal === 'rank' ? renderRank() : ''}`;
 }
 
 function renderStart(): string {
@@ -313,7 +331,7 @@ function renderStart(): string {
     <button class="primary start-btn" data-act="start-game">${has ? '開始新遊戲' : '開始遊戲'} ▶<small>${modeSel === 'story' ? '劇情' : '無限'}模式 · ${DIFFS[difficulty].label}</small></button>
     <button class="settings-btn" data-act="open-settings">⚙️ 設定</button>
     <p class="muted foot">所有遊戲、角色與數字皆為虛構</p>
-  </div>${modal === 'settings' ? renderSettings() : ''}`;
+  </div>${modal === 'settings' ? renderSettings() : modal === 'rank' ? renderRank() : ''}`;
 }
 
 function goalText(g: Goal): string {
@@ -367,7 +385,7 @@ function previewIcons(o: EventOption): string {
 }
 
 function renderOptionButtons(s: State, it: InboxItem, ev: GameEvent): string {
-  return eventOptions(s, ev).map((o, i) => {
+  return itemOptions(s, ev, it).map(({ opt: o, index: i }) => {
     const risky = o.outcomes.length > 1 ? ' 🎲' : '';
     const cost = optionCost(s, it, o);
     return `<button data-act="opt" data-uid="${it.uid}" data-i="${i}" ${s.ap < cost ? 'disabled' : ''}>
@@ -394,16 +412,17 @@ function renderInbox(s: State): string {
     const left = it.deadline - s.day;
     const due = left <= 0 ? '今天截止' : `還剩 ${left + 1} 天`;
     const opts = open ? renderOptionButtons(s, it, ev) : '';
+    const tx = eventText(ev, it);
     const detail = open ? `<div class="mail-body">
-      <div class="body">${esc(ev.brief ?? ev.body)}</div>
+      <div class="body">${esc(tx.brief ?? tx.body)}</div>
       ${it.stage ? '<div class="hint warn">上次沒處理,對方又來催了。這次處理要多花 1 點,再不處理就不了了之。</div>' : ''}
       ${it.hint && !it.stage && showHints(s.difficulty) ? `<div class="hint">🦋 ${esc(it.hint)}</div>` : ''}
-      ${ev.brief && ev.brief !== ev.body ? `<details class="more"><summary>詳情</summary><div>${esc(ev.body)}</div></details>` : ''}
+      ${tx.brief && tx.brief !== tx.body ? `<details class="more"><summary>詳情</summary><div>${esc(tx.body)}</div></details>` : ''}
       <div class="opts">${opts}</div></div>` : '';
     return `<div class="card mail ${open ? 'open' : ''} ${isNew ? 'enter' : ''} ${it.stage ? 'escalated' : ''}" style="--i:${delay}">
       <button class="mail-head" data-act="toggle" data-uid="${it.uid}" aria-expanded="${open}">
         <span class="k k-${ev.kind}">${KIND_ICON[ev.kind] ?? '📌'}</span>
-        <span class="mh"><b>${it.stage ? '🔥 ' : ''}${esc(ev.title)}</b>${open ? '' : `<small>${esc(ev.brief ?? ev.body)}</small>`}</span>
+        <span class="mh"><b>${it.stage ? '🔥 ' : ''}${esc(tx.title)}</b>${open ? '' : `<small>${esc(tx.brief ?? tx.body)}</small>`}</span>
         <span class="due ${left <= 0 ? 'urgent' : ''}">${due}</span>${room ? `<span class="go">🚪 ${ROOMS[room].name}</span>` : `<span class="chev">${open ? '▾' : '▸'}</span>`}
       </button>${detail}</div>`;
   }).join('');
@@ -531,9 +550,10 @@ function renderRoomUI(s: State): string {
   let body: string;
   if (it && !dialogResult) {
     const ev = EVENTS[it.eventId];
-    speaker = ev.from;
-    title = ev.title;
-    text = ev.brief ?? ev.body;
+    const tx = eventText(ev, it);
+    speaker = tx.from;
+    title = tx.title;
+    text = tx.brief ?? tx.body;
     const hint = it.stage ? '上次沒處理,對方又來催了。這次處理要多花 1 點。' : it.hint && showHints(s.difficulty) ? `🦋 ${it.hint}` : '';
     body = `${hint ? `<div class="hint">${esc(hint)}</div>` : ''}<div class="opts">${renderOptionButtons(s, it, ev)}</div>`;
   } else if (dialogResult && s.feed[0]) {
@@ -957,7 +977,8 @@ function syncScene(): void {
   const vw = document.documentElement.clientWidth;
   const vh = window.innerHeight;
   const L = computeLayout(vw, vh);
-  const t = inGame && S && S.maxAp > 0 ? (S.maxAp - S.ap) / S.maxAp : 0;
+  // 結算畫面還停在「今天」的傍晚,要按下「進入下一天」才回到早上
+  const t = inGame && S && S.maxAp > 0 ? (modal === 'summary' ? 1 : (S.maxAp - S.ap) / S.maxAp) : 0;
   const where: Place = inGame ? place : 'desk';
   // 橫向時牆面右欄很矮:咖啡杯縮成單排;直式空間夠,維持 30px 排兩排
   const cup = L.W > L.H ? Math.max(18, Math.min(28, Math.floor((L.rightW * L.S) / Math.max(1, S?.maxAp ?? 6)))) : 30;
@@ -1023,8 +1044,8 @@ function render(): void {
   if (screen === 'start' || !S) {
     app.innerHTML = renderStart();
     if (lastScreen !== 'start') app.querySelector('.start')?.classList.add('open');
-    const settingsKey = modal === 'settings' ? 'settings' : 'none';
-    if (settingsKey === 'settings' && lastModal !== 'settings') app.querySelector('.modal-bg')?.classList.add('open');
+    const settingsKey = modal === 'settings' || modal === 'rank' ? modal : 'none';
+    if (settingsKey !== 'none' && lastModal !== settingsKey) app.querySelector('.modal-bg')?.classList.add('open');
     lastModal = settingsKey;
     lastScreen = 'start';
     syncScene();
@@ -1161,7 +1182,7 @@ window.addEventListener('resize', () => { if (screen === 'skills') drawSkillLine
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && modal === 'report') { modal = 'none'; reportQuiz = null; reportDone = null; render(); }
   else if (e.key === 'Escape' && planning && !transitioning) { void goPlace('desk', resetPlace); }
-  else if (e.key === 'Escape' && (modal === 'settings' || modal === 'gamemenu')) { modal = 'none'; render(); }
+  else if (e.key === 'Escape' && (modal === 'settings' || modal === 'gamemenu' || modal === 'rank')) { modal = 'none'; render(); }
   else if (e.key === 'Escape' && notebookOpen) { notebookOpen = false; render(); }
   else if (e.key === 'Escape' && modal === 'planner') closePlanner();
 });
@@ -1195,6 +1216,8 @@ app.addEventListener('click', (e) => {
     case 'report-done': case 'close-report': modal = 'none'; reportQuiz = null; reportDone = null; render(); return;
     case 'open-menu': modal = 'gamemenu'; render(); return;
     case 'close-menu': modal = 'none'; render(); return;
+    case 'open-rank': modal = 'rank'; render(); return;
+    case 'close-rank': modal = 'none'; render(); return;
     case 'open-settings': modal = 'settings'; render(); return;
     case 'close-settings': modal = 'none'; render(); return;
     case 'bf': setButterfly(el.dataset.v as Butterfly); render(); return;

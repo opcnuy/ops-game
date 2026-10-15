@@ -910,3 +910,15 @@ body.scene-mode .modal .modal-head + .set-row { border-top: none; }
 /* 兩行按鈕統一:上面是主標(粗、較大),下面是副標(細、較小、灰) */
 .desk-ui button > span:first-child { font-size: 0.88rem; font-weight: 700; }
 .desk-ui button .cost { font-size: 0.72rem; font-weight: 400; margin-top: 1px; }
+
+/* 職級詳情 */
+button.cal.badge { font: inherit; cursor: pointer; }
+button.cal.badge:hover { filter: brightness(1.05); transform: translateY(-1px); }
+.profile .pt { width: 100%; background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; }
+.rank-modal { max-width: 460px; }
+.rank-row { padding: 8px 10px; margin: 6px 0; border: 1px solid var(--line); border-radius: 10px; }
+.rank-row .rt { display: flex; justify-content: space-between; align-items: baseline; }
+.rank-row .rt span { color: var(--muted); font-size: 0.8rem; }
+.rank-row ul { margin: 4px 0 0; padding-left: 1.2em; font-size: 0.85rem; }
+.rank-row.now { border-color: var(--accent); background: var(--chip); }
+.rank-row.next { opacity: 0.7; }

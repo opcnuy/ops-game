@@ -108,6 +108,8 @@ export interface InboxItem {
   hint?: string;
   /** 0 = 初次;1 = 逾期後再次催辦(處理成本 +1,再逾期就不了了之) */
   stage?: number;
+  /** 這件事的隨機種子:決定敘述版本、選項順序與額外選項 */
+  v?: number;
 }
 
 export interface State {
