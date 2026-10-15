@@ -1052,7 +1052,9 @@ function render(): void {
     return;
   }
   const s = S;
-  let html = renderGame(s);
+  // 結算畫面還在「今天」:日曆與咖啡杯先維持今天的樣子,按下「進入下一天」才翻頁、補滿
+  const shown: State = modal === 'summary' && summary ? { ...s, day: summary.day, ap: 0 } : s;
+  let html = renderGame(shown);
   const overShown = !!s.over && modal !== 'summary';
   if (overShown) html += renderOver(s);
   else if (modal === 'planner') html += renderPlanner(s);
@@ -1083,8 +1085,8 @@ function render(): void {
   syncScene();
   animate();
   if (notebookOpen && nbTab === 'skills') requestAnimationFrame(drawSkillLines);
-  prevAp = s.ap;
-  prevDay = s.day;
+  prevAp = shown.ap;
+  prevDay = shown.day;
 }
 
 /** 彈窗出現時的慶祝或警示效果 */
