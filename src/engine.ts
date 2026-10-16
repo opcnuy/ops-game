@@ -73,6 +73,7 @@ function addHabits(s: State, h?: Record<string, number>): string {
   if (!h) return '';
   const parts: string[] = [];
   for (const [k, n] of Object.entries(h)) {
+    if (k === 'overtime' && n > 0 && s.day < 3) continue; // 剛到職的前兩天不會有「熬夜加班」
     s.habits[k] = Math.max(0, (s.habits[k] ?? 0) + n);
     if (n > 0 && k in HABITS) (s.styleTotals ??= {})[k] = (s.styleTotals[k] ?? 0) + n;
     parts.push(`${HABITS[k]?.label ?? k} ${n > 0 ? '+' : ''}${n}`);
@@ -330,6 +331,7 @@ function sanitizeState(raw: unknown): State | null {
   }
   s.taste = { reward: cleanText(s.taste?.reward, 40), hated: cleanText(s.taste?.hated, 40) };
   s.intel = { reward: !!s.intel?.reward, hated: !!s.intel?.hated };
+  if (s.pulse !== undefined) s.pulse = num(s.pulse, 0, 1e5, 0);
   return s;
 }
 
@@ -464,6 +466,15 @@ function boostOutcomes(outs: Outcome[], boost: number): Outcome[] {
   return outs.map((o, i) => (i === best ? { ...o, p: o.p + m } : i === worst ? { ...o, p: o.p - m } : o));
 }
 
+/** 看過輿情之後,當天與隔天都掌握得到風向 */
+export const pulseActive = (s: State): boolean => s.pulse !== undefined && s.day - s.pulse <= 1;
+const isPulseEvent = (ev: GameEvent): boolean => ev.kind === '客訴' || ev.kind === '輿情';
+
+/** 掌握風向時,客訴、輿情事件在處理前就先給一句處理方向 */
+export function pulseHint(s: State, ev: GameEvent): string | undefined {
+  return pulseActive(s) && isPulseEvent(ev) ? ev.insight : undefined;
+}
+
 const ESCALATE_HINT = '上次沒處理,對方又來催了。';
 
 /** 只留「這局出現最少次」的事件;同樣少的,再優先挑過去幾局也看得最少的 */
@@ -554,6 +565,7 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
   let boost = 0;
   if (hasSkill(s, 'quick_report') && opt.tag === 'quick') boost += 0.2;
   if (hasSkill(s, 'soothe') && (ev.kind === '客訴' || ev.kind === '輿情')) boost += 0.1;
+  if (pulseActive(s) && isPulseEvent(ev)) boost += 0.1;
   if (boost && outs.length > 1) outs = boostOutcomes(outs, boost);
   let r = rand(s);
   let out: Outcome = outs[outs.length - 1];
@@ -643,13 +655,15 @@ export function doAction(s: State, kind: ActionKind): string | null {
     c.checked = true;
     pushFeed(s, '你請工程師做了上線前驗收,他發現並修了兩個小問題。');
   } else if (kind === 'intel') {
-    if (s.intel.reward && s.intel.hated) return '近期輿情已經沒有新發現';
+    const intelDone = s.intel.reward && s.intel.hated;
+    if (intelDone && s.pulse === s.day) return '今天的輿情風向已經掌握了';
     const found: string[] = [];
     if (hasSkill(s, 'social_sense')) {
       if (!s.intel.reward) found.push(revealIntel(s, 'reward'));
       if (!s.intel.hated) found.push(revealIntel(s, 'hated'));
-    } else found.push(revealIntel(s, s.intel.reward ? 'hated' : 'reward'));
-    pushFeed(s, '你花了一段時間爬論壇與社群。' + found.join(' '));
+    } else if (!intelDone) found.push(revealIntel(s, s.intel.reward ? 'hated' : 'reward'));
+    s.pulse = s.day;
+    pushFeed(s, `你花了一段時間爬論壇與社群。${found.join(' ')} 📡 掌握了風向:今明兩天的客訴與輿情事件會附上處理提示,有風險的選項也更穩。`.replace('  ', ' '));
   } else if (kind === 'sloppy') {
     if (s.pendingReports <= 0) return '沒有待填的日報';
     s.pendingReports--;

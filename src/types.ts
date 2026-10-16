@@ -159,6 +159,8 @@ export interface State {
   campaign?: Campaign;
   taste: { reward: string; hated: string };
   intel: { reward: boolean; hated: boolean };
+  /** 最近一次「看輿情」的那一天:當天與隔天,客訴、輿情事件會附上處理提示,有風險的選項也更穩 */
+  pulse?: number;
   history: { day: number; players: number; spend: number }[];
   feed: string[];
   /** 全程紀錄(最近 80 筆),給「紀錄」分頁回顧用 */

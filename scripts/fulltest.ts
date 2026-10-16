@@ -188,7 +188,7 @@ console.log(`對局檢查:${games} 局、${endings} 局到結局、玩了 ${inte
   const a = mkEnd({ transparency: 4, blame: 1 }, true);
   if (a?.name !== '公開透明派' || a.text !== ENDING_STYLES.transparent.good) fail(`風格判斷不對:${JSON.stringify(a)}`);
   if (mkEnd({ transparency: 4 }, false)?.text !== ENDING_STYLES.transparent.rough) fail('結局不好時應該用 rough 的說法');
-  if (mkEnd({ transparency: 2 }, true)) fail('次數不到門檻不該下定論');
+  if (mkEnd({ transparency: 1 }, true)) fail('次數不到門檻不該下定論');
   if (mkEnd({ transparency: 3, pushback: 3 }, true)) fail('並列第一不該下定論');
   if (mkEnd({ overtime: 2, rushed: 2 }, true)?.name !== '拚命三郎派') fail('同一種風格的多個習慣沒有加總');
   // 實際對局:全部標題都能產生,且風格欄位格式正確

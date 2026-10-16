@@ -6,7 +6,7 @@ import type { Room } from './scene/rooms';
 import { createFadeCanvas, dissolve } from './scene/fade';
 import { storageKey } from './storage';
 import {
-  CAMPAIGN_TARGET, CONTENT, DIFFS, EVENTS, computeRunXp, PHASES, phaseOf, GOAL_INFO, STORY_DAYS, chooseOption, clearSave, doAction, endDay,
+  CAMPAIGN_TARGET, CONTENT, DIFFS, pulseActive, pulseHint, EVENTS, computeRunXp, PHASES, phaseOf, GOAL_INFO, STORY_DAYS, chooseOption, clearSave, doAction, endDay,
   HABITS, find, goalMet, goalValue, hasSkill, makeReport, submitReport, estimateLift, itemOptions, eventText, load, newGame, optionCost, planCampaign, planCost, save, spendToday, weekdayLabel,
 } from './engine';
 import type { ActionKind, ReportQuiz } from './engine';
@@ -436,6 +436,7 @@ function renderInbox(s: State): string {
       <div class="body">${esc(tx.brief ?? tx.body)}</div>
       ${it.stage ? '<div class="hint warn">上次沒處理,對方又來催了。這次處理要多花 1 點,再不處理就不了了之。</div>' : ''}
       ${it.hint && !it.stage && showHints(s.difficulty) ? `<div class="hint">🦋 ${esc(it.hint)}</div>` : ''}
+      ${pulseHint(s, ev) ? `<div class="hint pulse">📡 風向提示:${esc(pulseHint(s, ev) ?? '')}</div>` : ''}
       ${tx.brief && tx.brief !== tx.body ? `<details class="more"><summary>詳情</summary><div>${esc(tx.body)}</div></details>` : ''}
       <div class="opts">${opts}</div></div>` : '';
     return `<div class="card mail ${open ? 'open' : ''} ${isNew ? 'enter' : ''} ${it.stage ? 'escalated' : ''}" style="--i:${delay}">
@@ -583,7 +584,8 @@ function renderRoomUI(s: State): string {
     title = tx.title;
     text = tx.brief ?? tx.body;
     const hint = it.stage ? '上次沒處理,對方又來催了。這次處理要多花 1 點。' : it.hint && showHints(s.difficulty) ? `🦋 ${it.hint}` : '';
-    body = `${hint ? `<div class="hint">${esc(hint)}</div>` : ''}<div class="opts">${renderOptionButtons(s, it, ev)}</div>`;
+    const ph = pulseHint(s, ev);
+    body = `${hint ? `<div class="hint">${esc(hint)}</div>` : ''}${ph ? `<div class="hint pulse">📡 風向提示:${esc(ph)}</div>` : ''}<div class="opts">${renderOptionButtons(s, it, ev)}</div>`;
   } else if (dialogResult && s.feed[0]) {
     speaker = '結果';
     text = resultOf(s.feed[0]);
@@ -609,7 +611,7 @@ function renderGame(s: State): string {
   const prev = s.history[s.history.length - 1];
   const spend = spendToday(s);
   const days = s.mode === 'story' ? `${Math.min(s.day, STORY_DAYS)}/${STORY_DAYS}` : `第 ${s.day} 天`;
-  const intelDone = s.intel.reward && s.intel.hated;
+  const intelDone = s.intel.reward && s.intel.hated && s.pulse === s.day;
   const camp = s.campaign && s.campaign.phase !== 'done';
   const tabs: [Tab, string][] = [
     ['inbox', `📥 收件匣 <em>${s.inbox.length}</em>`],
@@ -637,7 +639,7 @@ function renderGame(s: State): string {
   const tabsHtml = tabList.map(([k, label]) => `<button class="${tab === k ? 'sel' : ''}" data-act="tab" data-t="${k}">${label}</button>`).join('')
     + (sceneOn() ? '<button data-act="open-notebook">📓 筆記本</button>' : '');
   const dockHtml = `
-    <button data-act="intel" ${s.ap < 1 || intelDone ? 'disabled' : ''}><span>💬 看輿情</span><span class="cost">⚡</span></button>
+    <button data-act="intel" ${s.ap < 1 || intelDone ? 'disabled' : ''}><span>💬 看輿情${pulseActive(s) ? ' 📡' : ''}</span><span class="cost">⚡</span></button>
     <button data-act="report" ${(!hasSkill(s, 'auto_report') && s.ap < 1) || s.pendingReports <= 0 ? 'disabled' : ''}><span>📝 填日報${s.pendingReports ? ` (${s.pendingReports})` : ''}</span><span class="cost ${hasSkill(s, 'auto_report') ? 'down' : ''}">${hasSkill(s, 'auto_report') ? '免費' : '⚡'}</span></button>
     <button data-act="sloppy" ${s.pendingReports <= 0 ? 'disabled' : ''} title="不花點數,但會留下草率的紀錄"><span>🙈 隨便填</span><span class="cost">免費</span></button>
     <button class="primary end ${s.ap === 0 || !s.inbox.length ? 'pulse' : ''}" data-act="end"><span>${endArmed ? '再按一次結束' : '結束今天 ▶'}</span></button>`;
@@ -769,7 +771,7 @@ function renderIntro(): string {
     <p>・處理收件匣的事件(老闆、原廠、玩家都在等你)<br>・規劃並打磨活動<br>・看輿情、填日報</p>
     <p>點數用不完不會累積,事情沒處理也不會消失,只會變成麻煩。<br>注意四個數字:<b>人數、留存、營收、信任</b>,還有老闆的臉色。</p>
     <hr><p><b>${S!.mode === 'story' ? '試用期結束時要達成:' : '第一次考核(第 10 天)要達成:'}</b><br>${S!.goals.map((g) => '・' + goalText(g)).join('<br>')}</p>
-    <p class="muted">提示:選項旁的 🎲 代表結果有風險;不確定要做什麼時,可以先去看輿情。</p>
+    <p class="muted">提示:選項旁的 🎲 代表結果有風險。先看輿情能摸清玩家喜好,今明兩天的客訴與輿情事件也會附上處理提示。</p>
     <div class="actions"><button class="primary" data-act="close-modal">開始第一天</button></div>
   </div></div>`;
 }

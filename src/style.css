@@ -265,6 +265,7 @@ button.pulse { animation: pulseGlow 1.6s ease-in-out infinite; }
 .mail.escalated { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad), var(--shadow); }
 .urgent-badge { background: var(--bad); color: #fff; font-weight: 700; }
 .hint.warn { color: var(--bad); }
+.hint.pulse { color: var(--good, var(--accent)); font-style: italic; }
 .cost.up { color: var(--bad); font-weight: 700; }
 
 /* ---------- 新版面:常駐指標列、分頁、清單式收件匣、底部操作列 ---------- */

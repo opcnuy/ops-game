@@ -1,6 +1,6 @@
 // 技能系統檢查:資料自洽、學習規則、12 個技能各自的實際效果、存檔與職級的技能點帳目
 import {
-  DIFFS, EVENTS, chooseOption, doAction, endDay, eventOptions, hasSkill, load, makeReport, newGame, optionCost, planCampaign, save, submitReport,
+  DIFFS, EVENTS, pulseActive, pulseHint, chooseOption, doAction, endDay, eventOptions, hasSkill, load, makeReport, newGame, optionCost, planCampaign, save, submitReport,
 } from '../src/engine';
 import { ACHIEVEMENTS, LINES, SKILLS, prereqMet, prereqText, sanitizeSkills, skillById } from '../src/skills';
 import { LEVELS, SP_PER_LEVEL, availableSp, levelFor, loadProfile, saveProfile, spentSp } from '../src/profile';
@@ -262,6 +262,50 @@ ok(hasSkill(mk(['quick_report', 'template', 'forecast']), 'forecast'), '預測�
   ok(!learn('soothe'), '重複學習同一個技能');
   prof = { ...prof, skills: sanitizeSkills(prof.skills.filter((x) => x !== 'soothe')) };
   ok(prof.skills.length === 0 && availableSp(prof) === 4, '取消起點技能後,點數沒有全額退回');
+}
+
+// 看輿情:喜好都摸清後仍可再看,掌握風向當天與隔天;客訴/輿情事件先給提示,有風險的選項更穩
+{
+  const s = mk([]);
+  ok(!pulseActive(s) && !pulseHint(s, EVENTS.e_gacha_complaint), '還沒看輿情就有風向');
+  s.intel = { reward: true, hated: true };
+  const ap0 = s.ap;
+  ok(doAction(s, 'intel') === null && s.ap === ap0 - 1 && pulseActive(s), '喜好都摸清後,看輿情沒有給風向');
+  ok(doAction(s, 'intel') !== null && s.ap === ap0 - 1, '同一天重複看輿情不該再花點數');
+  ok(!!pulseHint(s, EVENTS.e_gacha_complaint) && !pulseHint(s, EVENTS.e_boss_campaign), '風向提示只該出現在客訴/輿情事件');
+  endDay(s);
+  ok(pulseActive(s), '隔天風向應該還在');
+  endDay(s);
+  ok(!pulseActive(s), '兩天後風向應該消失');
+  // 效果:有風險的選項成功率(以 e_gacha_complaint 的最佳選項為例,多次試驗)
+  const label = EVENTS.e_gacha_complaint.options.find((o) => o.outcomes.length > 1)?.label ?? '';
+  const trial = (look: boolean): number => {
+    let good = 0;
+    for (let i = 0; i < 600; i++) {
+      const t = mk([], 3000 + i); t.intel = { reward: true, hated: true };
+      if (look) doAction(t, 'intel');
+      const before = t.trust;
+      const uid = push(t, 'e_gacha_complaint');
+      const idx = optIndex(t, 'e_gacha_complaint', label);
+      if (idx >= 0) chooseOption(t, uid, idx);
+      if (t.trust > before) good++;
+    }
+    return good / 600;
+  };
+  const a = trial(false); const b = trial(true);
+  ok(b > a + 0.04, `看輿情後風險選項沒有明顯更穩:${a.toFixed(2)} → ${b.toFixed(2)}`);
+}
+
+// 熬夜加班:剛到職的前兩天不累積
+{
+  const s = mk([]);
+  const uid = push(s, 'e_adhoc_chart');
+  chooseOption(s, uid, optIndex(s, 'e_adhoc_chart', '全部做完'));
+  ok(!(s.habits.overtime > 0) && !(s.styleTotals?.overtime), '第一天就累積了熬夜加班');
+  s.day = 3; s.ap = 6;
+  const uid2 = push(s, 'e_adhoc_chart');
+  chooseOption(s, uid2, optIndex(s, 'e_adhoc_chart', '全部做完'));
+  ok(s.habits.overtime === 1, '第 3 天之後熬夜加班應該要累積');
 }
 
 if (failed) throw new Error(`技能系統檢查失敗 ${failed} 項`);
