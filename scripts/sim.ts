@@ -1,6 +1,8 @@
 import { newGame, chooseOption, planCampaign, doAction, endDay, goalMet, EVENTS, eventOptions, optionCost } from '../src/engine';
 import type { Difficulty, State } from '../src/types';
 
+declare const process: { env: Record<string, string | undefined> };
+
 // localStorage 在 Node 不存在,引擎的存檔函式只在瀏覽器呼叫,這裡不用處理
 
 function play(strategy: 'random' | 'careful' | 'lazy', diff: Difficulty, seed: number, level = 5, skills: string[] = []): State {
@@ -12,9 +14,9 @@ function play(strategy: 'random' | 'careful' | 'lazy', diff: Difficulty, seed: n
         if (s.day >= 2 && s.ap >= 3) {
           planCampaign(s, strategy === 'careful'
             ? (level >= 2
-              ? { mechanic: 'dungeon', reward: 'skin', bundle: 'skinpack', promo: 'social', delay: 3 }
-              : { mechanic: 'lottery', reward: 'shard', bundle: 'starter', promo: 'notice', delay: 3 })
-            : { mechanic: 'signin', reward: 'material', bundle: 'none', promo: 'none', delay: 2 });
+              ? { mechanic: 'dungeon', reward: 'skin', bundle: 'skinpack', promo: 'social', delay: Number(process.env.DELAY ?? 3) }
+              : { mechanic: 'lottery', reward: 'shard', bundle: 'starter', promo: 'notice', delay: Number(process.env.DELAY ?? 3) })
+            : { mechanic: 'signin', reward: 'material', bundle: 'none', promo: 'none', delay: Number(process.env.DELAY ?? 2) });
         }
       }
       if (strategy === 'careful') {

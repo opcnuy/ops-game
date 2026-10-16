@@ -579,7 +579,7 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
     addMoment(s, impactOf(out.effects), netOf(out.effects) >= 0 ? '✨' : '⚠️', `${quoted(eventText(ev, item).title)}${opt.label}——${out.result}`);
   }
   s.inbox = s.inbox.filter((i) => i.uid !== uid);
-  pushFeed(s, `【${ev.title}】${opt.label} → ${out.result}${extra}${effectNote(out.effects)}${chainNote}${note}`);
+  pushFeed(s, `【${eventText(ev, item).title}】${opt.label} → ${out.result}${extra}${effectNote(out.effects)}${chainNote}${note}`);
   return null;
 }
 
@@ -621,10 +621,6 @@ export function planCampaign(s: State, sel: PlanSel): string | null {
     ...sel, launchDay: s.day + sel.delay, polish: 0, checked: false, bugged: false,
     phase: 'planned', liveDaysLeft: 0, lift: 0,
   };
-  if (sel.delay > 3) {
-    applyEffects(s, { boss: -(sel.delay - 3) * 2 });
-    pushFeed(s, `你把活動排在 ${sel.delay} 天後,林總問了兩次進度。(老闆-${(sel.delay - 3) * 2})`);
-  }
   if (sel.delay >= 2) s.followUps.push({ eventId: 'e_tech_deadline', day: s.day + 1 });
   pushFeed(s, `你送出活動企劃,預計第 ${s.campaign.launchDay} 天上線。`);
   return null;
@@ -974,8 +970,25 @@ export function makeReport(s: State): ReportQuiz {
   return q;
 }
 
+/** 「數據重點」題用的三個數字。最大與次大的差距太小時,答案不明確,這題就不出 */
+function metricItems(s: State): { items: { name: string; v: number; fact: string }[]; clear: boolean } {
+  const prev = s.history[s.history.length - 1] ?? { players: s.players, spend: spendToday(s) };
+  const spend = spendToday(s);
+  const pPct = prev.players ? ((s.players - prev.players) / prev.players) * 100 : 0;
+  const sPct = prev.spend ? ((spend - prev.spend) / prev.spend) * 100 : 0;
+  const rDev = (s.retention - 36) * 3; // 留存離平常(約 36%)多遠,放大成可以跟百分比比較的尺度
+  const items = [
+    { name: '玩家人數', v: pPct, fact: `玩家人數 ${Math.round(s.players).toLocaleString('zh-TW')}(比昨天 ${pct(pPct)})` },
+    { name: '日營收', v: sPct, fact: `日營收 ${spend.toFixed(1)} 萬點(比昨天 ${pct(sPct)})` },
+    { name: '留存率', v: rDev, fact: `留存率 ${s.retention.toFixed(1)}%(平常約 36%)` },
+  ];
+  const mags = items.map((i) => Math.abs(i.v)).sort((a, b) => b - a);
+  return { items, clear: mags[0] - mags[1] >= 0.5 };
+}
+
 function buildReport(s: State): ReportQuiz {
-  const kinds: ReportQuiz['kind'][] = ['metric', 'trend', 'tone'];
+  const kinds: ReportQuiz['kind'][] = ['trend', 'tone'];
+  if (metricItems(s).clear) kinds.push('metric');
   if (s.inbox.length >= 3) kinds.push('priority');
   if (s.campaign && s.campaign.phase !== 'done') kinds.push('campaign');
   const pool = kinds.filter((k) => k !== s.lastReport);
@@ -984,16 +997,7 @@ function buildReport(s: State): ReportQuiz {
   const GOOD: Effects = { boss: 2 };
 
   if (kind === 'metric') {
-    const prev = s.history[s.history.length - 1] ?? { players: s.players, spend: spendToday(s) };
-    const spend = spendToday(s);
-    const pPct = prev.players ? ((s.players - prev.players) / prev.players) * 100 : 0;
-    const sPct = prev.spend ? ((spend - prev.spend) / prev.spend) * 100 : 0;
-    const rDev = (s.retention - 36) * 3; // 留存離平常(約 36%)多遠,放大成可以跟百分比比較的尺度
-    const items = [
-      { name: '玩家人數', v: pPct, fact: `玩家人數 ${Math.round(s.players).toLocaleString('zh-TW')}(比昨天 ${pct(pPct)})` },
-      { name: '日營收', v: sPct, fact: `日營收 ${spend.toFixed(1)} 萬點(比昨天 ${pct(sPct)})` },
-      { name: '留存率', v: rDev, fact: `留存率 ${s.retention.toFixed(1)}%(平常約 36%)` },
-    ];
+    const { items } = metricItems(s);
     const best = items.reduce((a, b) => (Math.abs(b.v) > Math.abs(a.v) ? b : a));
     return {
       kind, title: '數據重點', prompt: '今天要向老闆強調哪一個數字?挑「離平常最遠、變動最大」的。',

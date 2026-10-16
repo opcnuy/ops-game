@@ -35,6 +35,9 @@ let lastScreen = '';
 let prevAp = -1;
 let prevDay = -1;
 let busy = false;
+/** 動畫或換場期間按下的最後一下:動畫結束後補做,不再被吞掉 */
+let pendingClick: { x: number; y: number } | null = null;
+const REPLAY_ACTS = new Set(['end', 'tab', 'report', 'sloppy', 'open-plan', 'open-menu', 'toggle', 'close-modal']);
 const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 const rendered = new Set<number>();
 const prevNums: Record<string, number> = {};
@@ -517,9 +520,9 @@ function renderPlanRoom(s: State): string {
     { key: 'bundle', title: '商品', items: CONTENT.bundles },
     { key: 'promo', title: '宣傳', items: CONTENT.promos.map((p) => ({ ...p, tag: p.ap ? `+${p.ap} 點` : '' })) },
     { key: 'delay', title: '時間', items: [
+      { id: '1', name: '1 天後上線', desc: '極限趕工,幾乎沒有打磨與驗收的時間。' },
       { id: '2', name: '2 天後上線', desc: '很趕,打磨機會少。' },
       { id: '3', name: '3 天後上線', desc: '標準時程。' },
-      { id: '5', name: '5 天後上線', desc: '時間充裕,但老闆會問進度。' },
     ] },
   ];
   const st = steps[planStep];
@@ -717,9 +720,9 @@ function renderPlanner(s: State): string {
   }
   const cost = planCost(sel);
   const delays = [
+    { id: '1', name: '1 天後上線', desc: '極限趕工,幾乎沒有打磨與驗收的時間。' },
     { id: '2', name: '2 天後上線', desc: '很趕,打磨機會少。' },
     { id: '3', name: '3 天後上線', desc: '標準時程。' },
-    { id: '5', name: '5 天後上線', desc: '時間充裕,但老闆會問進度。' },
   ];
   return `<div class="modal-bg"><div class="modal planner">
     <div class="modal-head"><h2>規劃新活動</h2><button class="x" data-act="close-modal" aria-label="關閉">✕</button></div>
@@ -948,7 +951,16 @@ async function goPlace(next: Place, apply?: () => void): Promise<void> {
   } finally {
     transitioning = false;
     fadeCanvas.style.display = 'none';
+    setTimeout(flushPendingClick, 0);
   }
+}
+
+function flushPendingClick(): void {
+  const p = pendingClick;
+  pendingClick = null;
+  if (!p || busy || transitioning) return;
+  const el = document.elementFromPoint(p.x, p.y)?.closest<HTMLElement>('[data-act]');
+  if (el && REPLAY_ACTS.has(el.dataset.act ?? '')) el.click();
 }
 
 function closePlanner(): void {
@@ -1222,12 +1234,22 @@ function roomKey(e: KeyboardEvent): boolean {
 
 document.addEventListener('keydown', (e) => {
   if (roomKey(e)) { e.preventDefault(); return; }
+  // 每天結算畫面:空白鍵或 Enter 進入下一天
+  if ((e.key === ' ' || e.key === 'Enter') && modal === 'summary' && !busy && !transitioning && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    const next = app.querySelector<HTMLButtonElement>('.actions button.primary[data-act="close-modal"]');
+    if (next) { e.preventDefault(); next.click(); return; }
+  }
   if (e.key === 'Escape' && modal === 'report') { modal = 'none'; reportQuiz = null; reportDone = null; render(); }
   else if (e.key === 'Escape' && planning && !transitioning) { void goPlace('desk', resetPlace); }
   else if (e.key === 'Escape' && (START_MODALS.includes(modal) || modal === 'gamemenu')) { modal = 'none'; render(); }
   else if (e.key === 'Escape' && notebookOpen) { notebookOpen = false; render(); }
   else if (e.key === 'Escape' && modal === 'planner') closePlanner();
 });
+
+// 動畫或換場期間的點擊(可能落在換場遮罩上):記下位置,結束後補做
+document.addEventListener('click', (e) => {
+  if (busy || transitioning) pendingClick = { x: e.clientX, y: e.clientY };
+}, true);
 
 app.addEventListener('click', (e) => {
   if (busy || transitioning) return;
@@ -1340,6 +1362,7 @@ app.addEventListener('click', (e) => {
       const err = chooseOption(s, Number(el.dataset.uid), Number(el.dataset.i));
       if (!err) { lastInsight = (picked && EVENTS[picked.eventId]?.insight) || ''; openUid = null; if (place !== 'desk') dialogResult = true; }
       if (err) flash(err); else { save(s); render(); }
+      setTimeout(flushPendingClick, 0);
     };
     const card = el.closest('.mail');
     const risky = el.textContent?.includes('🎲');

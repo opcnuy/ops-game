@@ -119,7 +119,7 @@ for (const mode of modes) for (const diff of diffs) for (const level of [1, 3, 5
     const tag = `${mode}/${diff}/Lv${level}/技能${skills.length}/seed${seed}/day${s.day}`;
     checkState(s, tag);
     if (s.day >= 2 && (!s.campaign || s.campaign.phase === 'done') && s.ap >= 3) {
-      const err = planCampaign(s, { mechanic: 'signin', reward: 'shard', bundle: 'none', promo: 'none', delay: 2 + (seed % 3) });
+      const err = planCampaign(s, { mechanic: 'signin', reward: 'shard', bundle: 'none', promo: 'none', delay: 1 + (seed % 3) });
       if (err && err !== '行動點數不足') fail(`${tag} 規劃活動失敗:${err}`);
     }
     if (s.campaign?.phase === 'planned') { doAction(s, 'check'); doAction(s, 'polish'); }
