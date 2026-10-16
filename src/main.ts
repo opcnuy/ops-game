@@ -21,10 +21,13 @@ const app = document.getElementById('app') as HTMLDivElement;
 let S: State | null = load();
 let profile = loadProfile();
 let screen: 'start' | 'game' | 'skills' = 'start';
-type ModalKind = 'none' | 'planner' | 'summary' | 'intro' | 'confirm-end' | 'settings' | 'gamemenu' | 'report' | 'rank';
+type ModalKind = 'none' | 'planner' | 'summary' | 'intro' | 'settings' | 'gamemenu' | 'report' | 'rank';
 let modal: ModalKind = 'none';
 let summary: DaySummary | null = null;
 let toast = '';
+/** 還有沒做完的事時,第一次按「結束今天」只會進入待確認,再按一次才真的結束 */
+let endArmed = false;
+let endArmTimer = 0;
 let lastModal = 'none';
 let lastScreen = '';
 let prevAp = -1;
@@ -623,7 +626,7 @@ function renderGame(s: State): string {
     <button data-act="intel" ${s.ap < 1 || intelDone ? 'disabled' : ''}><span>💬 看輿情</span><span class="cost">⚡</span></button>
     <button data-act="report" ${(!hasSkill(s, 'auto_report') && s.ap < 1) || s.pendingReports <= 0 ? 'disabled' : ''}><span>📝 填日報${s.pendingReports ? ` (${s.pendingReports})` : ''}</span><span class="cost ${hasSkill(s, 'auto_report') ? 'down' : ''}">${hasSkill(s, 'auto_report') ? '免費' : '⚡'}</span></button>
     <button data-act="sloppy" ${s.pendingReports <= 0 ? 'disabled' : ''} title="不花點數,但會留下草率的紀錄"><span>🙈 隨便填</span><span class="cost">免費</span></button>
-    <button class="primary end ${s.ap === 0 || !s.inbox.length ? 'pulse' : ''}" data-act="end"><span>結束今天 ▶</span></button>`;
+    <button class="primary end ${s.ap === 0 || !s.inbox.length ? 'pulse' : ''}" data-act="end"><span>${endArmed ? '再按一次結束' : '結束今天 ▶'}</span></button>`;
   if (sceneOn() && place !== 'desk') return renderRoomUI(s);
   if (sceneOn()) {
     const cups = Array.from({ length: s.maxAp }, (_, i) => {
@@ -742,19 +745,6 @@ function renderSummary(): string {
     </tbody></table>
     ${d.lines.length ? `<hr>${d.lines.map((l) => `<p>${esc(l)}</p>`).join('')}` : '<hr><p class="muted">今天沒有特別的事。這大概是個壞兆頭。</p>'}
     <div class="actions"><button class="primary" data-act="close-modal">進入下一天</button></div>
-  </div></div>`;
-}
-
-function renderConfirmEnd(s: State): string {
-  const dueToday = s.inbox.filter((i) => i.deadline <= s.day).length;
-  const lines: string[] = [];
-  if (s.ap > 0) lines.push(`還有 <b>${s.ap}</b> 點行動點數沒用,不會留到明天。`);
-  if (dueToday > 0) lines.push(`有 <b>${dueToday}</b> 件事今天就到期,過了會受到懲罰。`);
-  else if (s.inbox.length > 0) lines.push(`收件匣還有 <b>${s.inbox.length}</b> 件事沒處理。`);
-  return `<div class="modal-bg"><div class="modal">
-    <h2>要結束今天嗎?</h2>
-    <p>${lines.join('<br>')}</p>
-    <div class="actions"><button data-act="close-modal">再想想</button><button class="primary" data-act="end-now">結束今天</button></div>
   </div></div>`;
 }
 
@@ -1071,7 +1061,6 @@ function render(): void {
   else if (modal === 'planner') html += renderPlanner(s);
   else if (modal === 'summary') html += renderSummary();
   else if (modal === 'intro') html += renderIntro();
-  else if (modal === 'confirm-end') html += renderConfirmEnd(s);
   else if (modal === 'gamemenu') html += renderGameMenu();
   else if (modal === 'report') html += renderReport(s);
   else if (modal === 'settings') html += renderSettings();
@@ -1211,6 +1200,7 @@ app.addEventListener('click', (e) => {
   if (!el || el.hasAttribute('disabled')) return;
   const act = el.dataset.act;
   const s = S;
+  if (act !== 'end' && endArmed) { endArmed = false; window.clearTimeout(endArmTimer); }
 
   switch (act) {
     case 'new': clearSave(); startNew(el.dataset.mode as Mode); return;
@@ -1331,9 +1321,15 @@ app.addEventListener('click', (e) => {
     else { save(s); render(); }
   } else if (act === 'end') {
     const dueToday = s.inbox.filter((i) => i.deadline <= s.day).length;
-    if (s.ap > 0 || dueToday > 0) { modal = 'confirm-end'; render(); return; }
-    finishDay(s);
-  } else if (act === 'end-now') {
+    if ((s.ap > 0 || dueToday > 0) && !endArmed) {
+      // 還有沒做完的事:不跳彈窗,按鈕變成「再按一次」,提示放在上方
+      endArmed = true;
+      window.clearTimeout(endArmTimer);
+      endArmTimer = window.setTimeout(() => { if (endArmed) { endArmed = false; render(); } }, 6000);
+      const warn = [s.ap > 0 ? `還有 ${s.ap} 點行動點數沒用` : '', dueToday > 0 ? `${dueToday} 件事今天到期,逾期會被罰` : ''].filter(Boolean);
+      flash(`${warn.join(',')}。再按一次結束今天`, 6000);
+      return;
+    }
     finishDay(s);
   }
 });
@@ -1359,8 +1355,21 @@ function finishDay(s: State): void {
   s.feed = [];
   openUid = null;
   tab = 'inbox';
+  endArmed = false;
   summary = endDay(s);
   settleRun(s);
+  // 沒有額外發生什麼事(只有下班那句話、老闆與信任沒變)的日子,不用再多按一次
+  const quiet = !s.over && summary.lines.every((l) => l.startsWith('🌆'))
+    && summary.before.boss === summary.boss && summary.before.trust === summary.trust;
+  if (quiet) {
+    const q = summary;
+    summary = null;
+    modal = 'none';
+    save(s);
+    render();
+    flash(`第 ${q.day} 天平安結束:玩家 ${fmt(q.before.players)} → ${fmt(q.players)}`, 2200);
+    return;
+  }
   modal = 'summary';
   save(s);
   render();
