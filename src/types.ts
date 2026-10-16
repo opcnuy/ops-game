@@ -36,6 +36,8 @@ export interface EventOption {
   tag?: 'quick';
   /** 由技能解鎖的額外選項 */
   fromSkill?: string;
+  /** 職級達到才會出現的選項(例如高階可以授權給專員);放在選項最後面,避免影響前面選項的編號 */
+  minLevel?: number;
 }
 
 /** 一季(10 天)裡的階段:事件池會偏向當下階段的事件 */

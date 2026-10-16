@@ -393,7 +393,8 @@ export function eventOptions(s: State, ev: GameEvent, item?: InboxItem): EventOp
   const pool = EXTRA.pools[ev.kind];
   const rnd = pool?.length && varies(item) ? seeded(item.v, SALT.bonus) : null;
   const bonus = rnd && rnd() < EXTRA.chance ? [pool![Math.floor(rnd() * pool!.length)]] : [];
-  return [...ev.options, ...bonus, ...skillOpts];
+  const own = ev.options.filter((o) => (o.minLevel ?? 1) <= s.level);
+  return [...own, ...bonus, ...skillOpts];
 }
 
 /** 選項實際花費:技能減免,以及逾期後再次催辦的事 +1 */
