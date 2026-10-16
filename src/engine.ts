@@ -6,6 +6,7 @@ import variantData from './content/variants.json';
 import optLabelData from './content/optlabels.json';
 import extraData from './content/extraOptions.json';
 import type {
+  Phase,
   EventOption, InboxItem,
   Campaign, CampaignContent, DaySummary, Difficulty, Effects, GameEvent, Goal, GoalKey, Mode, Outcome, PlanSel, State,
 } from './types';
@@ -87,6 +88,22 @@ export const GOAL_INFO: Record<GoalKey, { label: string; unit: string; digits: n
   boss: { label: '老闆滿意', unit: '', digits: 0 },
 };
 export const STORY_DAYS = 20;
+
+/** 每 10 天一季,分四個階段;不同階段遇到的事不太一樣 */
+export const PHASES: Record<Phase, { name: string; blurb: string }> = {
+  prep: { name: '籌備期', blurb: '新的一季開始了。這幾天多半在談預算、排活動、對齊方向。' },
+  launch: { name: '上線期', blurb: '活動上線的這幾天,伺服器、客服和輿情都會同時盯著你。' },
+  ops: { name: '維運期', blurb: '最忙的那陣子過了,開始有人問成效、查帳、挑細節。' },
+  review: { name: '檢討期', blurb: '一季快結束了,要交檢討、對數字、回答「這季到底做得怎樣」。' },
+};
+const PHASE_DAYS: [number, Phase][] = [[1, 'prep'], [4, 'launch'], [7, 'ops'], [9, 'review']];
+
+export function phaseOf(day: number): { key: Phase; first: boolean } {
+  const d = ((day - 1) % 10) + 1;
+  let cur = PHASE_DAYS[0];
+  for (const p of PHASE_DAYS) if (d >= p[0]) cur = p;
+  return { key: cur[1], first: d === cur[0] };
+}
 export const CAMPAIGN_TARGET = 0.3;
 export const LIVE_DAYS = 3;
 const SAVE_KEY = storageKey('ops-game-save-v1');
@@ -411,6 +428,8 @@ function spawnDay(s: State): void {
   s.dayStart = { boss: s.boss, trust: s.trust, players: s.players };
   s.dayLine = dayOpeningLine(s);
   pushLog(s, s.day, `🌤️ ${s.dayLine}`);
+  const ph = phaseOf(s.day);
+  if (ph.first) pushLog(s, s.day, `📌 進入${PHASES[ph.key].name}:${PHASES[ph.key].blurb}`);
   // 到期的後續事件
   s.followUps = s.followUps.filter((f) => {
     if (f.day <= s.day) { addEvent(s, f.eventId, f.stage ? ESCALATE_HINT : undefined, f.stage ?? 0); return false; }
@@ -444,6 +463,9 @@ function spawnDay(s: State): void {
         && DIFF_ORDER.indexOf(e.minDifficulty ?? 'easy') <= rank && (e.minLevel ?? 1) <= s.level,
     );
     if (!pool.length) break;
+    // 多數時候偏向當下階段的事件,偶爾來點意料之外的
+    const inPhase = pool.filter((e) => e.phase?.includes(ph.key));
+    if (inPhase.length && rand(s) < 0.75) pool = inPhase;
     // 抽完一輪才會重複:只從「出現次數最少」的事件裡抽
     const minSeen = Math.min(...pool.map((e) => s.seen[e.id] ?? 0));
     pool = pool.filter((e) => (s.seen[e.id] ?? 0) === minSeen);

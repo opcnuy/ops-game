@@ -6,7 +6,7 @@ import type { Room } from './scene/rooms';
 import { createFadeCanvas, dissolve } from './scene/fade';
 import { storageKey } from './storage';
 import {
-  CAMPAIGN_TARGET, CONTENT, DIFFS, EVENTS, computeRunXp, GOAL_INFO, STORY_DAYS, chooseOption, clearSave, doAction, endDay,
+  CAMPAIGN_TARGET, CONTENT, DIFFS, EVENTS, computeRunXp, PHASES, phaseOf, GOAL_INFO, STORY_DAYS, chooseOption, clearSave, doAction, endDay,
   HABITS, find, goalMet, goalValue, hasSkill, makeReport, submitReport, estimateLift, itemOptions, eventText, load, newGame, optionCost, planCampaign, planCost, save, spendToday, weekdayLabel,
 } from './engine';
 import type { ActionKind, ReportQuiz } from './engine';
@@ -405,7 +405,9 @@ function renderOptionButtons(s: State, it: InboxItem, ev: GameEvent): string {
 function renderInbox(s: State): string {
   const sorted = [...s.inbox].sort((a, b) => (b.stage ?? 0) - (a.stage ?? 0) || a.deadline - b.deadline);
   const banner = s.feed[0] ? `<div class="result-note">${renderFeedLine(s, s.feed[0]).replace(/^<li>|<\/li>$/g, '')}</div>` : '';
-  const dayLine = s.dayLine ? `<div class="day-line">🌤️ ${esc(s.dayLine)}</div>` : '';
+  const ph = phaseOf(s.day);
+  const phaseLine = ph.first ? `<div class="day-line">📌 ${PHASES[ph.key].name}:${esc(PHASES[ph.key].blurb)}</div>` : '';
+  const dayLine = (s.dayLine ? `<div class="day-line">🌤️ ${esc(s.dayLine)}</div>` : '') + phaseLine;
   if (!sorted.length) return `${dayLine}${banner}<div class="card empty">收件匣是空的。<br>這種時刻通常撐不過一個小時。</div>`;
   const openable = sorted.filter((i) => !sceneRoomFor(EVENTS[i.eventId]));
   // 預設全部收合,由玩家自己展開
@@ -634,7 +636,7 @@ function renderGame(s: State): string {
     return `<div class="scene-ui">
       <i class="mug-steam"></i>
       <div class="wall-ui">
-        <div class="wall-left"><div class="cal ${prevDay >= 0 && prevDay !== s.day ? 'bump' : ''}"><span>第 ${week} 週</span><b>${wd}</b><small>${days}</small></div>
+        <div class="wall-left"><div class="cal ${prevDay >= 0 && prevDay !== s.day ? 'bump' : ''}"><span>第 ${week} 週</span><b>${wd}</b><small>${days} · ${PHASES[phaseOf(s.day).key].name}</small></div>
           <div class="wall-tools"><button class="menu-btn" data-act="open-menu" aria-label="選單" title="選單">☰</button><i class="beacon" title="有緊急的事"></i></div></div>
         <div class="wall-mid"></div>
         <div class="wall-right"><div class="cups" title="今天能做的事有限,用完就只能下班">${cups}</div></div>
@@ -651,7 +653,7 @@ function renderGame(s: State): string {
   <div class="game">
   <header class="hud">
     <div class="topbar">
-      <div class="day ${prevDay >= 0 && prevDay !== s.day ? 'bump' : ''}">${weekdayLabel(s.day)} <span class="muted">${days} · ${s.mode === 'story' ? '劇情' : '無限'} · ${DIFFS[s.difficulty].label}</span></div>
+      <div class="day ${prevDay >= 0 && prevDay !== s.day ? 'bump' : ''}">${weekdayLabel(s.day)} <span class="muted">${days} · ${PHASES[phaseOf(s.day).key].name} · ${s.mode === 'story' ? '劇情' : '無限'} · ${DIFFS[s.difficulty].label}</span></div>
       <div class="ap" title="今天能做的事有限,用完就只能結束這一天">
         ${Array.from({ length: s.maxAp }, (_, i) => {
           const spent = prevAp >= 0 && i >= s.ap && i < prevAp;

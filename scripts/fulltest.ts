@@ -1,6 +1,6 @@
 // 完整檢查:內容資料是否自洽、遊戲邏輯在大量隨機對局下不會壞掉
 import {
-  CONTENT, DIFFS, EVENTS, HABITS, chooseOption, doAction, endDay, eventOptions, goalMet, load, makeReport, newGame, optionCost, planCampaign, spendToday, submitReport,
+  CONTENT, DIFFS, PHASES, EVENTS, HABITS, chooseOption, doAction, endDay, eventOptions, goalMet, load, makeReport, newGame, optionCost, planCampaign, spendToday, submitReport,
 } from '../src/engine';
 import { SKILLS, prereqMet } from '../src/skills';
 import { LEVELS } from '../src/profile';
@@ -22,6 +22,8 @@ for (const e of Object.values(EVENTS)) {
   if (!KINDS.includes(e.kind)) fail(`${e.id} 的種類不合法:${e.kind}`);
   if (!e.title || !e.body || !e.from) fail(`${e.id} 缺少標題、內容或來源`);
   if (!(e.deadline >= 1)) fail(`${e.id} 期限不合法`);
+  for (const p of e.phase ?? []) if (!(p in PHASES)) fail(`${e.id} 的階段不合法:${p}`);
+  if ((e.weight ?? 0) > 0 && !e.phase?.length) fail(`${e.id} 在隨機事件池裡,但沒有標階段`);
   if (!e.options.length) fail(`${e.id} 沒有選項`);
   for (const [i, o] of e.options.entries()) {
     if (!o.label) fail(`${e.id} 選項 ${i} 沒有文字`);

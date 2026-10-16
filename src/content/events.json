@@ -46,6 +46,10 @@
  {
   "id": "e_adhoc_roi",
   "kind": "數據",
+  "phase": [
+   "prep",
+   "review"
+  ],
   "from": "林總",
   "day": 2,
   "weight": 2,
@@ -125,6 +129,9 @@
  {
   "id": "e_vendor_anomaly",
   "kind": "原廠",
+  "phase": [
+   "ops"
+  ],
   "from": "原廠窗口",
   "day": 4,
   "weight": 2,
@@ -262,6 +269,10 @@
  {
   "id": "e_gacha_complaint",
   "kind": "客訴",
+  "phase": [
+   "launch",
+   "ops"
+  ],
   "from": "玩家論壇",
   "weight": 2,
   "minDay": 3,
@@ -508,6 +519,9 @@
  {
   "id": "e_social_meme",
   "kind": "輿情",
+  "phase": [
+   "launch"
+  ],
   "from": "社群監控",
   "weight": 3,
   "title": "迷因:「獎勵 = 泡麵加衛生紙」",
@@ -584,6 +598,10 @@
  {
   "id": "e_adhoc_chart",
   "kind": "雜務",
+  "phase": [
+   "prep",
+   "review"
+  ],
   "from": "企劃同事",
   "weight": 3,
   "title": "「順便幫我拉個留存」",
@@ -652,6 +670,9 @@
  {
   "id": "e_server_lag",
   "kind": "技術",
+  "phase": [
+   "launch"
+  ],
   "from": "玩家回報",
   "weight": 2,
   "minDay": 2,
@@ -751,6 +772,10 @@
  {
   "id": "e_competitor",
   "kind": "輿情",
+  "phase": [
+   "prep",
+   "ops"
+  ],
   "from": "社群監控",
   "weight": 2,
   "minDay": 3,
@@ -840,6 +865,9 @@
  {
   "id": "e_vendor_report",
   "kind": "原廠",
+  "phase": [
+   "review"
+  ],
   "from": "原廠窗口",
   "day": 15,
   "weight": 1,
@@ -900,6 +928,10 @@
  {
   "id": "e_refund",
   "kind": "客訴",
+  "phase": [
+   "launch",
+   "ops"
+  ],
   "from": "客服信箱",
   "weight": 2,
   "minDay": 3,
@@ -967,6 +999,10 @@
  {
   "id": "e_cheater",
   "kind": "數據",
+  "phase": [
+   "launch",
+   "ops"
+  ],
   "from": "後台數據",
   "weight": 2,
   "minDay": 4,
@@ -1051,6 +1087,9 @@
  {
   "id": "e_boss_idea",
   "kind": "老闆",
+  "phase": [
+   "prep"
+  ],
   "from": "林總",
   "weight": 2,
   "minDay": 3,
@@ -1133,6 +1172,11 @@
  {
   "id": "e_data_dup",
   "kind": "雜務",
+  "phase": [
+   "prep",
+   "ops",
+   "review"
+  ],
   "from": "原廠與後台",
   "weight": 2,
   "minDay": 2,
@@ -1212,6 +1256,9 @@
  {
   "id": "e_holiday",
   "kind": "老闆",
+  "phase": [
+   "prep"
+  ],
   "from": "林總",
   "day": 12,
   "weight": 1,
@@ -1340,6 +1387,9 @@
  {
   "id": "e_audit",
   "kind": "原廠",
+  "phase": [
+   "review"
+  ],
   "from": "原廠稽核窗口",
   "weight": 2,
   "minDay": 6,
@@ -1409,6 +1459,10 @@
  {
   "id": "e_conflict",
   "kind": "老闆",
+  "phase": [
+   "prep",
+   "review"
+  ],
   "from": "林總 vs 原廠",
   "weight": 2,
   "minDay": 5,
@@ -1483,6 +1537,9 @@
  {
   "id": "e_streamer_oops",
   "kind": "輿情",
+  "phase": [
+   "launch"
+  ],
   "from": "社群監控",
   "weight": 2,
   "minDay": 4,
@@ -1556,6 +1613,9 @@
  {
   "id": "e_double_crisis",
   "kind": "技術",
+  "phase": [
+   "launch"
+  ],
   "from": "客服主管",
   "weight": 2,
   "minDay": 6,
@@ -1633,6 +1693,10 @@
  {
   "id": "e_budget_cut",
   "kind": "老闆",
+  "phase": [
+   "prep",
+   "review"
+  ],
   "from": "林總",
   "weight": 2,
   "minDay": 8,
@@ -1711,6 +1775,9 @@
  {
   "id": "e_patch_typo",
   "kind": "輿情",
+  "phase": [
+   "launch"
+  ],
   "from": "社群監控",
   "title": "公告打錯字",
   "brief": "公告把「限時三天」打成「限時三年」。",
@@ -1780,6 +1847,9 @@
  {
   "id": "e_maint_overrun",
   "kind": "技術",
+  "phase": [
+   "launch"
+  ],
   "from": "工程師",
   "title": "維護拖太久",
   "brief": "說好維護 4 小時,現在第 6 小時。",
@@ -1854,6 +1924,9 @@
  {
   "id": "e_ugc",
   "kind": "輿情",
+  "phase": [
+   "ops"
+  ],
   "from": "玩家論壇",
   "title": "玩家畫的圖超好看",
   "brief": "有玩家自己畫了活動主圖,比官方的還好看。",
@@ -1915,6 +1988,9 @@
  {
   "id": "e_legal",
   "kind": "雜務",
+  "phase": [
+   "prep"
+  ],
   "from": "法務",
   "title": "條款要你確認",
   "brief": "法務寄來 14 頁新條款,今天要回覆。",
@@ -2007,6 +2083,10 @@
  {
   "id": "e_new_hire",
   "kind": "雜務",
+  "phase": [
+   "prep",
+   "review"
+  ],
   "from": "新人",
   "title": "新人在問問題",
   "brief": "新人問你日報怎麼填。你也不太確定標準答案。",
@@ -2057,6 +2137,9 @@
  {
   "id": "e_rank_dispute",
   "kind": "客訴",
+  "phase": [
+   "launch"
+  ],
   "from": "玩家論壇",
   "title": "排行榜差 1 分",
   "brief": "第 3、4 名只差 1 分,獎勵差很多,第 4 名在抗議。",
@@ -2132,6 +2215,10 @@
  {
   "id": "e_vip",
   "kind": "客訴",
+  "phase": [
+   "launch",
+   "ops"
+  ],
   "from": "大額玩家",
   "title": "大額玩家想要特別待遇",
   "brief": "花很多錢的玩家私訊:「我該有專屬補償吧?」",
@@ -2198,6 +2285,9 @@
  {
   "id": "e_streamer_inbound",
   "kind": "輿情",
+  "phase": [
+   "launch"
+  ],
   "from": "實況主",
   "title": "實況主主動來合作",
   "brief": "實況主想合作直播,但要一個專屬造型。",
@@ -2264,6 +2354,9 @@
  {
   "id": "e_translation",
   "kind": "雜務",
+  "phase": [
+   "ops"
+  ],
   "from": "外語玩家",
   "title": "翻譯出包",
   "brief": "外語公告把「限時活動」翻成「限量處刑」。",
@@ -2330,6 +2423,10 @@
  {
   "id": "e_store_rating",
   "kind": "數據",
+  "phase": [
+   "ops",
+   "review"
+  ],
   "from": "應用商店",
   "title": "商店評分下降",
   "brief": "商店評分從 4.4 掉到 4.1,最新評論都在抱怨登入。",
@@ -2399,6 +2496,9 @@
  {
   "id": "e_reward_expired",
   "kind": "客訴",
+  "phase": [
+   "launch"
+  ],
   "from": "玩家",
   "title": "獎勵過期了",
   "brief": "玩家忘記領獎,獎勵過期,寫了三封信求補發。",
@@ -2447,6 +2547,9 @@
  {
   "id": "e_leak",
   "kind": "技術",
+  "phase": [
+   "launch"
+  ],
   "from": "美術同事",
   "title": "新角色圖外流",
   "brief": "美術不小心把下一期角色圖傳到公開頻道。",
@@ -2525,6 +2628,9 @@
  {
   "id": "e_tool_broken",
   "kind": "技術",
+  "phase": [
+   "ops"
+  ],
   "from": "工程師",
   "title": "後台工具壞了",
   "brief": "報表工具壞了,資料要手動撈。",
@@ -2580,6 +2686,10 @@
  {
   "id": "e_survey",
   "kind": "數據",
+  "phase": [
+   "ops",
+   "review"
+  ],
   "from": "問卷結果",
   "title": "玩家問卷出爐",
   "brief": "問卷最多票的意見是「讓我跳過新手教學」。",
@@ -2637,6 +2747,9 @@
  {
   "id": "e_marketing",
   "kind": "老闆",
+  "phase": [
+   "prep"
+  ],
   "from": "行銷部",
   "title": "行銷想買廣告",
   "brief": "行銷想花錢投廣告找新玩家,問你要買哪種人。",
@@ -2708,6 +2821,9 @@
  {
   "id": "e_guild",
   "kind": "客訴",
+  "phase": [
+   "ops"
+  ],
   "from": "玩家公會",
   "title": "兩個公會吵架",
   "brief": "兩個大公會在世界頻道吵了兩小時,起因是一條不清楚的活動規則。",
@@ -2781,6 +2897,9 @@
  {
   "id": "e_giftcode",
   "kind": "技術",
+  "phase": [
+   "launch"
+  ],
   "from": "社群監控",
   "title": "禮包序號外流",
   "brief": "官方禮包序號被貼在社群,但只有前 500 人能用。",
@@ -2854,6 +2973,9 @@
  {
   "id": "e_seasonal",
   "kind": "老闆",
+  "phase": [
+   "prep"
+  ],
   "from": "林總",
   "title": "連假要有活動",
   "brief": "下週連假,老闆覺得該有活動。沒人記得上次有沒有辦。",

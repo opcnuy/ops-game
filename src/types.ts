@@ -38,6 +38,9 @@ export interface EventOption {
   fromSkill?: string;
 }
 
+/** 一季(10 天)裡的階段:事件池會偏向當下階段的事件 */
+export type Phase = 'prep' | 'launch' | 'ops' | 'review';
+
 export type EventKind = '老闆' | '原廠' | '技術' | '客訴' | '輿情' | '數據' | '雜務' | '插曲';
 
 export interface GameEvent {
@@ -58,6 +61,8 @@ export interface GameEvent {
   /** 隨機事件池權重,0 或缺省表示不進池 */
   weight?: number;
   minDay?: number;
+  /** 偏好出現的階段(缺省表示不限);隨機事件池抽選時優先考慮符合當下階段的 */
+  phase?: Phase[];
   /** 只在該難度(含)以上出現 */
   minDifficulty?: Difficulty;
   /** 職級達到才會出現在隨機事件池 */
