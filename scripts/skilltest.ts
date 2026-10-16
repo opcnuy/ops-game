@@ -240,6 +240,10 @@ ok(hasSkill(mk(['quick_report', 'template', 'forecast']), 'forecast'), '預測�
   const p = loadProfile();
   ok(p.skills.join() === 'quick_report', `職級資料的技能沒被清乾淨:${p.skills.join()}`);
   ok(spentSp(p) === 1 && availableSp(p) === 7, `技能點帳目不對:花 ${spentSp(p)} 剩 ${availableSp(p)}`);
+  // 跨局事件次數:竄改的鍵與數值要被清掉或限制範圍
+  store.set(key, JSON.stringify({ v: 1, xp: 0, runs: 0, sp: 0, skills: [], ach: [], seen: { e_ok: 3, ['x'.repeat(80)]: 1, e_big: 99999, e_str: 'a', e_neg: -5 } }));
+  const sn = loadProfile().seen ?? {};
+  ok(sn.e_ok === 3 && sn.e_big === 99 && sn.e_neg === 0 && !('e_str' in sn) && Object.keys(sn).length === 3, `跨局事件次數沒被清乾淨:${JSON.stringify(sn)}`);
   // 舊存檔沒有技能點:依職級補發升級獎勵
   store.set(key, JSON.stringify({ v: 1, xp: 300, runs: 3, skills: [], ach: [] }));
   const old = loadProfile();

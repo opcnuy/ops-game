@@ -216,14 +216,14 @@ export function weekdayLabel(day: number): string {
 
 /* ---------- 新遊戲 / 存檔 ---------- */
 
-export function newGame(mode: Mode, difficulty: Difficulty = 'normal', seed = Date.now(), level = 1, skills: string[] = []): State {
+export function newGame(mode: Mode, difficulty: Difficulty = 'normal', seed = Date.now(), level = 1, skills: string[] = [], pastSeen: Record<string, number> = {}): State {
   const cfg = DIFFS[difficulty];
   const apBonus = skills.includes('time_mgmt') ? 1 : 0;
   const s: State = {
     v: 1, mode, difficulty, level, skills: [...skills], ach: [], goals: cfg.goals.map((g) => ({ ...g })), goalRound: 0, maxAp: cfg.maxAp + apBonus,
     rng: seed | 0, day: 1, ap: cfg.maxAp + apBonus,
     players: 12000, retention: 36, trust: cfg.trust, boss: cfg.boss, spendRate: 38,
-    inbox: [], flags: {}, seen: {}, followUps: [], pendingReports: 0, habits: {},
+    inbox: [], flags: {}, seen: {}, pastSeen: { ...pastSeen }, followUps: [], pendingReports: 0, habits: {},
     taste: { reward: '', hated: '' }, intel: { reward: false, hated: false },
     history: [], feed: [], log: [], uid: 1,
   };
@@ -273,7 +273,7 @@ function sanitizeState(raw: unknown): State | null {
   if (r.flags && typeof r.flags === 'object') for (const [k, x] of Object.entries(r.flags as object).slice(0, 200)) flags[cleanText(k, 40)] = !!x;
   const s = { ...(r as unknown as State) };
   s.goals = goals; s.inbox = inbox; s.followUps = followUps; s.flags = flags;
-  s.seen = rec(r.seen); s.habits = rec(r.habits);
+  s.seen = rec(r.seen); s.pastSeen = rec(r.pastSeen); s.habits = rec(r.habits);
   s.level = num(r.level, 1, 5, 1); s.skills = sanitizeSkills(strs(r.skills)); s.ach = strs(r.ach);
   s.goalRound = num(r.goalRound, 0, 1e4, 0); s.maxAp = num(r.maxAp, 1, 12, 6);
   s.rng = num(r.rng, -2147483648, 2147483647, 1); s.day = num(r.day, 1, 1e5, 1); s.ap = num(r.ap, 0, 12, 0);
@@ -445,6 +445,16 @@ function boostOutcomes(outs: Outcome[], boost: number): Outcome[] {
 
 const ESCALATE_HINT = '上次沒處理,對方又來催了。';
 
+/** 只留「這局出現最少次」的事件;同樣少的,再優先挑過去幾局也看得最少的 */
+function leastSeen(s: State, list: GameEvent[]): GameEvent[] {
+  const now = (e: GameEvent): number => s.seen[e.id] ?? 0;
+  const minNow = Math.min(...list.map(now));
+  const cur = list.filter((e) => now(e) === minNow);
+  const past = (e: GameEvent): number => s.pastSeen?.[e.id] ?? 0;
+  const minPast = Math.min(...cur.map(past));
+  return cur.filter((e) => past(e) === minPast);
+}
+
 function spawnDay(s: State): void {
   s.dayStart = { boss: s.boss, trust: s.trust, players: s.players };
   s.dayLine = dayOpeningLine(s);
@@ -491,8 +501,7 @@ function spawnDay(s: State): void {
     const inPhase = pool.filter((e) => e.phase?.includes(ph.key));
     if (inPhase.length && rand(s) < 0.75) pool = inPhase;
     // 抽完一輪才會重複:只從「出現次數最少」的事件裡抽
-    const minSeen = Math.min(...pool.map((e) => s.seen[e.id] ?? 0));
-    pool = pool.filter((e) => (s.seen[e.id] ?? 0) === minSeen);
+    pool = leastSeen(s, pool);
     const weights = pool.map((e) => e.weight ?? 0);
     let r = rand(s) * weights.reduce((a, b) => a + b, 0);
     let pick = pool[pool.length - 1];
@@ -503,8 +512,7 @@ function spawnDay(s: State): void {
   if (s.day >= 2 && rand(s) < 0.4) {
     let ip = Object.values(EVENTS).filter((e) => e.kind === '插曲' && !s.inbox.some((i) => i.eventId === e.id));
     if (ip.length) {
-      const minSeen = Math.min(...ip.map((e) => s.seen[e.id] ?? 0));
-      ip = ip.filter((e) => (s.seen[e.id] ?? 0) === minSeen);
+      ip = leastSeen(s, ip);
       addEvent(s, pickOf(s, ip).id);
     }
   }

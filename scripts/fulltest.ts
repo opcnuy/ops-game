@@ -3,7 +3,7 @@ import {
   CONTENT, DIFFS, PHASES, STORY_DAYS, EVENTS, HABITS, chooseOption, doAction, endDay, eventOptions, goalMet, load, makeReport, newGame, optionCost, planCampaign, spendToday, submitReport,
 } from '../src/engine';
 import { SKILLS, prereqMet } from '../src/skills';
-import { LEVELS } from '../src/profile';
+import { LEVELS, mergeSeen } from '../src/profile';
 import variants from '../src/content/variants.json';
 import optLabels from '../src/content/optlabels.json';
 import extra from '../src/content/extraOptions.json';
@@ -163,6 +163,35 @@ console.log(`對局檢查:${games} 局、${endings} 局到結局、玩了 ${inte
   for (let i = 0; i < 5; i++) { endDay(s); endDay(back); }
   if (JSON.stringify(s) !== JSON.stringify(back)) fail('存檔讀回後,接下來的演算結果不一致(隨機種子沒存好?)');
   else console.log('存檔往返:讀回後繼續遊戲,結果與不存檔完全一致');
+}
+/* ---------- 3.5 跨局新鮮度 ---------- */
+{
+  const poolIds = Object.values(EVENTS).filter((e) => (e.weight ?? 0) > 0 && (e.minLevel ?? 1) <= 5).map((e) => e.id);
+  const fresh = poolIds.slice(0, 6);
+  const past = Object.fromEntries(poolIds.filter((id) => !fresh.includes(id)).map((id) => [id, 4]));
+  const firstDays = (pastSeen: Record<string, number>): number => {
+    let hit = 0;
+    for (let seed = 1; seed <= 60; seed++) {
+      const s = newGame('story', 'normal', seed, 5, [], pastSeen);
+      for (let d = 0; d < 5; d++) endDay(s);
+      hit += fresh.filter((id) => (s.seen[id] ?? 0) > 0).length;
+    }
+    return hit / 60;
+  };
+  const base = firstDays({}), withPast = firstDays(past);
+  if (!(withPast > base + 1)) fail(`跨局新鮮度沒有讓沒看過的事件更早出現:${base.toFixed(2)} → ${withPast.toFixed(2)}`);
+  else console.log(`跨局新鮮度:前 5 天出現 ${fresh.length} 個沒看過的事件 ${base.toFixed(2)} → ${withPast.toFixed(2)} 個`);
+  // 同一局內仍然「抽完一輪才重複」:有足夠事件時,10 天內同一個隨機事件不該重複出現
+  let dup = 0;
+  for (let seed = 1; seed <= 60; seed++) {
+    const s = newGame('story', 'normal', seed, 5, [], past);
+    for (let d = 0; d < STORY_DAYS; d++) endDay(s);
+    dup += Object.entries(s.seen).filter(([id, n]) => n > 1 && (EVENTS[id]?.weight ?? 0) > 0).length;
+  }
+  if (dup > 0) fail(`有 ${dup} 次在同一局內重複抽到同一個隨機事件,跨局偏好不該破壞單局不重複`);
+  // 職級資料:累計、上限與竄改檢查
+  const merged = mergeSeen({ v: 1, xp: 0, runs: 0, sp: 0, skills: [], ach: [], seen: { a: 98, b: 1 } }, { a: 5, c: 2 });
+  if (merged.a !== 99 || merged.b !== 1 || merged.c !== 2) fail(`跨局累計不對:${JSON.stringify(merged)}`);
 }
 void DIFFS;
 

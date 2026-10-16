@@ -12,6 +12,8 @@ export interface Profile {
   skills: string[];
   /** 已達成的成就 */
   ach: string[];
+  /** 各事件跨局累計看過幾次(用來讓新局優先出現沒看過的事件) */
+  seen?: Record<string, number>;
 }
 
 export interface LevelDef {
@@ -44,7 +46,7 @@ export function loadProfile(): Profile {
       return {
         v: 1, xp, runs: n(p.runs, 0),
         sp: n(p.sp, (levelFor(xp).lv - 1) * SP_PER_LEVEL),
-        skills: sanitizeSkills(list(p.skills)), ach: list(p.ach),
+        skills: sanitizeSkills(list(p.skills)), ach: list(p.ach), seen: sanitizeSeen(p.seen),
       };
     }
   } catch { /* 讀不到就當新玩家 */ }
@@ -52,6 +54,23 @@ export function loadProfile(): Profile {
 }
 
 export const SP_PER_LEVEL = 2;
+
+/** 讀檔時逐項檢查:鍵名要短、次數要合理,數量也設上限 */
+function sanitizeSeen(v: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (!v || typeof v !== 'object') return out;
+  for (const [k, n] of Object.entries(v as Record<string, unknown>).slice(0, 300)) {
+    if (k.length <= 60 && typeof n === 'number' && Number.isFinite(n)) out[k] = Math.min(99, Math.max(0, Math.floor(n)));
+  }
+  return out;
+}
+
+/** 這一局的事件出現次數併進跨局累計 */
+export function mergeSeen(p: Profile, runSeen: Record<string, number>): Record<string, number> {
+  const out = { ...(p.seen ?? {}) };
+  for (const [k, n] of Object.entries(runSeen)) out[k] = Math.min(99, (out[k] ?? 0) + n);
+  return out;
+}
 
 export function spentSp(p: Profile): number {
   return p.skills.reduce((n, id) => n + (skillById(id)?.cost ?? 0), 0);

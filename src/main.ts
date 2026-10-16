@@ -10,7 +10,7 @@ import {
   HABITS, find, goalMet, goalValue, hasSkill, makeReport, submitReport, estimateLift, itemOptions, eventText, load, newGame, optionCost, planCampaign, planCost, save, spendToday, weekdayLabel,
 } from './engine';
 import type { ActionKind, ReportQuiz } from './engine';
-import { LEVELS, SP_PER_LEVEL, availableSp, levelFor, loadProfile, nextLevel, saveProfile } from './profile';
+import { LEVELS, SP_PER_LEVEL, availableSp, levelFor, loadProfile, mergeSeen, nextLevel, saveProfile } from './profile';
 import { ACHIEVEMENTS, LINES, SKILLS, prereqMet, prereqText, sanitizeSkills, skillById } from './skills';
 import type { Skill } from './skills';
 import type { SkillLine } from './skills';
@@ -1179,7 +1179,7 @@ function flash(msg: string | null, ms = 1500): void {
 /* ---------- 事件 ---------- */
 
 function startNew(mode: Mode): void {
-  S = newGame(mode, difficulty, Date.now(), levelFor(profile.xp).lv, profile.skills);
+  S = newGame(mode, difficulty, Date.now(), levelFor(profile.xp).lv, profile.skills, profile.seen);
   resetPlace();
   resetMotion();
   openUid = null;
@@ -1354,7 +1354,7 @@ function settleRun(s: State): void {
   const newAch = s.ach.filter((id) => !profile.ach.includes(id));
   for (const id of newAch) spLines.push(`成就「${ACHIEVEMENTS.find((a) => a.id === id)?.name ?? id}」:+1`);
   const sp = lvUp * SP_PER_LEVEL + newAch.length;
-  profile = { ...profile, xp: toXp, runs: profile.runs + 1, sp: profile.sp + sp, ach: [...profile.ach, ...newAch] };
+  profile = { ...profile, xp: toXp, runs: profile.runs + 1, sp: profile.sp + sp, ach: [...profile.ach, ...newAch], seen: mergeSeen(profile, s.seen) };
   saveProfile(profile);
   s.award = { xp: r.total, lines: r.lines, fromXp, toXp, sp, spLines };
 }

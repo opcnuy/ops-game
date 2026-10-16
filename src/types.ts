@@ -143,6 +143,8 @@ export interface State {
   inbox: InboxItem[];
   flags: Record<string, boolean>;
   seen: Record<string, number>;
+  /** 開局時帶入的「過去幾局各事件看過幾次」(整局固定),抽事件時優先抽看得比較少的 */
+  pastSeen?: Record<string, number>;
   followUps: { eventId: string; day: number; stage?: number }[];
   pendingReports: number;
   /** 上一次日報的題型,避免連續出現同一種 */
