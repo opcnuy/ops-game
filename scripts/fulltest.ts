@@ -1,6 +1,6 @@
 // 完整檢查:內容資料是否自洽、遊戲邏輯在大量隨機對局下不會壞掉
 import {
-  CONTENT, DIFFS, PHASES, EVENTS, HABITS, chooseOption, doAction, endDay, eventOptions, goalMet, load, makeReport, newGame, optionCost, planCampaign, spendToday, submitReport,
+  CONTENT, DIFFS, PHASES, STORY_DAYS, EVENTS, HABITS, chooseOption, doAction, endDay, eventOptions, goalMet, load, makeReport, newGame, optionCost, planCampaign, spendToday, submitReport,
 } from '../src/engine';
 import { SKILLS, prereqMet } from '../src/skills';
 import { LEVELS } from '../src/profile';
@@ -143,7 +143,7 @@ for (const mode of modes) for (const diff of diffs) for (const level of [1, 3, 5
     if (!s.dayLine) fail(`${tag} 缺少每日開場句`);
   }
   if (s.over) { endings++; anyOver += s.award ? 1 : 0; if (!s.over.title) fail('結局沒有標題'); }
-  if (mode === 'story' && !s.over && s.day <= 20) fail(`劇情模式 ${diff} seed${seed} 跑 25 步還沒結束,卡在第 ${s.day} 天`);
+  if (mode === 'story' && !s.over && s.day <= STORY_DAYS) fail(`劇情模式 ${diff} seed${seed} 跑 25 步還沒結束,卡在第 ${s.day} 天`);
   checkState(s, '結束');
   void goalMet;
 }

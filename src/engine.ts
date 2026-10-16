@@ -42,12 +42,12 @@ export const DIFFS: Record<Difficulty, DiffConfig> = {
   },
   normal: {
     label: '普通', desc: '3 個目標,事件偏多,選擇會連帶引出新的事。', maxAp: 6, boss: 60, trust: 60, ignoreMult: 1, deadlineDelta: 0, extraEvents: 1, extraFrom: 3, extraChance: 0.5,
-    goals: [{ key: 'players', target: 14500 }, { key: 'spend', target: 62 }, { key: 'trust', target: 70 }],
+    goals: [{ key: 'players', target: 14300 }, { key: 'spend', target: 62 }, { key: 'trust', target: 70 }],
   },
   hard: {
     label: '困難', desc: '5 個目標,每天少 1 點,事件更多更複雜,逾期代價更重。', maxAp: 5, boss: 60, trust: 58, ignoreMult: 1.1, deadlineDelta: 0, extraEvents: 1, extraFrom: 6, extraChance: 1,
     goals: [
-      { key: 'players', target: 15500 }, { key: 'retention', target: 39 }, { key: 'spend', target: 66 },
+      { key: 'players', target: 14800 }, { key: 'retention', target: 39 }, { key: 'spend', target: 66 },
       { key: 'trust', target: 72 }, { key: 'boss', target: 60 },
     ],
   },
@@ -87,7 +87,7 @@ export const GOAL_INFO: Record<GoalKey, { label: string; unit: string; digits: n
   trust: { label: '玩家信任', unit: '', digits: 0 },
   boss: { label: '老闆滿意', unit: '', digits: 0 },
 };
-export const STORY_DAYS = 20;
+export const STORY_DAYS = 10;
 
 /** 每 10 天一季,分四個階段;不同階段遇到的事不太一樣 */
 export const PHASES: Record<Phase, { name: string; blurb: string }> = {
@@ -452,7 +452,9 @@ function spawnDay(s: State): void {
     s.habits[ev.trigger!.habit] = 0;
   }
   // 隨機事件
-  const base = s.mode === 'story' ? (s.day <= 3 ? 1 : 2) : Math.min(4, 1 + Math.floor(s.day / 8));
+  // 劇情只有 10 天:每天的事件總量有上限,上線期最忙;固定事件、催辦、連鎖先算進去,不足才用隨機事件補
+  const arrivedToday = s.inbox.filter((i) => i.arrived === s.day && EVENTS[i.eventId].kind !== '插曲').length;
+  const base = s.mode === 'story' ? Math.max(0, (ph.key === 'launch' ? 2 : 1) - arrivedToday) : Math.min(4, 1 + Math.floor(s.day / 8));
   const d = DIFFS[s.difficulty];
   const want = base + (s.day >= d.extraFrom && rand(s) < d.extraChance ? d.extraEvents : 0);
   const cap = s.difficulty === 'hard' ? 8 : 7;
@@ -751,7 +753,7 @@ export function endDay(s: State): DaySummary {
   s.players = Math.max(0, Math.round(s.players * (1 + growth)));
 
   // 4.5 目標檢視
-  if (s.mode === 'story' && s.day === 10) {
+  if (s.mode === 'story' && s.day === STORY_DAYS / 2) {
     const met = s.goals.filter((g) => goalMet(s, g)).length;
     lines.push(`📊 期中檢視:目前達成 ${met}/${s.goals.length} 個目標。林總:「後半段要加把勁。」`);
   }

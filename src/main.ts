@@ -285,7 +285,7 @@ function renderStartScene(): string {
   const stars: Record<Difficulty, string> = { easy: '⭐', normal: '⭐⭐', hard: '⭐⭐⭐' };
   const brief = (d: Difficulty) => `${DIFFS[d].goals.length} 個目標<small>${DIFFS[d].maxAp < 6 ? '每天少 1 點' : '&nbsp;'}</small>`;
   const modes: [Mode, string, string, string][] = [
-    ['story', '📖', '劇情模式', '4 週試用期,達標才能轉正'],
+    ['story', '📖', '劇情模式', '10 天試用期,達標才能轉正'],
     ['endless', '♾️', '無限模式', '每 10 天考核,撐越久越好'],
   ];
   const sp = availableSp(profile);
@@ -320,7 +320,7 @@ function renderStart(): string {
   if (sceneOn()) return renderStartScene();
   const has = S && !S.over;
   const modes: [Mode, string, string, string][] = [
-    ['story', '📖', '劇情模式', '4 週試用期,達標才能轉正'],
+    ['story', '📖', '劇情模式', '10 天試用期,達標才能轉正'],
     ['endless', '♾️', '無限模式', '每 10 天考核,撐越久越好'],
   ];
   const stars: Record<Difficulty, string> = { easy: '⭐', normal: '⭐⭐', hard: '⭐⭐⭐' };
