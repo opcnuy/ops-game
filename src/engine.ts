@@ -6,7 +6,7 @@ import variantData from './content/variants.json';
 import optLabelData from './content/optlabels.json';
 import extraData from './content/extraOptions.json';
 import type {
-  Phase,
+  Moment, Phase,
   EventOption, InboxItem,
   Campaign, CampaignContent, DaySummary, Difficulty, Effects, GameEvent, Goal, GoalKey, Mode, Outcome, PlanSel, State,
 } from './types';
@@ -165,6 +165,24 @@ function pushLog(s: State, day: number, text: string): void {
   if (s.log.length > 80) s.log.length = 80;
 }
 
+/** 記下一個值得回顧的時刻;超過 40 筆時丟掉最不重要的(同樣重要就丟比較早的) */
+function addMoment(s: State, w: number, icon: string, text: string): void {
+  const list = s.moments ?? (s.moments = []);
+  list.push({ day: s.day, icon, text: text.slice(0, 140), w });
+  if (list.length > 40) {
+    let drop = 0;
+    list.forEach((m, i) => { if (m.w < list[drop].w) drop = i; });
+    list.splice(drop, 1);
+  }
+}
+
+/** 事件標題有的本身就是一整句「引號」:不要再多包一層 */
+const quoted = (t: string): string => (t.startsWith('「') && t.endsWith('」') && t.indexOf('」') === t.length - 1 ? t : `「${t}」`);
+
+/** 一筆效果的「份量」:老闆與信任看絕對值,玩家人數變動比較難得所以加權 */
+const impactOf = (e?: Effects): number => Math.abs(e?.boss ?? 0) + Math.abs(e?.trust ?? 0) + Math.abs(e?.players ?? 0) * 1.5;
+const netOf = (e?: Effects): number => (e?.boss ?? 0) + (e?.trust ?? 0) + (e?.players ?? 0) * 1.5;
+
 function pushFeed(s: State, line: string): void {
   pushLog(s, s.day, line);
   s.feed.unshift(line);
@@ -269,6 +287,8 @@ function sanitizeState(raw: unknown): State | null {
     .map((h) => ({ day: num(h?.day, 0, 1e5, 0), players: num(h?.players, 0, 1e9, 0), spend: num(h?.spend, 0, 1e12, 0) }));
   if (s.dayLine !== undefined) s.dayLine = cleanText(s.dayLine);
   if (s.lastReport !== undefined) s.lastReport = cleanText(s.lastReport, 40);
+  s.moments = (Array.isArray(r.moments) ? (r.moments as Moment[]) : []).slice(0, 40)
+    .map((m) => ({ day: num(m?.day, 0, 1e5, 0), icon: cleanText(m?.icon, 4), text: cleanText(m?.text, 160), w: num(m?.w, 0, 100, 0) }));
   if (s.over) s.over = { title: cleanText(s.over.title), body: cleanText(s.over.body, 1000) };
   if (s.award) {
     s.award = { xp: num(s.award.xp, 0, 1e6, 0), lines: strs(s.award.lines), fromXp: num(s.award.fromXp, 0, 1e6, 0),
@@ -450,6 +470,7 @@ function spawnDay(s: State): void {
   if (chains.length && s.day > 2 && rand(s) < 0.75) {
     const ev = chains[Math.floor(rand(s) * chains.length)];
     addEvent(s, ev.id, ev.hint);
+    addMoment(s, 7, '🔗', `${quoted(ev.title)}找上門——這是你累積「${HABITS[ev.trigger!.habit]?.label ?? ev.trigger!.habit}」的結果。`);
     s.habits[ev.trigger!.habit] = 0;
   }
   // 隨機事件
@@ -525,6 +546,9 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
   }
   let extra = '';
   if (out.reveal) extra = ' ' + revealIntel(s, out.reveal);
+  if (impactOf(out.effects) >= 5) {
+    addMoment(s, impactOf(out.effects), netOf(out.effects) >= 0 ? '✨' : '⚠️', `${quoted(eventText(ev, item).title)}${opt.label}——${out.result}`);
+  }
   s.inbox = s.inbox.filter((i) => i.uid !== uid);
   pushFeed(s, `【${ev.title}】${opt.label} → ${out.result}${extra}${effectNote(out.effects)}${chainNote}${note}`);
   return null;
@@ -646,6 +670,7 @@ function launch(s: State, lines: string[]): void {
     applyEffects(s, { trust: -4 });
     addEvent(s, 'e_bug_after_launch');
     lines.push('⚠️ 活動上線了,但領獎出現問題。(信任-4,營收提升打了七折)');
+    addMoment(s, 5, '⚠️', `活動「${mech.name}」上線時領獎出問題,營收提升打了七折。`);
   }
   c.scores = { fun, appeal, desire, reach: reachN };
   c.lift = lift;
@@ -679,11 +704,14 @@ function finishCampaign(s: State, lines: string[]): void {
     applyEffects(s, { boss: 10, trust: 2 });
     gainAch(s, 'campaign_hit');
     verdict = `✅ 活動檢討:日營收平均提升 ${pct}%,達成目標 ${targetPct}%!老闆很滿意。(老闆+10 信任+2)`;
+    addMoment(s, 9, '🎉', `活動「${mech.name}」日營收提升 ${pct}%,達成老闆的 ${targetPct}% 目標。`);
   } else if (c.lift >= 0.15) {
     applyEffects(s, { boss: 2 });
+    addMoment(s, 4, '🟡', `活動「${mech.name}」提升 ${pct}%,沒達標但交代得過去。`);
     verdict = `🟡 活動檢討:日營收平均提升 ${pct}%,低於目標 ${targetPct}%,但還算交代得過去。(老闆+2)\n最大的缺點:${factors[0][1]}`;
   } else {
     applyEffects(s, { boss: -8, trust: -2 });
+    addMoment(s, 8, '💥', `活動「${mech.name}」只提升 ${pct}%,主因是${factors[0][1].split(':')[0]}。`);
     verdict = `❌ 活動檢討:日營收平均只提升 ${pct}%,遠低於目標 ${targetPct}%。(老闆-8 信任-2)\n主要原因:${factors[0][1]}`;
   }
   verdict += `\n💬 玩家留言:${pickOf(s, c.lift >= CAMPAIGN_TARGET ? QUOTES_HIT : c.lift >= 0.15 ? QUOTES_OK : QUOTES_MISS)}`;
@@ -714,12 +742,14 @@ export function endDay(s: State): DaySummary {
         applyEffects(s, pen);
         addHabits(s, { ...(ev.ignore.habit ?? {}), procrastinate: 1 });
         lines.push(`🔥 「${ev.title}」第二次逾期,這件事不了了之,對方很失望。${effectNote(pen)}`);
+        addMoment(s, 6 + impactOf(pen) / 2, '🔥', `${quoted(ev.title)}拖到第二次逾期,最後不了了之。`);
       } else {
         applyEffects(s, pen);
         addHabits(s, { ...(ev.ignore.habit ?? {}), procrastinate: 1 });
         if (hurts) {
           s.followUps.push({ eventId: it.eventId, day: s.day + 1, stage: 1 });
           lines.push(`⏰ 「${ev.title}」逾期:${ev.ignore.result}${effectNote(pen)}\n對方明天會再來催,而且處理會更費力。`);
+          if (impactOf(pen) >= 5) addMoment(s, impactOf(pen), '⏰', `${quoted(ev.title)}沒處理到逾期:${ev.ignore.result}`);
         } else lines.push(`⏰ 「${ev.title}」逾期:${ev.ignore.result}`);
       }
       return false;

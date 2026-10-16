@@ -898,6 +898,13 @@ function drawSkillLines(): void {
   });
 }
 
+/** 結局畫面的「難忘時刻」:挑最重的 4 筆,再依發生的先後排列 */
+function renderMoments(s: State): string {
+  const top = [...(s.moments ?? [])].sort((a, b) => b.w - a.w || b.day - a.day).slice(0, 4).sort((a, b) => a.day - b.day);
+  if (!top.length) return '';
+  return `<div class="moments"><h3>這一局的難忘時刻</h3>${top.map((m) => `<p><span class="md">第 ${m.day} 天</span> ${esc(m.icon)} ${esc(m.text)}</p>`).join('')}</div><hr>`;
+}
+
 function renderOver(s: State): string {
   const peak = Math.max(...s.history.map((h) => h.spend));
   return `<div class="modal-bg"><div class="modal">
@@ -906,6 +913,7 @@ function renderOver(s: State): string {
     <hr>
     <p>${s.goals.map((g) => `${goalMet(s, g) ? '✅' : '❌'} ${goalText(g)}(結果 ${fmt(goalValue(s, g.key), GOAL_INFO[g.key].digits)})`).join('<br>')}</p>
     <hr>
+    ${renderMoments(s)}
     <p class="muted">${s.mode === 'story' ? '試用期' : '你撐了'} ${s.day - 1} 天 · 玩家 ${fmt(s.players)} 人 · 單日最高營收 ${fmt(peak, 1)} 萬點</p>
     ${renderAward(s)}
     <div class="actions"><button data-act="home">回到標題</button><button class="primary" data-act="new" data-mode="${s.mode}">再來一次</button></div>

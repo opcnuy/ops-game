@@ -923,3 +923,8 @@ button.cal.badge:hover { filter: brightness(1.05); transform: translateY(-1px); 
 .rank-row ul { margin: 4px 0 0; padding-left: 1.2em; font-size: 0.85rem; }
 .rank-row.now { border-color: var(--accent); background: var(--chip); }
 .rank-row.next { opacity: 0.7; }
+
+/* 結局畫面的難忘時刻 */
+.moments h3 { margin: 0 0 6px; font-size: 14px; }
+.moments p { margin: 4px 0; font-size: 13px; line-height: 1.5; }
+.moments .md { display: inline-block; min-width: 3.4em; color: var(--muted, #8a97a5); font-size: 12px; }

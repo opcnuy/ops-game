@@ -163,9 +163,14 @@ export interface State {
   over?: { title: string; body: string };
   /** 無限模式通過的季度考核數 */
   reviewsPassed?: number;
+  /** 這局的難忘時刻(最多 40 筆,依重要程度保留) */
+  moments?: Moment[];
   /** 這局結算的經驗(結束時寫入一次) */
   award?: { xp: number; lines: string[]; fromXp: number; toXp: number; sp: number; spLines: string[] };
 }
+
+/** 這局值得回顧的時刻:結局畫面會挑最重的幾筆列出來 */
+export interface Moment { day: number; icon: string; text: string; w: number }
 
 export interface DaySummary {
   day: number;

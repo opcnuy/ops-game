@@ -142,6 +142,12 @@ for (const mode of modes) for (const diff of diffs) for (const level of [1, 3, 5
     if (!sum.lines.some((l) => l.startsWith('🌆'))) fail(`${tag} 結算缺少「下班前」一句`);
     if (!s.dayLine) fail(`${tag} 缺少每日開場句`);
   }
+  const ms = s.moments ?? [];
+  if (ms.length > 40) fail(`${diff} seed${seed} 難忘時刻超過 40 筆:${ms.length}`);
+  for (const m of ms) {
+    if (!m.icon || !m.text.trim() || !(m.w > 0) || !(m.day >= 1)) fail(`${diff} seed${seed} 難忘時刻格式不對:${JSON.stringify(m)}`);
+    if (/「「|」」」/.test(m.text.replace(/「[^「」]*「[^「」]*」[^「」]*」/g, ''))) fail(`難忘時刻引號重複:${m.text}`);
+  }
   if (s.over) { endings++; anyOver += s.award ? 1 : 0; if (!s.over.title) fail('結局沒有標題'); }
   if (mode === 'story' && !s.over && s.day <= STORY_DAYS) fail(`劇情模式 ${diff} seed${seed} 跑 25 步還沒結束,卡在第 ${s.day} 天`);
   checkState(s, '結束');
