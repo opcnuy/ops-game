@@ -934,3 +934,6 @@ button.cal.badge:hover { filter: brightness(1.05); transform: translateY(-1px); 
 /* 辦公室對話裡選項前的快捷鍵數字(只在有實體鍵盤的裝置顯示) */
 .kbd { display: none; font-style: normal; font-size: 11px; opacity: .6; margin-right: 6px; padding: 0 5px; border: 1px solid currentColor; border-radius: 3px; }
 @media (hover: hover) and (pointer: fine) { .kbd { display: inline-block; } }
+
+/* 處理完事件後的做法說明 */
+.insight { margin-top: 8px; padding: 6px 9px; font-size: 12.5px; line-height: 1.55; color: var(--muted); border-left: 3px solid var(--accent); background: rgba(127,127,127,.08); border-radius: 3px; text-align: left; }

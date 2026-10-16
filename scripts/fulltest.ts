@@ -22,6 +22,12 @@ for (const e of Object.values(EVENTS)) {
   if (!KINDS.includes(e.kind)) fail(`${e.id} 的種類不合法:${e.kind}`);
   if (!e.title || !e.body || !e.from) fail(`${e.id} 缺少標題、內容或來源`);
   if (!(e.deadline >= 1)) fail(`${e.id} 期限不合法`);
+  if (e.kind !== '插曲' && !e.insight?.trim()) fail(`${e.id} 沒有做法說明(insight)`);
+  if (e.insight) {
+    if (e.insight.length > 80) fail(`${e.id} 的說明太長:${e.insight.length} 字`);
+    // 說明只寫做法;沒有出處的數據與「研究顯示」一類的說法一律不放
+    if (/[0-9]+\s*%|[0-9]+\s*倍|研究顯示|調查顯示|統計顯示|數據顯示|根據.{0,8}(報告|研究|調查)/.test(e.insight)) fail(`${e.id} 的說明含有數據或出處類說法:${e.insight}`);
+  }
   for (const p of e.phase ?? []) if (!(p in PHASES)) fail(`${e.id} 的階段不合法:${p}`);
   if ((e.weight ?? 0) > 0 && !e.phase?.length) fail(`${e.id} 在隨機事件池裡,但沒有標階段`);
   if (!e.options.length) fail(`${e.id} 沒有選項`);

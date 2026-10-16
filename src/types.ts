@@ -52,6 +52,8 @@ export interface GameEvent {
   title: string;
   /** 一句白話摘要(預設顯示) */
   brief?: string;
+  /** 做法層面的實務說明(只講怎麼做比較好,不放沒有出處的數據);處理完事件後顯示 */
+  insight?: string;
   /** 完整描述(收在「詳情」裡) */
   body: string;
   /** 抵達後幾天內要處理(1 = 當天) */

@@ -27,6 +27,8 @@ let summary: DaySummary | null = null;
 let toast = '';
 /** 還有沒做完的事時,第一次按「結束今天」只會進入待確認,再按一次才真的結束 */
 let endArmed = false;
+/** 剛處理完的那件事的實務說明,顯示在結果下方 */
+let lastInsight = '';
 let endArmTimer = 0;
 let lastModal = 'none';
 let lastScreen = '';
@@ -407,7 +409,7 @@ function renderOptionButtons(s: State, it: InboxItem, ev: GameEvent): string {
 
 function renderInbox(s: State): string {
   const sorted = [...s.inbox].sort((a, b) => (b.stage ?? 0) - (a.stage ?? 0) || a.deadline - b.deadline);
-  const banner = s.feed[0] ? `<div class="result-note">${renderFeedLine(s, s.feed[0]).replace(/^<li>|<\/li>$/g, '')}</div>` : '';
+  const banner = s.feed[0] ? `<div class="result-note">${renderFeedLine(s, s.feed[0]).replace(/^<li>|<\/li>$/g, '')}${lastInsight ? `<div class="insight">💡 ${esc(lastInsight)}</div>` : ''}</div>` : '';
   const ph = phaseOf(s.day);
   const phaseLine = ph.first ? `<div class="day-line">📌 ${PHASES[ph.key].name}:${esc(PHASES[ph.key].blurb)}</div>` : '';
   const dayLine = (s.dayLine ? `<div class="day-line">🌤️ ${esc(s.dayLine)}</div>` : '') + phaseLine;
@@ -583,7 +585,7 @@ function renderRoomUI(s: State): string {
     speaker = '結果';
     text = resultOf(s.feed[0]);
     const note = s.feed[0].split('||🦋')[1];
-    body = `${note && showHints(s.difficulty) ? `<div class="hint">🦋 ${esc(note)}</div>` : ''}<button class="primary" data-act="dialog-next">${nextLabel}</button>${nextEv ? '<button class="dlg-leave" data-act="dialog-leave">← 先回座位</button>' : ''}`;
+    body = `${note && showHints(s.difficulty) ? `<div class="hint">🦋 ${esc(note)}</div>` : ''}${lastInsight ? `<div class="insight">💡 ${esc(lastInsight)}</div>` : ''}<button class="primary" data-act="dialog-next">${nextLabel}</button>${nextEv ? '<button class="dlg-leave" data-act="dialog-leave">← 先回座位</button>' : ''}`;
   } else {
     text = dialogText ?? '';
     body = '<button class="primary" data-act="dialog-next">▶ 回座位</button>';
@@ -1334,8 +1336,9 @@ app.addEventListener('click', (e) => {
   } else if (act === 'opt') {
     const apply = () => {
       busy = false;
+      const picked = s.inbox.find((i) => i.uid === Number(el.dataset.uid));
       const err = chooseOption(s, Number(el.dataset.uid), Number(el.dataset.i));
-      if (!err) { openUid = null; if (place !== 'desk') dialogResult = true; }
+      if (!err) { lastInsight = (picked && EVENTS[picked.eventId]?.insight) || ''; openUid = null; if (place !== 'desk') dialogResult = true; }
       if (err) flash(err); else { save(s); render(); }
     };
     const card = el.closest('.mail');
@@ -1394,6 +1397,7 @@ function finishDay(s: State): void {
   openUid = null;
   tab = 'inbox';
   endArmed = false;
+  lastInsight = '';
   toast = '';
   window.clearTimeout(toastTimer);
   summary = endDay(s);
