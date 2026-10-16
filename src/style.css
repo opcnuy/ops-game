@@ -928,3 +928,5 @@ button.cal.badge:hover { filter: brightness(1.05); transform: translateY(-1px); 
 .moments h3 { margin: 0 0 6px; font-size: 14px; }
 .moments p { margin: 4px 0; font-size: 13px; line-height: 1.5; }
 .moments .md { display: inline-block; min-width: 3.4em; color: var(--muted, #8a97a5); font-size: 12px; }
+
+.over-style { font-size: 13px; line-height: 1.6; padding: 8px 10px; border-left: 3px solid var(--accent, #3b9b7a); background: rgba(127,127,127,.08); border-radius: 4px; }

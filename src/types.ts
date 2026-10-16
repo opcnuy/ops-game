@@ -162,7 +162,9 @@ export interface State {
   /** 全程紀錄(最近 80 筆),給「紀錄」分頁回顧用 */
   log: { day: number; text: string }[];
   uid: number;
-  over?: { title: string; body: string };
+  over?: { title: string; body: string; style?: { name: string; text: string } };
+  /** 整局累計的行為習慣次數(不會衰減),結局用來判斷「這一局的你」是什麼風格 */
+  styleTotals?: Record<string, number>;
   /** 無限模式通過的季度考核數 */
   reviewsPassed?: number;
   /** 這局的難忘時刻(最多 40 筆,依重要程度保留) */

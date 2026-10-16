@@ -5,6 +5,7 @@ import campaignData from './content/campaigns.json';
 import variantData from './content/variants.json';
 import optLabelData from './content/optlabels.json';
 import extraData from './content/extraOptions.json';
+import endingsData from './content/endings.json';
 import type {
   Moment, Phase,
   EventOption, InboxItem,
@@ -73,6 +74,7 @@ function addHabits(s: State, h?: Record<string, number>): string {
   const parts: string[] = [];
   for (const [k, n] of Object.entries(h)) {
     s.habits[k] = Math.max(0, (s.habits[k] ?? 0) + n);
+    if (n > 0 && k in HABITS) (s.styleTotals ??= {})[k] = (s.styleTotals[k] ?? 0) + n;
     parts.push(`${HABITS[k]?.label ?? k} ${n > 0 ? '+' : ''}${n}`);
   }
   return parts.length ? `${NOTE_MARK}${parts.join('、')}` : '';
@@ -88,6 +90,20 @@ export const GOAL_INFO: Record<GoalKey, { label: string; unit: string; digits: n
   boss: { label: '老闆滿意', unit: '', digits: 0 },
 };
 export const STORY_DAYS = 10;
+
+/** 結局文字放在內容檔裡,依職能分開(目前只有營運) */
+const ENDINGS = endingsData.ops;
+export const ENDING_STYLES = ENDINGS.styles as Record<string, { name: string; habits: string[]; good: string; rough: string }>;
+
+/** 這一局累計最多的行為風格;最多的次數不到門檻、或和第二名並列時,就不下定論 */
+export function endingStyle(s: State, good: boolean): { name: string; text: string } | undefined {
+  const totals = s.styleTotals ?? {};
+  const scored = Object.values(ENDING_STYLES)
+    .map((st) => ({ st, n: st.habits.reduce((a, h) => a + (totals[h] ?? 0), 0) }))
+    .sort((a, b) => b.n - a.n);
+  if (!scored.length || scored[0].n < ENDINGS.styleMinCount || scored[0].n === (scored[1]?.n ?? -1)) return undefined;
+  return { name: scored[0].st.name, text: good ? scored[0].st.good : scored[0].st.rough };
+}
 
 /** 每 10 天一季,分四個階段;不同階段遇到的事不太一樣 */
 export const PHASES: Record<Phase, { name: string; blurb: string }> = {
@@ -289,7 +305,12 @@ function sanitizeState(raw: unknown): State | null {
   if (s.lastReport !== undefined) s.lastReport = cleanText(s.lastReport, 40);
   s.moments = (Array.isArray(r.moments) ? (r.moments as Moment[]) : []).slice(0, 40)
     .map((m) => ({ day: num(m?.day, 0, 1e5, 0), icon: cleanText(m?.icon, 4), text: cleanText(m?.text, 160), w: num(m?.w, 0, 100, 0) }));
-  if (s.over) s.over = { title: cleanText(s.over.title), body: cleanText(s.over.body, 1000) };
+  s.styleTotals = rec(r.styleTotals);
+  if (s.over) {
+    const st = s.over.style;
+    s.over = { title: cleanText(s.over.title), body: cleanText(s.over.body, 1000),
+      ...(st && typeof st === 'object' ? { style: { name: cleanText(st.name, 40), text: cleanText(st.text, 300) } } : {}) };
+  }
   if (s.award) {
     s.award = { xp: num(s.award.xp, 0, 1e6, 0), lines: strs(s.award.lines), fromXp: num(s.award.fromXp, 0, 1e6, 0),
       toXp: num(s.award.toXp, 0, 1e6, 0), sp: num(s.award.sp, 0, 100, 0), spLines: strs(s.award.spLines) };
@@ -826,17 +847,16 @@ export function endDay(s: State): DaySummary {
 
 function checkEnding(s: State): void {
   if (s.boss <= 0) {
-    s.over = { title: '被約談了', body: '林總請你去會議室,桌上放著一份你沒看過的文件。「我們再聊聊。」' };
+    s.over = { ...ENDINGS.lost.boss, style: endingStyle(s, false) };
   } else if (s.trust <= 0) {
-    s.over = { title: '玩家出走', body: '論壇最後一則置頂是「謝謝營運,我們到此為止」。遊戲依然存在,但已經沒有什麼人了。' };
+    s.over = { ...ENDINGS.lost.trust, style: endingStyle(s, false) };
   } else if (s.mode === 'story' && s.day > STORY_DAYS) {
     const met = s.goals.filter((g) => goalMet(s, g)).length;
     const frac = met / s.goals.length;
     const tag = `(達成目標 ${met}/${s.goals.length})`;
-    if (frac === 1) s.over = { title: '正式轉正(表現優秀)', body: `所有目標達成!林總:「下個月開始,你帶新人。」你不知道這是獎勵還是處罰。${tag}` };
-    else if (frac >= 0.6) s.over = { title: '順利轉正', body: `人資寄來了正式聘書。你發現日報欄位又多了兩個。${tag}` };
-    else if (frac >= 0.4) s.over = { title: '延長試用期', body: `林總:「再觀察一個月。」他的語氣像在說一件很科學的事。${tag}` };
-    else s.over = { title: '試用期未通過', body: `你收拾桌面時,發現抽屜裡還有三份沒寄出的日報。${tag}` };
+    const tier = frac === 1 ? 'excellent' : frac >= 0.6 ? 'pass' : frac >= 0.4 ? 'extend' : 'fail';
+    const e = ENDINGS.story[tier];
+    s.over = { title: e.title, body: e.body.replace('{tag}', tag), style: endingStyle(s, tier === 'excellent' || tier === 'pass') };
   }
   if (s.mode === 'story' && s.over?.title.includes('轉正')) {
     gainAch(s, 'first_win');

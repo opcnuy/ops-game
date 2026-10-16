@@ -910,6 +910,7 @@ function renderOver(s: State): string {
   return `<div class="modal-bg"><div class="modal">
     <h2>${s.over!.title}</h2>
     <p>${s.over!.body}</p>
+    ${s.over!.style ? `<p class="over-style">這一局的你:<b>${esc(s.over!.style.name)}</b><br>${esc(s.over!.style.text)}</p>` : ''}
     <hr>
     <p>${s.goals.map((g) => `${goalMet(s, g) ? '✅' : '❌'} ${goalText(g)}(結果 ${fmt(goalValue(s, g.key), GOAL_INFO[g.key].digits)})`).join('<br>')}</p>
     <hr>
@@ -1364,6 +1365,8 @@ function finishDay(s: State): void {
   openUid = null;
   tab = 'inbox';
   endArmed = false;
+  toast = '';
+  window.clearTimeout(toastTimer);
   summary = endDay(s);
   settleRun(s);
   // 沒有額外發生什麼事(只有下班那句話、老闆與信任沒變)的日子,不用再多按一次

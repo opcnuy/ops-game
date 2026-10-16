@@ -1,6 +1,6 @@
 // 完整檢查:內容資料是否自洽、遊戲邏輯在大量隨機對局下不會壞掉
 import {
-  CONTENT, DIFFS, PHASES, STORY_DAYS, EVENTS, HABITS, chooseOption, doAction, endDay, eventOptions, goalMet, load, makeReport, newGame, optionCost, planCampaign, spendToday, submitReport,
+  CONTENT, DIFFS, ENDING_STYLES, PHASES, STORY_DAYS, EVENTS, HABITS, chooseOption, doAction, endDay, eventOptions, goalMet, load, endingStyle, makeReport, newGame, optionCost, planCampaign, spendToday, submitReport,
 } from '../src/engine';
 import { SKILLS, prereqMet } from '../src/skills';
 import { LEVELS, mergeSeen } from '../src/profile';
@@ -164,6 +164,42 @@ console.log(`對局檢查:${games} 局、${endings} 局到結局、玩了 ${inte
   if (JSON.stringify(s) !== JSON.stringify(back)) fail('存檔讀回後,接下來的演算結果不一致(隨機種子沒存好?)');
   else console.log('存檔往返:讀回後繼續遊戲,結果與不存檔完全一致');
 }
+/* ---------- 3.4 結局資料與風格 ---------- */
+{
+  const seenHabits = new Set<string>();
+  for (const [id, st] of Object.entries(ENDING_STYLES)) {
+    if (!st.name || !st.good.trim() || !st.rough.trim()) fail(`結局風格 ${id} 缺文字`);
+    if (!st.habits.length) fail(`結局風格 ${id} 沒有對應的習慣`);
+    for (const h of st.habits) {
+      if (h === 'procrastinate' || h === 'late_reports') fail(`風格 ${id} 不該用系統自動累積的習慣:${h}`);
+      if (!(h in HABITS)) fail(`結局風格 ${id} 的習慣不存在:${h}`);
+      if (seenHabits.has(h)) fail(`習慣 ${h} 同時屬於兩種風格`);
+      seenHabits.add(h);
+    }
+  }
+  // 累計最多的風格決定結局;太少或並列都不下定論
+  const mkEnd = (totals: Record<string, number>, good: boolean) => { const s = newGame('story', 'normal', 5, 1, []); s.styleTotals = totals; return endingStyle(s, good); };
+  const a = mkEnd({ transparency: 4, blame: 1 }, true);
+  if (a?.name !== '公開透明派' || a.text !== ENDING_STYLES.transparent.good) fail(`風格判斷不對:${JSON.stringify(a)}`);
+  if (mkEnd({ transparency: 4 }, false)?.text !== ENDING_STYLES.transparent.rough) fail('結局不好時應該用 rough 的說法');
+  if (mkEnd({ transparency: 2 }, true)) fail('次數不到門檻不該下定論');
+  if (mkEnd({ transparency: 3, pushback: 3 }, true)) fail('並列第一不該下定論');
+  if (mkEnd({ overtime: 2, rushed: 2 }, true)?.name !== '拚命三郎派') fail('同一種風格的多個習慣沒有加總');
+  // 實際對局:全部標題都能產生,且風格欄位格式正確
+  const got = new Set<string>(); let styled = 0, ended = 0;
+  for (let seed = 1; seed <= 200; seed++) {
+    const s = newGame('story', 'normal', seed, 3, []);
+    while (!s.over) {
+      let n = 0;
+      for (const it of [...s.inbox]) { if (n++ >= 2 + (seed % 3)) break; for (let o = 0; o < EVENTS[it.eventId].options.length; o++) if (chooseOption(s, it.uid, o) === null) break; }
+      endDay(s);
+    }
+    ended++; got.add(s.over.title);
+    if (s.over.style) { styled++; if (!s.over.style.name || !s.over.style.text) fail('結局風格格式不對'); }
+  }
+  console.log(`結局:200 局出現 ${got.size} 種結局、${styled}/${ended} 局有風格說明`);
+}
+
 /* ---------- 3.5 跨局新鮮度 ---------- */
 {
   const poolIds = Object.values(EVENTS).filter((e) => (e.weight ?? 0) > 0 && (e.minLevel ?? 1) <= 5).map((e) => e.id);
