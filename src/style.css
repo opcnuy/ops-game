@@ -930,3 +930,7 @@ button.cal.badge:hover { filter: brightness(1.05); transform: translateY(-1px); 
 .moments .md { display: inline-block; min-width: 3.4em; color: var(--muted, #8a97a5); font-size: 12px; }
 
 .over-style { font-size: 13px; line-height: 1.6; padding: 8px 10px; border-left: 3px solid var(--accent, #3b9b7a); background: rgba(127,127,127,.08); border-radius: 4px; }
+
+/* 辦公室對話裡選項前的快捷鍵數字(只在有實體鍵盤的裝置顯示) */
+.kbd { display: none; font-style: normal; font-size: 11px; opacity: .6; margin-right: 6px; padding: 0 5px; border: 1px solid currentColor; border-radius: 3px; }
+@media (hover: hover) and (pointer: fine) { .kbd { display: inline-block; } }

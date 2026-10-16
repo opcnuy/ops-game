@@ -396,11 +396,11 @@ function previewIcons(o: EventOption): string {
 }
 
 function renderOptionButtons(s: State, it: InboxItem, ev: GameEvent): string {
-  return itemOptions(s, ev, it).map(({ opt: o, index: i }) => {
+  return itemOptions(s, ev, it).map(({ opt: o, index: i }, pos) => {
     const risky = o.outcomes.length > 1 ? ' 🎲' : '';
     const cost = optionCost(s, it, o);
     return `<button data-act="opt" data-uid="${it.uid}" data-i="${i}" ${s.ap < cost ? 'disabled' : ''}>
-        <span class="lbl">${o.fromSkill ? '✨ ' : ''}${esc(o.label)}${risky}</span>${showHints(s.difficulty) ? previewIcons(o) : ''}
+        <span class="lbl">${sceneOn() && place !== 'desk' ? `<i class="kbd">${pos + 1}</i>` : ''}${o.fromSkill ? '✨ ' : ''}${esc(o.label)}${risky}</span>${showHints(s.difficulty) ? previewIcons(o) : ''}
         <span class="cost ${cost > o.ap ? 'up' : cost < o.ap ? 'down' : ''}">${cost ? '⚡'.repeat(cost) : '免費'}</span></button>`;
   }).join('');
 }
@@ -552,12 +552,21 @@ function renderPlanRoom(s: State): string {
     </div></div>`;
 }
 
+/** 這一件處理完,接下來最該處理的一件(不含茶水間的小插曲):同一間辦公室的優先,否則依急迫程度 */
+function nextRoomEvent(s: State, here: Room): InboxItem | undefined {
+  const cand = s.inbox.filter((i) => { const r = sceneRoomFor(EVENTS[i.eventId]); return !!r && r !== 'pantry'; });
+  const urgent = (a: InboxItem, b: InboxItem) => (b.stage ?? 0) - (a.stage ?? 0) || a.deadline - b.deadline;
+  const same = cand.filter((i) => sceneRoomFor(EVENTS[i.eventId]) === here).sort(urgent);
+  return same[0] ?? cand.sort(urgent)[0];
+}
+
 function renderRoomUI(s: State): string {
   if (place === 'meeting' && planning) return renderPlanRoom(s);
   const room = place as Room;
   const info = ROOMS[room];
   const it = dialogUid !== null ? s.inbox.find((i) => i.uid === dialogUid) : undefined;
-  const hasNext = room !== 'pantry' && s.inbox.some((i) => sceneRoomFor(EVENTS[i.eventId]) === room);
+  const nextEv = room !== 'pantry' ? nextRoomEvent(s, room) : undefined;
+  const nextLabel = !nextEv ? '▶ 回座位' : sceneRoomFor(EVENTS[nextEv.eventId]) === room ? '▶ 下一件' : `▶ 下一件(去${ROOMS[sceneRoomFor(EVENTS[nextEv.eventId]) as Room].name})`;
   let speaker = info.who;
   let title = '';
   let text = '';
@@ -574,7 +583,7 @@ function renderRoomUI(s: State): string {
     speaker = '結果';
     text = resultOf(s.feed[0]);
     const note = s.feed[0].split('||🦋')[1];
-    body = `${note && showHints(s.difficulty) ? `<div class="hint">🦋 ${esc(note)}</div>` : ''}<button class="primary" data-act="dialog-next">${hasNext ? '▶ 下一件' : '▶ 回座位'}</button>`;
+    body = `${note && showHints(s.difficulty) ? `<div class="hint">🦋 ${esc(note)}</div>` : ''}<button class="primary" data-act="dialog-next">${nextLabel}</button>${nextEv ? '<button class="dlg-leave" data-act="dialog-leave">← 先回座位</button>' : ''}`;
   } else {
     text = dialogText ?? '';
     body = '<button class="primary" data-act="dialog-next">▶ 回座位</button>';
@@ -1193,7 +1202,24 @@ function startNew(mode: Mode): void {
 
 window.addEventListener('resize', () => { if (screen === 'skills') drawSkillLines(); });
 
+/** 辦公室裡的對話:數字鍵選選項,空白鍵或 Enter 繼續(按鈕本身有焦點時交給瀏覽器) */
+function roomKey(e: KeyboardEvent): boolean {
+  if (e.ctrlKey || e.metaKey || e.altKey || screen !== 'game' || place === 'desk' || modal !== 'none' || busy || transitioning) return false;
+  if (e.target instanceof Element && e.target.closest('button, input, textarea, select')) return false;
+  if (/^[1-9]$/.test(e.key)) {
+    const btn = app.querySelectorAll<HTMLButtonElement>('.dialog-ui [data-act="opt"]')[Number(e.key) - 1];
+    if (btn && !btn.disabled) { btn.click(); return true; }
+    return false;
+  }
+  if (e.key === ' ' || e.key === 'Enter') {
+    const next = app.querySelector<HTMLButtonElement>('.dialog-ui button.primary[data-act="dialog-next"]');
+    if (next) { next.click(); return true; }
+  }
+  return false;
+}
+
 document.addEventListener('keydown', (e) => {
+  if (roomKey(e)) { e.preventDefault(); return; }
   if (e.key === 'Escape' && modal === 'report') { modal = 'none'; reportQuiz = null; reportDone = null; render(); }
   else if (e.key === 'Escape' && planning && !transitioning) { void goPlace('desk', resetPlace); }
   else if (e.key === 'Escape' && (START_MODALS.includes(modal) || modal === 'gamemenu')) { modal = 'none'; render(); }
@@ -1275,11 +1301,14 @@ app.addEventListener('click', (e) => {
       return;
     }
     case 'dialog-next': {
-      const nextIt = place !== 'pantry' && dialogResult ? s?.inbox.find((i) => sceneRoomFor(EVENTS[i.eventId]) === place) : undefined;
-      if (nextIt) { dialogUid = nextIt.uid; dialogResult = false; dialogText = null; render(); return; }
+      const nextIt = place !== 'pantry' && dialogResult && s ? nextRoomEvent(s, place as Room) : undefined;
+      const nextRoom = nextIt ? sceneRoomFor(EVENTS[nextIt.eventId]) : undefined;
+      if (nextIt && nextRoom === place) { dialogUid = nextIt.uid; dialogResult = false; dialogText = null; render(); return; }
+      if (nextIt && nextRoom) { void goPlace(nextRoom, () => { dialogUid = nextIt.uid; dialogResult = false; dialogText = null; }); return; }
       void goPlace('desk', resetPlace);
       return;
     }
+    case 'dialog-leave': void goPlace('desk', resetPlace); return;
     case 'mode': modeSel = el.dataset.m as Mode; render(); return;
     case 'start-game': clearSave(); startNew(modeSel); return;
     case 'diff': difficulty = el.dataset.d as Difficulty; render(); return;
