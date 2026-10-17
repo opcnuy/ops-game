@@ -48,7 +48,7 @@ function play(strategy: 'random' | 'careful' | 'lazy', diff: Difficulty, seed: n
 }
 
 const BUILD = ['quick_report', 'soothe', 'crisis_pr', 'auto_report', 'risk_ctrl', 'time_mgmt', 'forecast'];
-for (const skills of [[], BUILD]) for (const diff of ['normal', 'hard'] as const) {
+for (const skills of [[], BUILD]) for (const diff of (process.env.EASY ? ['easy', 'normal', 'hard'] : ['normal', 'hard']) as ('easy' | 'normal' | 'hard')[]) {
   const level = 5;
   for (const strat of ['careful'] as const) {
     const N = 60;

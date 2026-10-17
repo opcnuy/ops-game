@@ -560,14 +560,23 @@ export function styleFit(s: State, ev: GameEvent, item: InboxItem | undefined, o
   return { trait, mood, total: Math.max(-3, Math.min(3, trait + mood)) };
 }
 
-/** 選完之後的一句反應:只透露「這個做法合不合對方的胃口」,不直接說性格是什麼 */
-function fitFlavor(s: State, ev: GameEvent, item: InboxItem, opt: EventOption): string {
+/** 選完之後的一句反應:只透露「這個做法合不合對方的胃口」,不直接說性格是什麼。
+ *  結果和對方的態度相反時(欣賞卻失敗、不喜歡卻成功),換成不矛盾的說法 */
+function fitFlavor(s: State, ev: GameEvent, item: InboxItem, opt: EventOption, net: number): string {
   const fit = styleFit(s, ev, item, opt);
   const lines: string[] = [];
-  const table = moodStat(ev) === 'boss' ? BOSS_TRAITS[bossTrait(s)] : COMMUNITY_TRAITS[communityTrait(s)];
-  if (fit.trait) lines.push(fit.trait > 0 ? table.good : table.bad);
+  const isBoss = moodStat(ev) === 'boss';
+  const table = isBoss ? BOSS_TRAITS[bossTrait(s)] : COMMUNITY_TRAITS[communityTrait(s)];
+  // 玩家面的事,對象可能是玩家、記者或原廠,所以只說「對方」;公司內部的事,老闆不一定在場,就寫成他事後聽說
+  const subject = isBoss ? (ev.from.includes('林總') ? '林總' : '林總事後聽說了,') : '';
+  const who = isBoss ? '林總' : '對方';
+  if (fit.trait > 0) lines.push(net < 0 ? `${who}其實欣賞這種做法,可惜這次沒成。` : `${subject}${table.good}`);
+  else if (fit.trait < 0) lines.push(net > 0 ? `雖然不太對${who}的胃口,但這次結果還不錯。` : `${subject}${table.bad}`);
   const mood = moodOf(item, ev);
-  if (fit.mood && mood !== 'neutral') lines.push(fit.mood > 0 ? MOOD_FLAVOR[mood].good : MOOD_FLAVOR[mood].bad);
+  if (fit.mood && mood !== 'neutral') {
+    const good = fit.mood > 0;
+    if (!(good && net < 0) && !(!good && net > 0)) lines.push(good ? MOOD_FLAVOR[mood].good : MOOD_FLAVOR[mood].bad);
+  }
   return lines.length ? ` 🧭 ${lines.join('')}` : '';
 }
 
@@ -791,7 +800,7 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
   }
   let extra = '';
   if (out.reveal) extra = ' ' + revealIntel(s, out.reveal);
-  extra += fitFlavor(s, ev, item, opt);
+  extra += fitFlavor(s, ev, item, opt, netOf(out.effects));
   if (impactOf(eff) >= 5) {
     addMoment(s, impactOf(eff), netOf(eff) >= 0 ? '✨' : '⚠️', `${quoted(eventText(ev, item).title)}${opt.label}——${out.result}`);
   }

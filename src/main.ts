@@ -973,6 +973,8 @@ async function goPlace(next: Place, apply?: () => void): Promise<void> {
     place = next;
     apply?.();
     sceneKey = '';
+    // 換場後不讓剛點過的按鈕留著焦點,否則數字鍵與空白鍵會被當成在操作那顆按鈕
+    (document.activeElement as HTMLElement | null)?.blur?.();
     render();
     await dissolve(fadeCanvas, 240, 'out');
   } finally {
@@ -1181,7 +1183,8 @@ function animate(): void {
     const card = el.closest('.metric');
     const diff = to - from;
     card?.classList.add(diff > 0 ? 'flash-up' : 'flash-down');
-    if (card && Math.abs(diff) >= Math.pow(10, -d)) {
+    // 每日結算畫面開著時,數字的變化已經列在結算表裡,不再在彈窗上方飄出浮動數字
+    if (card && modal !== 'summary' && Math.abs(diff) >= Math.pow(10, -d)) {
       floatText(card, `${diff > 0 ? '+' : ''}${fmt(diff, d)}${suffix}`, diff > 0);
       if ((k === 'trust' || k === 'boss') && diff <= -5) card.classList.add('shake');
       if ((k === 'trust' || k === 'boss') && diff >= 5) burst(...centerOf(card), ['✨', '⭐'], 10);
@@ -1288,6 +1291,8 @@ app.addEventListener('click', (e) => {
   if (!el || el.hasAttribute('disabled')) return;
   const act = el.dataset.act;
   const s = S;
+  // 其他動作的結果出現時,上一件事的「一般來說」說明就不該再掛在畫面上
+  if (act && ['report-pick', 'scout-pick', 'scout-skip', 'polish', 'check', 'intel', 'sloppy', 'confirm-plan'].includes(act)) lastInsight = '';
   if (act !== 'end' && endArmed) { endArmed = false; window.clearTimeout(endArmTimer); }
 
   switch (act) {
