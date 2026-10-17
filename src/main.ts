@@ -9,7 +9,7 @@ import { createFadeCanvas, dissolve } from './scene/fade';
 import { storageKey } from './storage';
 import {
   CAMPAIGN_TARGET, CONTENT, DIFFS, activeBuffs, bossTrait, communityTrait, pickScout, pulseActive, pulseHint, EVENTS, computeRunXp, PHASES, phaseOf, GOAL_INFO, STORY_DAYS, chooseOption, clearSave, doAction, endDay,
-  HABITS, find, goalMet, goalValue, hasSkill, makeReport, submitReport, itemOptions, eventText, load, newGame, optionCost, planCampaign, planCost, save, spendToday, weekdayLabel,
+  HABITS, find, goalMet, goalValue, hasSkill, makeReport, submitReport, itemOptions, eventOptions, styleFit, eventText, load, newGame, optionCost, planCampaign, planCost, save, spendToday, weekdayLabel,
 } from './engine';
 import type { ActionKind, ReportQuiz } from './engine';
 import { LEVELS, SP_PER_LEVEL, availableSp, levelFor, loadProfile, mergeSeen, nextLevel, saveProfile } from './profile';
@@ -1398,8 +1398,15 @@ app.addEventListener('click', (e) => {
     const apply = () => {
       busy = false;
       const picked = s.inbox.find((i) => i.uid === Number(el.dataset.uid));
+      // 做法說明講的是「一般來說」:這局的對象比較特別、結果不如預期時,補一句提醒,不要讓玩家以為學錯了
+      const chosen = picked ? eventOptions(s, EVENTS[picked.eventId], picked)[Number(el.dataset.i)] : undefined;
+      const unusual = picked && chosen ? styleFit(s, EVENTS[picked.eventId], picked, chosen).total < 0 : false;
       const err = chooseOption(s, Number(el.dataset.uid), Number(el.dataset.i));
-      if (!err) { lastInsight = (picked && EVENTS[picked.eventId]?.insight) || ''; openUid = null; if (place !== 'desk') dialogResult = true; }
+      if (!err) {
+        const base = (picked && EVENTS[picked.eventId]?.insight) || '';
+        lastInsight = base ? `一般來說:${base}${unusual ? '(不過這次的對象比較特別,結果和一般情況不太一樣。)' : ''}` : '';
+        openUid = null; if (place !== 'desk') dialogResult = true;
+      }
       if (err) flash(err); else { save(s); render(); }
       setTimeout(flushPendingClick, 0);
     };
