@@ -34,6 +34,11 @@ let lastModal = 'none';
 let lastScreen = '';
 let prevAp = -1;
 let prevDay = -1;
+/** 版號:來自 package.json,由 vite 在建置時帶入 */
+declare const __APP_VERSION__: string;
+const VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '';
+const versionTag = (): string => (VERSION ? `<span class="ver">v${VERSION}</span>` : '');
+
 let busy = false;
 /** 動畫或換場期間按下的最後一下:動畫結束後補做,不再被吞掉 */
 let pendingClick: { x: number; y: number } | null = null;
@@ -302,7 +307,7 @@ function renderStartScene(): string {
       <div class="wall-left"><button class="cal badge" data-act="open-rank" title="${nextHint()}(點開看職級詳情)">
         <span>${cur.title}</span><b>Lv ${cur.lv}</b><div class="xpbar mini"><span style="--to:${xpPercent(profile.xp)}%"></span></div></button></div>
       <div class="wall-mid"></div>
-      <div class="wall-right"><div class="wall-btns"><button class="ghost" data-act="open-settings">⚙️ 設定</button></div></div>
+      <div class="wall-right"><div class="wall-btns">${versionTag()}<button class="ghost" data-act="open-settings">⚙️ 設定</button></div></div>
     </div>
     <div class="screen-ui menu">
       <div class="menu-title">營運日常<small>當一天遊戲營運,看你撐不撐得過試用期</small></div>
@@ -333,7 +338,7 @@ function renderStart(): string {
   ];
   const stars: Record<Difficulty, string> = { easy: '⭐', normal: '⭐⭐', hard: '⭐⭐⭐' };
   const brief = (d: Difficulty) => `${DIFFS[d].goals.length} 個目標<small>${DIFFS[d].maxAp < 6 ? '每天少 1 點' : '&nbsp;'}</small>`;
-  return `<div class="start">
+  return `<div class="start">${versionTag()}
     <div class="hero"><div class="logo">📱📊🎯</div><h1>營運日常</h1>
       <p class="tagline">當一天遊戲營運,看你撐不撐得過試用期</p></div>
     ${renderProfile()}
@@ -436,7 +441,7 @@ function renderInbox(s: State): string {
       <div class="body">${esc(tx.brief ?? tx.body)}</div>
       ${it.stage ? '<div class="hint warn">上次沒處理,對方又來催了。這次處理要多花 1 點,再不處理就不了了之。</div>' : ''}
       ${it.hint && !it.stage && showHints(s.difficulty) ? `<div class="hint">🦋 ${esc(it.hint)}</div>` : ''}
-      ${pulseHint(s, ev) ? `<div class="hint pulse">📡 風向提示:${esc(pulseHint(s, ev) ?? '')}</div>` : ''}
+      ${pulseHint(s, ev, it) ? `<div class="hint pulse">📡 風向:${esc(pulseHint(s, ev, it) ?? '')}</div>` : ''}
       ${tx.brief && tx.brief !== tx.body ? `<details class="more"><summary>詳情</summary><div>${esc(tx.body)}</div></details>` : ''}
       <div class="opts">${opts}</div></div>` : '';
     return `<div class="card mail ${open ? 'open' : ''} ${isNew ? 'enter' : ''} ${it.stage ? 'escalated' : ''}" style="--i:${delay}">
@@ -584,8 +589,8 @@ function renderRoomUI(s: State): string {
     title = tx.title;
     text = tx.brief ?? tx.body;
     const hint = it.stage ? '上次沒處理,對方又來催了。這次處理要多花 1 點。' : it.hint && showHints(s.difficulty) ? `🦋 ${it.hint}` : '';
-    const ph = pulseHint(s, ev);
-    body = `${hint ? `<div class="hint">${esc(hint)}</div>` : ''}${ph ? `<div class="hint pulse">📡 風向提示:${esc(ph)}</div>` : ''}<div class="opts">${renderOptionButtons(s, it, ev)}</div>`;
+    const ph = pulseHint(s, ev, it);
+    body = `${hint ? `<div class="hint">${esc(hint)}</div>` : ''}${ph ? `<div class="hint pulse">📡 風向:${esc(ph)}</div>` : ''}<div class="opts">${renderOptionButtons(s, it, ev)}</div>`;
   } else if (dialogResult && s.feed[0]) {
     speaker = '結果';
     text = resultOf(s.feed[0]);

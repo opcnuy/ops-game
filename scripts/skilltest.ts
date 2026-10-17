@@ -1,6 +1,6 @@
 // 技能系統檢查:資料自洽、學習規則、12 個技能各自的實際效果、存檔與職級的技能點帳目
 import {
-  DIFFS, EVENTS, pulseActive, pulseHint, chooseOption, doAction, endDay, eventOptions, hasSkill, load, makeReport, newGame, optionCost, planCampaign, save, submitReport,
+  DIFFS, EVENTS, moodOf, pulseActive, pulseHint, chooseOption, doAction, endDay, eventOptions, hasSkill, load, makeReport, newGame, optionCost, planCampaign, save, submitReport,
 } from '../src/engine';
 import { ACHIEVEMENTS, LINES, SKILLS, prereqMet, prereqText, sanitizeSkills, skillById } from '../src/skills';
 import { LEVELS, SP_PER_LEVEL, availableSp, levelFor, loadProfile, saveProfile, spentSp } from '../src/profile';
@@ -306,6 +306,50 @@ ok(hasSkill(mk(['quick_report', 'template', 'forecast']), 'forecast'), '預測�
   const uid2 = push(s, 'e_adhoc_chart');
   chooseOption(s, uid2, optIndex(s, 'e_adhoc_chart', '全部做完'));
   ok(s.habits.overtime === 1, '第 3 天之後熬夜加班應該要累積');
+}
+
+// 氣氛與結果浮動(客訴、輿情):同一個選項,碰到不同的對象結果會不同
+{
+  const ev = EVENTS.e_gacha_complaint;
+  const label = '公布完整機率驗證報告';
+  const mkItem = (v: number, stage = 0) => ({ uid: 1, eventId: ev.id, arrived: 1, deadline: 9, stage, v });
+  // 氣氛分布大約 3:5:2,被催第二次一律火氣大,非客訴/輿情事件永遠普通
+  const cnt = { receptive: 0, neutral: 0, hostile: 0 };
+  for (let v = 1; v <= 3000; v++) cnt[moodOf(mkItem(v * 7919), ev)]++;
+  near(cnt.receptive / 3000, 0.3, 0.04, `願意聽的比例不對:${cnt.receptive}`);
+  near(cnt.hostile / 3000, 0.2, 0.04, `火氣大的比例不對:${cnt.hostile}`);
+  ok(moodOf(mkItem(5, 1), ev) === 'hostile', '被催第二次應該火氣很大');
+  ok(moodOf(mkItem(5), EVENTS.e_boss_campaign) === 'neutral', '老闆事件不該有氣氛');
+  // 找出三種氣氛各一個種子,比較成功率與數值
+  const seeds: Record<string, number[]> = { receptive: [], neutral: [], hostile: [] };
+  for (let v = 1; v < 5000; v++) { const m = moodOf(mkItem(v), ev); if (seeds[m].length < 500) seeds[m].push(v); }
+  const run = (m: string) => {
+    let good = 0; const vals = new Set<number>();
+    seeds[m].forEach((v, i) => {
+      const t = mk([], 9000 + i); const uid = t.uid++;
+      t.inbox.push({ uid, eventId: ev.id, arrived: t.day, deadline: t.day + 5, stage: 0, v });
+      const before = t.trust;
+      chooseOption(t, uid, optIndex(t, ev.id, label));
+      const d = t.trust - before;
+      if (d > 0) { good++; vals.add(d); }
+    });
+    return { rate: good / seeds[m].length, spread: vals.size };
+  };
+  const r = run('receptive'), n = run('neutral'), h = run('hostile');
+  ok(r.rate > n.rate + 0.05 && n.rate > h.rate + 0.05, `成功率應該 願意聽 > 普通 > 火氣大:${r.rate.toFixed(2)} ${n.rate.toFixed(2)} ${h.rate.toFixed(2)}`);
+  ok(n.spread >= 3, `同一個選項成功時的信任變化應該有幾種:${n.spread}`);
+  // 浮動不改變正負號,也不會把「有變動」變成 0
+  for (let i = 0; i < 300; i++) {
+    const t = mk([], 20000 + i); const uid = t.uid++;
+    t.inbox.push({ uid, eventId: 'e_refund', arrived: t.day, deadline: t.day + 5, stage: 0, v: i * 31 + 1 });
+    const before = t.trust;
+    chooseOption(t, uid, optIndex(t, 'e_refund', '回覆「無法處理」'));
+    if (!(t.trust < before)) { fail('扣信任的選項浮動後變成沒扣'); break; }
+  }
+  // 風向提示會帶出氣氛
+  const sp = mk([]); sp.intel = { reward: true, hated: true }; doAction(sp, 'intel');
+  const hint = pulseHint(sp, ev, mkItem(seeds.hostile[0]));
+  ok(!!hint && hint.includes('火氣'), `風向提示沒有說出氣氛:${hint}`);
 }
 
 if (failed) throw new Error(`技能系統檢查失敗 ${failed} 項`);

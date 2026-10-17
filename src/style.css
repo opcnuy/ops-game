@@ -938,3 +938,10 @@ button.cal.badge:hover { filter: brightness(1.05); transform: translateY(-1px); 
 
 /* 處理完事件後的做法說明 */
 .insight { margin-top: 8px; padding: 6px 9px; font-size: 12.5px; line-height: 1.55; color: var(--muted); border-left: 3px solid var(--accent); background: rgba(127,127,127,.08); border-radius: 3px; text-align: left; }
+
+/* 版號:主頁右上角 */
+.wall-btns { align-items: center; }
+.wall-btns .ver { padding: 0 4px; background: rgba(255, 253, 244, 0.75); color: #2a2f3a; border: 2px solid transparent; }
+.ver { font-size: 0.7rem; color: var(--muted, #8a93a3); opacity: 0.85; letter-spacing: 0.03em; }
+.start { position: relative; }
+.start > .ver { position: absolute; top: 4px; right: 4px; }

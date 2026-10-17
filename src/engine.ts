@@ -276,7 +276,7 @@ function sanitizeState(raw: unknown): State | null {
     .map((g) => ({ key: g.key, target: num(g.target, 0, 1e9, 0) }));
   if (!goals.length) return null;
   const inbox = (r.inbox as InboxItem[]).slice(0, 60).filter((i) => i && typeof i.eventId === 'string' && Object.hasOwn(EVENTS, i.eventId))
-    .map((i) => ({ uid: num(i.uid, 0, 1e9, 0), eventId: i.eventId, arrived: num(i.arrived, 0, 1e5, 0), deadline: num(i.deadline, 0, 1e5, 0),
+    .map((i) => ({ uid: num(i.uid, 0, 1e9, 0), eventId: i.eventId, arrived: num(i.arrived, 0, 1e5, 0), deadline: num(i.deadline, 0, 1e5, 0), v: i.v === undefined ? undefined : num(i.v, 0, 1e9, 0),
       hint: i.hint === undefined ? undefined : cleanText(i.hint), stage: num(i.stage, 0, 2, 0) }));
   const followUps = (Array.isArray(r.followUps) ? (r.followUps as State['followUps']) : []).slice(0, 60)
     .filter((f) => f && typeof f.eventId === 'string' && Object.hasOwn(EVENTS, f.eventId))
@@ -388,7 +388,7 @@ const SKILL_OPTIONS: { skill: string; match: (ev: GameEvent) => boolean; opt: Ev
 ];
 
 /** 偽隨機:同一件事每次渲染都得到同樣的結果。salt 讓不同用途互不影響 */
-const SALT = { shuffle: 0x9e3779b1, bonus: 0x51ed270b, label: 0x1b873593 };
+const SALT = { shuffle: 0x9e3779b1, bonus: 0x51ed270b, label: 0x1b873593, mood: 0x2545f491 };
 function seeded(v: number, salt: number): () => number {
   let a = ((v ^ salt) || 1) >>> 0;
   return () => {
@@ -462,17 +462,50 @@ function boostOutcomes(outs: Outcome[], boost: number): Outcome[] {
     if (goodness(o) < goodness(outs[worst])) worst = i;
   });
   if (best === worst) return outs;
-  const m = Math.min(boost, outs[worst].p);
+  // 正的 boost:把機率從最差的結果搬到最好的;負的反過來
+  const m = boost >= 0 ? Math.min(boost, outs[worst].p) : -Math.min(-boost, outs[best].p);
   return outs.map((o, i) => (i === best ? { ...o, p: o.p + m } : i === worst ? { ...o, p: o.p - m } : o));
+}
+
+/** 客訴、輿情這類「人」的事:每一件有自己的氣氛,同樣的做法,碰到不同的對象結果會不同 */
+export type Mood = 'receptive' | 'neutral' | 'hostile';
+const MOODS: Record<Mood, { text: string; boost: number }> = {
+  receptive: { text: '這件事的氣氛不錯,對方願意聽官方怎麼說。', boost: 0.12 },
+  neutral: { text: '這件事的氣氛普通,看你怎麼處理。', boost: 0 },
+  hostile: { text: '這件事火氣很大,對方不太聽得進去。', boost: -0.12 },
+};
+
+export function moodOf(item: InboxItem | undefined, ev: GameEvent): Mood {
+  if (!isPulseEvent(ev) || !item) return 'neutral';
+  if (item.stage) return 'hostile'; // 上次沒處理才被催第二次,對方當然不開心
+  if (item.v === undefined) return 'neutral';
+  const r = seeded(item.v, SALT.mood)();
+  return r < 0.3 ? 'receptive' : r < 0.8 ? 'neutral' : 'hostile';
+}
+
+/** 結果的數值不是固定的:大致落在原本的 0.6 到 1.4 倍,而且氣氛會讓信任的得失放大或縮小(正負號與「有沒有變動」不變) */
+function tuneEffects(s: State, e: Effects | undefined, mood: Mood): Effects | undefined {
+  if (!e) return e;
+  const out: Effects = { ...e };
+  for (const k of ['players', 'trust', 'boss'] as const) {
+    const v = e[k];
+    if (!v) continue;
+    let f = 0.6 + rand(s) * 0.8;
+    if (k === 'trust') f *= v > 0 ? (mood === 'receptive' ? 1.2 : mood === 'hostile' ? 0.8 : 1) : (mood === 'hostile' ? 1.3 : 1);
+    const n = Math.round(Math.abs(v) * f);
+    out[k] = Math.sign(v) * Math.max(1, n);
+  }
+  return out;
 }
 
 /** 看過輿情之後,當天與隔天都掌握得到風向 */
 export const pulseActive = (s: State): boolean => s.pulse !== undefined && s.day - s.pulse <= 1;
 const isPulseEvent = (ev: GameEvent): boolean => ev.kind === '客訴' || ev.kind === '輿情';
 
-/** 掌握風向時,客訴、輿情事件在處理前就先給一句處理方向 */
-export function pulseHint(s: State, ev: GameEvent): string | undefined {
-  return pulseActive(s) && isPulseEvent(ev) ? ev.insight : undefined;
+/** 掌握風向時,客訴、輿情事件在處理前就先看得出氣氛,並給一句處理方向 */
+export function pulseHint(s: State, ev: GameEvent, item?: InboxItem): string | undefined {
+  if (!pulseActive(s) || !isPulseEvent(ev)) return undefined;
+  return `${MOODS[moodOf(item, ev)].text}${ev.insight ?? ''}`;
 }
 
 const ESCALATE_HINT = '上次沒處理,對方又來催了。';
@@ -566,11 +599,14 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
   if (hasSkill(s, 'quick_report') && opt.tag === 'quick') boost += 0.2;
   if (hasSkill(s, 'soothe') && (ev.kind === '客訴' || ev.kind === '輿情')) boost += 0.1;
   if (pulseActive(s) && isPulseEvent(ev)) boost += 0.1;
+  const mood = moodOf(item, ev);
+  boost += MOODS[mood].boost;
   if (boost && outs.length > 1) outs = boostOutcomes(outs, boost);
   let r = rand(s);
   let out: Outcome = outs[outs.length - 1];
   for (const o of outs) { r -= o.p; if (r <= 0) { out = o; break; } }
-  applyEffects(s, out.effects);
+  const eff = isPulseEvent(ev) ? tuneEffects(s, out.effects, mood) : out.effects;
+  applyEffects(s, eff);
   if (out.setFlag) s.flags[out.setFlag] = true;
   if (out.reports) s.pendingReports = Math.max(0, s.pendingReports + out.reports);
   const note = addHabits(s, out.habit);
@@ -587,11 +623,11 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
   }
   let extra = '';
   if (out.reveal) extra = ' ' + revealIntel(s, out.reveal);
-  if (impactOf(out.effects) >= 5) {
-    addMoment(s, impactOf(out.effects), netOf(out.effects) >= 0 ? '✨' : '⚠️', `${quoted(eventText(ev, item).title)}${opt.label}——${out.result}`);
+  if (impactOf(eff) >= 5) {
+    addMoment(s, impactOf(eff), netOf(eff) >= 0 ? '✨' : '⚠️', `${quoted(eventText(ev, item).title)}${opt.label}——${out.result}`);
   }
   s.inbox = s.inbox.filter((i) => i.uid !== uid);
-  pushFeed(s, `【${eventText(ev, item).title}】${opt.label} → ${out.result}${extra}${effectNote(out.effects)}${chainNote}${note}`);
+  pushFeed(s, `【${eventText(ev, item).title}】${opt.label} → ${out.result}${extra}${effectNote(eff)}${chainNote}${note}`);
   return null;
 }
 
