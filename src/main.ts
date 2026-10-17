@@ -233,18 +233,17 @@ function renderScout(s: State): string {
     const c = scoutCard(id);
     if (!c) return '';
     const poor = s.ap < c.ap;
-    return `<button class="scout-card ${c.bad ? 'bad' : ''}" data-act="scout-pick" data-id="${c.id}" ${poor ? 'disabled' : ''}>
+    return `<button class="scout-card" data-act="scout-pick" data-id="${c.id}" ${poor ? 'disabled' : ''}>
       <span class="sc-icon">${c.icon}</span>
       <span class="sc-body">
         <b>${esc(c.name)}</b>
         <span class="sc-row"><i>你要</i>${esc(c.action)}</span>
-        <span class="sc-row gain"><i>結果</i>${esc(c.gain)}</span>
       </span>
       <span class="cost">${c.ap ? `花 ${c.ap} 點 ⚡` : '免費'}</span></button>`;
   }).join('');
   return `<div class="modal-bg"><div class="modal scout-modal">
     <div class="modal-head"><h2>📡 輿情報告</h2><button class="x" data-act="scout-close" aria-label="先關閉,晚點再選">✕</button></div>
-    <p class="scout-intro">你翻完論壇和社群,冒出了 ${sc.cards.length} 件事。<b>今天只顧得了一件</b>,點一張卡去處理,其他的就讓它過去。</p>
+    <p class="scout-intro">你翻完論壇和社群,冒出了 ${sc.cards.length} 件事。<b>今天只顧得了一件</b>,選一件去處理,其他的就讓它過去,處理完才知道結果。</p>
     ${sc.found ? `<p class="scout-found">🔎 ${esc(sc.found)}</p>` : ''}
     <div class="scout-cards">${cards}</div>
     <div class="actions"><button data-act="scout-skip">都先不處理</button></div>
