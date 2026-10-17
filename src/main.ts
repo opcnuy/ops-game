@@ -217,14 +217,13 @@ function renderProfile(): string {
     <button class="skills-btn" data-act="skills">${sceneOn() ? '📓 技能筆記本' : '🧠 技能'}${availableSp(profile) > 0 ? ` <em>${availableSp(profile)} 點可用</em>` : ` <small>已學 ${profile.skills.length} 個</small>`}</button></div>`;
 }
 
-/** 看輿情之後的報告:玩家心聲,加上三張發現卡選一張 */
+/** 看輿情之後的報告:冒出幾件事,今天只顧得了一件 */
 function renderScout(s: State): string {
   const sc = s.scout;
   if (!sc) return '';
   const complaints = s.inbox.filter((i) => ['客訴', '輿情'].includes(EVENTS[i.eventId].kind)).length;
   const mood = s.trust >= 70 ? '整體氣氛不錯' : s.trust >= 50 ? '氣氛普通' : '抱怨變多了';
-  const voices = [
-    sc.found ?? '',
+  const notes = [
     `玩家信任 ${Math.round(s.trust)}:${mood}。`,
     complaints ? `收件匣裡有 ${complaints} 件客訴或輿情還沒處理。` : '目前沒有待處理的客訴或輿情。',
     sc.listened ? '你有在看,玩家感覺得到:「忽視玩家」的累積減 1。' : '',
@@ -236,16 +235,21 @@ function renderScout(s: State): string {
     const poor = s.ap < c.ap;
     return `<button class="scout-card ${c.bad ? 'bad' : ''}" data-act="scout-pick" data-id="${c.id}" ${poor ? 'disabled' : ''}>
       <span class="sc-icon">${c.icon}</span>
-      <span class="sc-body"><b>${esc(c.name)}</b><small>${esc(c.desc)}</small></span>
-      <span class="cost">${c.ap ? '⚡'.repeat(c.ap) : '免費'}</span></button>`;
+      <span class="sc-body">
+        <b>${esc(c.name)}</b>
+        <span class="sc-row"><i>你要</i>${esc(c.action)}</span>
+        <span class="sc-row gain"><i>結果</i>${esc(c.gain)}</span>
+      </span>
+      <span class="cost">${c.ap ? `花 ${c.ap} 點 ⚡` : '免費'}</span></button>`;
   }).join('');
   return `<div class="modal-bg"><div class="modal scout-modal">
     <div class="modal-head"><h2>📡 輿情報告</h2><button class="x" data-act="scout-close" aria-label="先關閉,晚點再選">✕</button></div>
-    <ul class="scout-voices">${voices.map((v) => `<li>${esc(v)}</li>`).join('')}</ul>
-    <h3 class="scout-title">輿情裡冒出這幾件事。你今天顧得了哪一件?</h3>
+    <p class="scout-intro">你翻完論壇和社群,冒出了 ${sc.cards.length} 件事。<b>今天只顧得了一件</b>,點一張卡去處理,其他的就讓它過去。</p>
+    ${sc.found ? `<p class="scout-found">🔎 ${esc(sc.found)}</p>` : ''}
     <div class="scout-cards">${cards}</div>
     <div class="actions"><button data-act="scout-skip">都先不處理</button></div>
-    <p class="muted report-foot">只能顧一件,沒處理的事就讓它過去了(報告明天過期)。</p>
+    <details class="scout-notes"><summary>今日概況</summary><ul>${notes.map((v) => `<li>${esc(v)}</li>`).join('')}</ul></details>
+    <p class="muted report-foot">沒選的話,這份報告明天就過期了。</p>
   </div></div>`;
 }
 
