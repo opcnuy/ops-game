@@ -223,8 +223,25 @@ const rate = (trials: number, run: (seed: number, withSkill: boolean) => boolean
   near(cut, 0.185, 0.04, '風險控管後的出包率');
 }
 
-// forecast:引擎面沒有限制(畫面只在學會時顯示),這裡確認技能存在且前置正確
+// forecast:確認技能存在且前置正確
 ok(hasSkill(mk(['quick_report', 'template', 'forecast']), 'forecast'), '預測模型沒有被帶進對局');
+// forecast:活動上線時成績的隨機起伏減半(升幅的標準差明顯變小)
+{
+  const spread = (skills: string[]): number => {
+    const v: number[] = [];
+    for (let i = 0; i < 300; i++) {
+      const t = mk(skills, 70000 + i);
+      planCampaign(t, { mechanic: 'lottery', reward: 'shard', bundle: 'starter', promo: 'notice', delay: 1 });
+      t.campaign!.checked = true; t.campaign!.polish = 1;
+      endDay(t);
+      if (t.campaign?.phase === 'live' && !t.campaign.bugged) v.push(t.campaign.lift); // 出包的不算,不然七折會蓋過雜訊
+    }
+    const m = v.reduce((a, b) => a + b, 0) / v.length;
+    return Math.sqrt(v.reduce((a, b) => a + (b - m) ** 2, 0) / v.length) / m; // 相對起伏
+  };
+  const a = spread([]); const b = spread(['quick_report', 'template', 'forecast']);
+  ok(b < a * 0.8, `預測模型沒有讓活動成績更穩定:${a.toFixed(3)} → ${b.toFixed(3)}`);
+}
 
 /* ---------- 4. 存檔與職級的帳目 ---------- */
 {

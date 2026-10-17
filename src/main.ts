@@ -8,7 +8,7 @@ import { createFadeCanvas, dissolve } from './scene/fade';
 import { storageKey } from './storage';
 import {
   CAMPAIGN_TARGET, CONTENT, DIFFS, activeBuffs, pickScout, pulseActive, pulseHint, EVENTS, computeRunXp, PHASES, phaseOf, GOAL_INFO, STORY_DAYS, chooseOption, clearSave, doAction, endDay,
-  HABITS, find, goalMet, goalValue, hasSkill, makeReport, submitReport, estimateLift, itemOptions, eventText, load, newGame, optionCost, planCampaign, planCost, save, spendToday, weekdayLabel,
+  HABITS, find, goalMet, goalValue, hasSkill, makeReport, submitReport, itemOptions, eventText, load, newGame, optionCost, planCampaign, planCost, save, spendToday, weekdayLabel,
 } from './engine';
 import type { ActionKind, ReportQuiz } from './engine';
 import { LEVELS, SP_PER_LEVEL, availableSp, levelFor, loadProfile, mergeSeen, nextLevel, saveProfile } from './profile';
@@ -227,7 +227,7 @@ function renderScout(s: State): string {
     `玩家信任 ${Math.round(s.trust)}:${mood}。`,
     complaints ? `收件匣裡有 ${complaints} 件客訴或輿情還沒處理。` : '目前沒有待處理的客訴或輿情。',
     sc.listened ? '你有在看,玩家感覺得到:「忽視玩家」的累積減 1。' : '',
-    '今明兩天,事件會先看得出氣氛、附上處理提示。',
+    '今明兩天,事件會先看得出對方的氣氛。',
   ].filter(Boolean);
   const cards = sc.cards.map((id) => {
     const c = scoutCard(id);
@@ -427,26 +427,12 @@ function renderFeedLine(s: State, line: string): string {
   return `<li>${esc(main)}${note && showHints(s.difficulty) ? `<div class="hint">🦋 ${esc(note)}</div>` : ''}</li>`;
 }
 
-const OPT_ICON: Record<string, string> = { players: '👥', retention: '🔁', trust: '🤝', boss: '👔' };
-
-/** 選項預告:只顯示「可能影響哪些指標」,不顯示方向、數字與機率 */
-function previewIcons(o: EventOption): string {
-  const keys = new Set<string>();
-  let reveal = false;
-  for (const out of o.outcomes) {
-    for (const k of Object.keys(out.effects ?? {})) keys.add(k);
-    if (out.reveal) reveal = true;
-  }
-  const icons = [...keys].map((k) => OPT_ICON[k]).filter(Boolean).join('') + (reveal ? '💡' : '');
-  return icons ? `<span class="pv" title="這個選項可能影響這些指標">${icons}</span>` : '';
-}
-
 function renderOptionButtons(s: State, it: InboxItem, ev: GameEvent): string {
   return itemOptions(s, ev, it).map(({ opt: o, index: i }, pos) => {
-    const risky = o.outcomes.length > 1 ? ' 🎲' : '';
+    const risky = o.outcomes.length > 1;
     const cost = optionCost(s, it, o);
-    return `<button data-act="opt" data-uid="${it.uid}" data-i="${i}" ${s.ap < cost ? 'disabled' : ''}>
-        <span class="lbl">${sceneOn() && place !== 'desk' ? `<i class="kbd">${pos + 1}</i>` : ''}${o.fromSkill ? '✨ ' : ''}${esc(o.label)}${risky}</span>${showHints(s.difficulty) ? previewIcons(o) : ''}
+    return `<button data-act="opt" data-uid="${it.uid}" data-i="${i}" ${risky ? 'data-risky="1"' : ''} ${s.ap < cost ? 'disabled' : ''}>
+        <span class="lbl">${sceneOn() && place !== 'desk' ? `<i class="kbd">${pos + 1}</i>` : ''}${o.fromSkill ? '✨ ' : ''}${esc(o.label)}</span>
         <span class="cost ${cost > o.ap ? 'up' : cost < o.ap ? 'down' : ''}">${cost ? '⚡'.repeat(cost) : '免費'}</span></button>`;
   }).join('');
 }
@@ -580,7 +566,7 @@ function renderPlanRoom(s: State): string {
   const last = planStep === steps.length - 1;
   const cost = planCost(sel);
   const summary = last
-    ? `<div class="plan-sum">玩法「${find(CONTENT.mechanics, sel.mechanic).name}」・獎勵「${find(CONTENT.rewards, sel.reward).name}」・商品「${find(CONTENT.bundles, sel.bundle).name}」・宣傳「${find(CONTENT.promos, sel.promo).name}」</div>${hasSkill(s, 'forecast') ? renderForecast(s) : ''}`
+    ? `<div class="plan-sum">玩法「${find(CONTENT.mechanics, sel.mechanic).name}」・獎勵「${find(CONTENT.rewards, sel.reward).name}」・商品「${find(CONTENT.bundles, sel.bundle).name}」・宣傳「${find(CONTENT.promos, sel.promo).name}」</div>`
     : '';
   const bubbles = planBubbles(planStep).map(([who, text], i) => `<div class="bubble b${i + 1}"><b>${who}</b>${esc(text)}</div>`).join('');
   return `<div class="scene-ui room">
@@ -667,8 +653,6 @@ function renderGame(s: State): string {
   else if (tab === 'goals') body = `${renderGoals(s)}${renderSkillChips(s)}${renderHabits(s)}
     <details class="card glossary"><summary>名詞小教室</summary><dl>
       <dt>留存率</dt><dd>${TIPS.retention}</dd><dt>日營收</dt><dd>${TIPS.spend}</dd>
-      <dt>🎲</dt><dd>選項有風險,結果不一定。</dd>
-      <dt>👥🔁🤝👔</dt><dd>選項旁的小圖示,代表這個選擇可能影響的指標(不一定是好是壞)。</dd>
       <dt>🔥 再次催辦</dt><dd>逾期沒處理的事,隔天會再來催。處理要多花 1 點,再逾期就不了了之。</dd></dl></details>`;
   else body = renderLog(s);
   const metricsHtml = `
@@ -746,15 +730,6 @@ function choiceGroup(title: string, key: keyof PlanSel, items: { id: string; nam
   }).join('')}</div></div>`;
 }
 
-function renderForecast(s: State): string {
-  const e = estimateLift(s, sel);
-  const lo = Math.round(e.low * 100);
-  const hi = Math.round(e.high * 100);
-  const target = Math.round(CAMPAIGN_TARGET * 100);
-  const known = s.intel.reward && s.intel.hated ? '' : '(還沒摸清玩家喜好,實際可能落在範圍外)';
-  return `<div class="forecast">🔮 預估營收提升 <b>${lo}%–${hi}%</b>,老闆目標 ${target}%${hi >= target ? '' : ' · 這組合很難達標'}<small>${known}</small></div>`;
-}
-
 function renderPlanner(s: State): string {
   // 目前選的項目如果還沒解鎖,退回第一個可用的
   const groups: [keyof PlanSel, { id: string; minLevel?: number }[]][] = [
@@ -779,7 +754,7 @@ function renderPlanner(s: State): string {
     ${choiceGroup('宣傳', 'promo', CONTENT.promos.map((p) => ({ ...p, desc: `${p.desc}${p.ap ? `(+${p.ap} 點)` : ''}` })))}
     <div class="group"><h4>上線時間</h4><div class="choices">${delays.map((d) =>
       `<button class="choice ${String(sel.delay) === d.id ? 'sel' : ''}" data-act="pick" data-key="delay" data-id="${d.id}"><b>${d.name}</b><span>${d.desc}</span></button>`).join('')}</div></div>
-    ${hasSkill(s, 'forecast') ? renderForecast(s) : ''}
+    
     <div class="actions">
       <button data-act="close-modal">取消</button>
       <button class="primary" data-act="confirm-plan" ${s.ap < cost ? 'disabled' : ''}>送出企劃(${cost} 點)</button>
@@ -815,7 +790,7 @@ function renderIntro(): string {
     <p>・處理收件匣的事件(老闆、原廠、玩家都在等你)<br>・規劃並打磨活動<br>・看輿情、填日報</p>
     <p>點數用不完不會累積,事情沒處理也不會消失,只會變成麻煩。<br>注意四個數字:<b>人數、留存、營收、信任</b>,還有老闆的臉色。</p>
     <hr><p><b>${S!.mode === 'story' ? '試用期結束時要達成:' : '第一次考核(第 10 天)要達成:'}</b><br>${S!.goals.map((g) => '・' + goalText(g)).join('<br>')}</p>
-    <p class="muted">提示:選項旁的 🎲 代表結果有風險。先看輿情能摸清玩家喜好,今明兩天的事件也會先看得出氣氛、附上處理提示。</p>
+    <p class="muted">提示:同樣的選擇,結果不一定一樣。先看輿情能摸清玩家喜好,今明兩天的事件也會先看得出氣氛。</p>
     <div class="actions"><button class="primary" data-act="close-modal">開始第一天</button></div>
   </div></div>`;
 }
@@ -1423,7 +1398,7 @@ app.addEventListener('click', (e) => {
       setTimeout(flushPendingClick, 0);
     };
     const card = el.closest('.mail');
-    const risky = el.textContent?.includes('🎲');
+    const risky = el.dataset.risky === '1';
     if (card && !reduceMotion && risky) {
       busy = true;
       el.classList.add('rolling');

@@ -159,7 +159,7 @@ export interface State {
   campaign?: Campaign;
   taste: { reward: string; hated: string };
   intel: { reward: boolean; hated: boolean };
-  /** 最近一次「看輿情」的那一天:當天與隔天,客訴、輿情事件會附上處理提示,有風險的選項也更穩 */
+  /** 最近一次「看輿情」的那一天:當天與隔天,事件會先看得出氣氛,客訴、輿情也更好處理 */
   pulse?: number;
   /** 看輿情後抽到、還沒選的發現卡(日期,三張卡,有沒有順便聽見玩家) */
   scout?: { day: number; cards: string[]; listened?: boolean; found?: string };

@@ -592,10 +592,10 @@ export const pulseActive = (s: State): boolean => s.pulse !== undefined && s.day
 /** 看輿情直接加成的事件(客訴、輿情);其他事件掌握風向只會看到氣氛與提示 */
 const isPulseEvent = (ev: GameEvent): boolean => ev.kind === '客訴' || ev.kind === '輿情';
 
-/** 掌握風向時,事件在處理前就先看得出氣氛,並給一句處理方向 */
+/** 掌握風向時,事件在處理前就先看得出對方的氣氛(只看得出氣氛,不會告訴你怎麼做) */
 export function pulseHint(s: State, ev: GameEvent, item?: InboxItem): string | undefined {
   if (!pulseActive(s) || !hasMood(ev)) return undefined;
-  return `${MOOD_TEXT[ev.kind][moodOf(item, ev)]}${ev.insight ?? ''}`;
+  return MOOD_TEXT[ev.kind][moodOf(item, ev)];
 }
 
 const ESCALATE_HINT = '上次沒處理,對方又來催了。';
@@ -815,7 +815,8 @@ function launch(s: State, lines: string[]): void {
   const reward = find(CONTENT.rewards, c.reward);
   const bundle = find(CONTENT.bundles, c.bundle);
   const promo = find(CONTENT.promos, c.promo);
-  const noise = () => (rand(s) - 0.5) * 16;
+  // 預測模型:成績的隨機起伏減半
+  const noise = () => (rand(s) - 0.5) * 16 * (hasSkill(s, 'forecast') ? 0.5 : 1);
 
   let fun = mech.fun + c.polish * 10 - Math.max(0, mech.need - c.polish) * 9;
   if (mech.id === s.taste.hated) fun -= 22;
@@ -1053,25 +1054,6 @@ export function computeRunXp(s: State): { total: number; lines: string[] } {
   const mult = XP_MULT[s.difficulty];
   if (mult !== 1) lines.push(`${DIFFS[s.difficulty].label}難度 ×${mult}`);
   return { total: Math.max(5, Math.round(base * mult)), lines };
-}
-
-/** 預測模型:估計這組活動的營收提升範圍(只把「已經探聽到」的玩家喜好算進去) */
-export function estimateLift(s: State, sel: PlanSel): { low: number; high: number } {
-  const mech = find(CONTENT.mechanics, sel.mechanic);
-  const reward = find(CONTENT.rewards, sel.reward);
-  const bundle = find(CONTENT.bundles, sel.bundle);
-  const promo = find(CONTENT.promos, sel.promo);
-  const calc = (polish: number, n: number): number => {
-    let fun = mech.fun + polish * 10 - Math.max(0, mech.need - polish) * 9;
-    if (s.intel.hated && mech.id === s.taste.hated) fun -= 22;
-    const appeal = reward.appeal + (s.intel.reward && reward.id === s.taste.reward ? 20 : 0);
-    let desire = bundle.desire + (appeal - 50) * 0.3;
-    if (bundle.risky && s.trust < 55) desire -= 25;
-    const cl = (v: number) => clamp(v + n, 5, 100);
-    const part = (cl(promo.reach + 10) / 100) * (0.35 + 0.65 * (cl(fun) / 100));
-    return 1.1 * part * (cl(desire) / 100) * (0.4 + 0.6 * (cl(appeal) / 100));
-  };
-  return { low: calc(0, -8), high: calc(4, 8) };
 }
 
 /* ---------- 日報:每次不一樣的小題目 ---------- */

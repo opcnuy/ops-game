@@ -25,9 +25,9 @@ export const SKILLS: Skill[] = [
   { id: 'quick_report', line: 'data', tier: 1, icon: '📈', name: '快速報表', cost: 1, desc: '「快速抓個大概」這類選項,出錯的機率降低。' },
   { id: 'data_unify', line: 'data', tier: 2, icon: '🧮', name: '口徑統一', cost: 2, requires: ['quick_report'], desc: '數據、報表類事件的選項,都少花 1 點。' },
   { id: 'template', line: 'data', tier: 2, icon: '🗂️', name: '報表範本庫', cost: 2, requires: ['quick_report'], desc: '數據、報表類事件多一個選項:用範本快速出表。' },
-  { id: 'forecast', line: 'data', tier: 3, icon: '🔮', name: '預測模型', cost: 3, requiresAny: ['data_unify', 'template'], desc: '規劃活動時,會顯示預估的營收提升範圍。' },
+  { id: 'forecast', line: 'data', tier: 3, icon: '🔮', name: '預測模型', cost: 3, requiresAny: ['data_unify', 'template'], desc: '活動上線時,成績的隨機起伏減半,結果更穩定。' },
 
-  { id: 'soothe', line: 'comm', tier: 1, icon: '🕊️', name: '安撫話術', cost: 1, desc: '客訴、輿情事件裡,有風險的選項成功率提高。' },
+  { id: 'soothe', line: 'comm', tier: 1, icon: '🕊️', name: '安撫話術', cost: 1, desc: '客訴、輿情事件裡,處理得更順利(成功率提高)。' },
   { id: 'advocate', line: 'comm', tier: 2, icon: '📣', name: '玩家代言人', cost: 2, requires: ['soothe'], desc: '客訴、輿情事件多一個選項:請核心玩家出面說明。' },
   { id: 'crisis_pr', line: 'comm', tier: 2, icon: '🚒', name: '危機公關', cost: 2, requires: ['soothe'], desc: '逾期後再次催辦的事,處理不用多花 1 點。' },
   { id: 'social_sense', line: 'comm', tier: 3, icon: '📡', name: '社群敏銳', cost: 3, requiresAny: ['advocate', 'crisis_pr'], desc: '「看輿情」一次就揭露兩項玩家情報。' },
