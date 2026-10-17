@@ -6,6 +6,9 @@ import variantData from './content/variants.json';
 import optLabelData from './content/optlabels.json';
 import extraData from './content/extraOptions.json';
 import endingsData from './content/endings.json';
+import { BUFFS, SCOUT_CARDS, scoutCard, type BuffId, type ScoutCard } from './scout';
+
+const BUFF_IDS = BUFFS;
 import type {
   Moment, Phase,
   EventOption, InboxItem,
@@ -332,6 +335,14 @@ function sanitizeState(raw: unknown): State | null {
   s.taste = { reward: cleanText(s.taste?.reward, 40), hated: cleanText(s.taste?.hated, 40) };
   s.intel = { reward: !!s.intel?.reward, hated: !!s.intel?.hated };
   if (s.pulse !== undefined) s.pulse = num(s.pulse, 0, 1e5, 0);
+  const rs = r.scout as { day?: unknown; cards?: unknown; listened?: unknown } | undefined;
+  s.scout = rs && typeof rs === 'object' && Array.isArray(rs.cards)
+    ? { day: num(rs.day, 0, 1e5, 0), cards: rs.cards.filter((id): id is string => typeof id === 'string' && !!scoutCard(id)).slice(0, 3), listened: !!rs.listened,
+      found: typeof (rs as { found?: unknown }).found === 'string' ? cleanText((rs as { found?: string }).found, 200) : undefined }
+    : undefined;
+  if (s.scout && !s.scout.cards.length) s.scout = undefined;
+  s.buffs = (Array.isArray(r.buffs) ? (r.buffs as { id?: unknown; until?: unknown }[]) : []).slice(0, 10)
+    .filter((b) => b && typeof b.id === 'string' && Object.hasOwn(BUFF_IDS, b.id)).map((b) => ({ id: b.id as string, until: num(b.until, 0, 1e5, 0) }));
   return s;
 }
 
@@ -446,6 +457,7 @@ export function optionCost(s: State, item: InboxItem, opt: EventOption): number 
   if (c <= 0) return 0;
   const ev = EVENTS[item.eventId];
   if (hasSkill(s, 'data_unify') && isDataEvent(ev) && c > 1) c -= 1;
+  if (buffActive(s, 'prepared') && isPulseEvent(ev)) c = Math.max(0, c - 1);
   if (item.stage && !hasSkill(s, 'crisis_pr')) c += 1;
   return c;
 }
@@ -505,6 +517,74 @@ function tuneEffects(s: State, ev: GameEvent, e: Effects | undefined, mood: Mood
     out[k] = Math.sign(v) * Math.max(1, Math.round(Math.abs(v) * f));
   }
   return out;
+}
+
+/* ---------- 看輿情的發現卡與持續狀態 ---------- */
+
+export const buffActive = (s: State, id: BuffId): boolean => (s.buffs ?? []).some((b) => b.id === id && b.until >= s.day);
+export const activeBuffs = (s: State): { id: BuffId; left: number }[] =>
+  (s.buffs ?? []).filter((b) => b.until >= s.day).map((b) => ({ id: b.id as BuffId, left: b.until - s.day + 1 }));
+
+function addBuff(s: State, id: BuffId, days: number): void {
+  s.buffs = [...(s.buffs ?? []).filter((b) => b.id !== id), { id, until: s.day + days - 1 }];
+}
+
+/** 持續狀態對事件結果的加成:信任的得分、老闆好感的得失 */
+function buffEffects(s: State, e: Effects | undefined): Effects | undefined {
+  if (!e) return e;
+  const out: Effects = { ...e };
+  if (buffActive(s, 'trustUp') && (out.trust ?? 0) > 0) out.trust = Math.ceil((out.trust as number) * 1.25);
+  if (buffActive(s, 'bossAmp') && out.boss) out.boss = Math.sign(out.boss) * Math.ceil(Math.abs(out.boss) * 1.3);
+  return out;
+}
+
+/** 從卡池抽三張:不重複,至少一張不是壞的、至少一張不用花點數 */
+function drawScout(s: State): string[] {
+  const pool = SCOUT_CARDS.filter((c) => !(c.needs === 'reports' && s.pendingReports <= 0));
+  const picked: ScoutCard[] = [];
+  const rest = [...pool];
+  while (picked.length < 3 && rest.length) {
+    let r = rand(s) * rest.reduce((a, c) => a + c.weight, 0);
+    let i = 0;
+    for (; i < rest.length - 1; i++) { r -= rest[i].weight; if (r <= 0) break; }
+    picked.push(rest.splice(i, 1)[0]);
+  }
+  if (picked.every((c) => c.bad)) picked[2] = scoutCard('calm') as ScoutCard;
+  if (picked.every((c) => c.ap > 0)) picked[picked.length - 1] = picked.some((c) => c.id === 'calm') ? scoutCard('guide') as ScoutCard : scoutCard('calm') as ScoutCard;
+  return picked.map((c) => c.id);
+}
+
+/** 選一張發現卡;id 為 null 代表先觀望 */
+export function pickScout(s: State, id: string | null): string | null {
+  if (!s.scout) return '沒有待選的輿情報告';
+  if (id === null) {
+    s.scout = undefined;
+    pushFeed(s, '你把輿情報告看過一遍,決定先觀望。');
+    return null;
+  }
+  if (!s.scout.cards.includes(id)) return '沒有這張卡';
+  const c = scoutCard(id);
+  if (!c) return '沒有這張卡';
+  if (s.ap < c.ap) return '行動點數不足';
+  s.ap -= c.ap;
+  applyEffects(s, c.effects);
+  if (c.buff) addBuff(s, c.buff.id, c.buff.days);
+  if (c.clearHabit) s.habits[c.clearHabit] = 0;
+  if (c.reports) s.pendingReports = Math.max(0, s.pendingReports - c.reports);
+  let extra = '';
+  if (c.complaintTomorrow) {
+    const pool = Object.values(EVENTS).filter((e) => (e.kind === '客訴' || e.kind === '輿情') && (e.weight ?? 0) > 0
+      && (e.minDay ?? 1) <= s.day + 1 && (e.minLevel ?? 1) <= s.level && !s.inbox.some((i) => i.eventId === e.id));
+    if (pool.length) {
+      const ev = pickOf(s, leastSeen(s, pool));
+      s.followUps.push({ eventId: ev.id, day: s.day + 1 });
+      extra = ' 明天會多一件事。';
+    }
+  }
+  s.scout = undefined;
+  pushFeed(s, `📡 【${c.name}】${c.result}${extra}${effectNote(c.effects)}`);
+  if (c.id === 'harsh' || c.id === 'rival') addMoment(s, 3, c.icon, `看輿情時遇到「${c.name}」。`);
+  return null;
 }
 
 /** 看過輿情之後,當天與隔天都掌握得到風向 */
@@ -615,7 +695,7 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
   let r = rand(s);
   let out: Outcome = outs[outs.length - 1];
   for (const o of outs) { r -= o.p; if (r <= 0) { out = o; break; } }
-  const eff = hasMood(ev) ? tuneEffects(s, ev, out.effects, mood) : out.effects;
+  const eff = buffEffects(s, hasMood(ev) ? tuneEffects(s, ev, out.effects, mood) : out.effects);
   applyEffects(s, eff);
   if (out.setFlag) s.flags[out.setFlag] = true;
   if (out.reports) s.pendingReports = Math.max(0, s.pendingReports + out.reports);
@@ -701,15 +781,18 @@ export function doAction(s: State, kind: ActionKind): string | null {
     c.checked = true;
     pushFeed(s, '你請工程師做了上線前驗收,他發現並修了兩個小問題。');
   } else if (kind === 'intel') {
-    const intelDone = s.intel.reward && s.intel.hated;
-    if (intelDone && s.pulse === s.day) return '今天的輿情風向已經掌握了';
+    if (s.pulse === s.day) return '今天已經看過輿情了';
     const found: string[] = [];
     if (hasSkill(s, 'social_sense')) {
       if (!s.intel.reward) found.push(revealIntel(s, 'reward'));
       if (!s.intel.hated) found.push(revealIntel(s, 'hated'));
-    } else if (!intelDone) found.push(revealIntel(s, s.intel.reward ? 'hated' : 'reward'));
+    } else if (!(s.intel.reward && s.intel.hated)) found.push(revealIntel(s, s.intel.reward ? 'hated' : 'reward'));
     s.pulse = s.day;
-    pushFeed(s, `你花了一段時間爬論壇與社群。${found.join(' ')} 📡 掌握了風向:今明兩天的事件會先看得出氣氛、附上處理提示,客訴與輿情的風險選項也更穩。`.replace('  ', ' '));
+    // 有在看,玩家感覺得到:「忽視玩家」的累積減 1
+    const listened = (s.habits.ignored_players ?? 0) > 0;
+    if (listened) s.habits.ignored_players--;
+    s.scout = { day: s.day, cards: drawScout(s), listened, found: found.join(' ') || undefined };
+    pushFeed(s, `你花了一段時間爬論壇與社群。${found.join(' ')} 整理成一份輿情報告,也掌握了風向。`.replace('  ', ' '));
   } else if (kind === 'sloppy') {
     if (s.pendingReports <= 0) return '沒有待填的日報';
     s.pendingReports--;
@@ -864,6 +947,7 @@ export function endDay(s: State): DaySummary {
   if (s.day % 5 === 0) for (const k of Object.keys(s.habits)) s.habits[k] = Math.max(0, s.habits[k] - 1);
 
   // 4. 自然變化
+  if (buffActive(s, 'hype')) applyEffects(s, { players: 0.3 });
   s.retention += (38 - s.retention) * 0.05;
   const growth = (s.retention - 35) * 0.0007 + (s.trust - 50) * 0.0002 + (rand(s) - 0.5) * 0.012;
   s.players = Math.max(0, Math.round(s.players * (1 + growth)));
@@ -886,7 +970,9 @@ export function endDay(s: State): DaySummary {
   // 5. 新的一天
   if (s.mode === 'endless' && s.day + 1 > 20) gainAch(s, 'endless20');
   s.day++;
-  s.ap = s.maxAp;
+  s.ap = Math.max(1, s.maxAp - (buffActive(s, 'tired') ? 1 : 0));
+  s.scout = undefined; // 沒選的報告隔天就過期了
+  s.buffs = (s.buffs ?? []).filter((b) => b.until >= s.day);
   if (s.campaign?.phase === 'planned' && s.campaign.launchDay <= s.day) launch(s, lines);
   spawnDay(s);
 

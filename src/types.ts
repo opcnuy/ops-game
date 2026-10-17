@@ -161,6 +161,10 @@ export interface State {
   intel: { reward: boolean; hated: boolean };
   /** 最近一次「看輿情」的那一天:當天與隔天,客訴、輿情事件會附上處理提示,有風險的選項也更穩 */
   pulse?: number;
+  /** 看輿情後抽到、還沒選的發現卡(日期,三張卡,有沒有順便聽見玩家) */
+  scout?: { day: number; cards: string[]; listened?: boolean; found?: string };
+  /** 看輿情帶來的持續狀態,until 是最後一個有效的日子 */
+  buffs?: { id: string; until: number }[];
   history: { day: number; players: number; spend: number }[];
   feed: string[];
   /** 全程紀錄(最近 80 筆),給「紀錄」分頁回顧用 */

@@ -1,7 +1,8 @@
 // 技能系統檢查:資料自洽、學習規則、12 個技能各自的實際效果、存檔與職級的技能點帳目
 import {
-  DIFFS, EVENTS, moodOf, pulseActive, pulseHint, chooseOption, doAction, endDay, eventOptions, hasSkill, load, makeReport, newGame, optionCost, planCampaign, save, submitReport,
+  DIFFS, EVENTS, activeBuffs, buffActive, moodOf, pickScout, pulseActive, pulseHint, chooseOption, doAction, endDay, eventOptions, hasSkill, load, makeReport, newGame, optionCost, planCampaign, save, submitReport,
 } from '../src/engine';
+import { SCOUT_CARDS, scoutCard } from '../src/scout';
 import { ACHIEVEMENTS, LINES, SKILLS, prereqMet, prereqText, sanitizeSkills, skillById } from '../src/skills';
 import { LEVELS, SP_PER_LEVEL, availableSp, levelFor, loadProfile, saveProfile, spentSp } from '../src/profile';
 import type { State } from '../src/types';
@@ -355,6 +356,75 @@ ok(hasSkill(mk(['quick_report', 'template', 'forecast']), 'forecast'), '預測�
   const sp = mk([]); sp.intel = { reward: true, hated: true }; doAction(sp, 'intel');
   const hint = pulseHint(sp, ev, mkItem(seeds.hostile[0]));
   ok(!!hint && hint.includes('火氣'), `風向提示沒有說出氣氛:${hint}`);
+}
+
+// 輿情報告:抽三張發現卡,選一張有好處也有代價,效果會持續幾天
+{
+  // 抽卡:三張不重複,至少一張不是壞的、至少一張免費
+  for (let i = 0; i < 400; i++) {
+    const s = mk([], 40000 + i); s.pendingReports = i % 2;
+    doAction(s, 'intel');
+    const ids = s.scout?.cards ?? [];
+    const cs = ids.map((id) => scoutCard(id)!);
+    if (ids.length !== 3 || new Set(ids).size !== 3 || cs.some((c) => !c)) { fail(`抽卡結果不對:${ids}`); break; }
+    if (cs.every((c) => c.bad)) { fail('三張全是壞的'); break; }
+    if (cs.every((c) => c.ap > 0)) { fail('三張都要花點數'); break; }
+    if (s.pendingReports === 0 && ids.includes('summary')) { fail('沒有待填日報卻抽到整理日報'); break; }
+  }
+  // 每種卡都能選,點數與效果正確
+  const withCard = (id: string, setup?: (s: State) => void): State => {
+    const s = mk([], 51000); setup?.(s);
+    doAction(s, 'intel'); s.scout = { day: s.day, cards: [id, 'calm', 'guide'] };
+    return s;
+  };
+  for (const c of SCOUT_CARDS) {
+    const s = withCard(c.id, (t) => { t.pendingReports = 2; t.habits.ignored_players = 3; });
+    const ap0 = s.ap;
+    ok(pickScout(s, c.id) === null && s.ap === ap0 - c.ap && !s.scout, `卡片「${c.name}」選下去的點數或狀態不對`);
+    if (c.buff) ok(buffActive(s, c.buff.id), `卡片「${c.name}」沒有給持續狀態`);
+    if (c.clearHabit) ok(!s.habits[c.clearHabit], `卡片「${c.name}」沒有清掉習慣`);
+    if (c.reports) ok(s.pendingReports === 2 - c.reports, `卡片「${c.name}」沒有減日報`);
+    if (c.complaintTomorrow) ok(s.followUps.some((f) => ['客訴', '輿情'].includes(EVENTS[f.eventId].kind)), `卡片「${c.name}」沒有排出隔天的事件`);
+  }
+  { // 點數不夠、不在手上的卡、先觀望
+    const s = withCard('trend'); s.ap = 0;
+    ok(pickScout(s, 'trend') !== null, '點數不夠還選得到要花點數的卡');
+    ok(pickScout(s, 'leak') !== null, '選到不在手上的卡');
+    ok(pickScout(s, null) === null && !s.scout, '先觀望沒有關掉報告');
+    ok(pickScout(s, null) !== null, '沒有報告還能觀望');
+  }
+  // 傾聽:有忽視玩家的累積才會減 1
+  { const a = mk([]); a.habits.ignored_players = 2; doAction(a, 'intel'); ok(a.habits.ignored_players === 1 && a.scout?.listened === true, '看輿情沒有減少忽視玩家');
+    const b = mk([]); doAction(b, 'intel'); ok(!b.scout?.listened, '沒有累積也說有聽見'); }
+  // 持續狀態:信任得分 +25%、老闆得失 +30%、事件選項少花 1 點、每天人數、明天少 1 點、過期
+  const gain = (setup: (s: State) => void, eventId: string, label: string, stat: 'trust' | 'boss'): number => {
+    let sum = 0;
+    for (let i = 0; i < 200; i++) {
+      const t = mk([], 60000 + i); setup(t);
+      const uid = push(t, eventId); const before = t[stat];
+      chooseOption(t, uid, optIndex(t, eventId, label)); sum += t[stat] - before;
+    }
+    return sum;
+  };
+  const addB = (id: string) => (t: State) => { t.buffs = [{ id, until: t.day + 2 }]; };
+  ok(gain(addB('trustUp'), 'e_refund', '依政策協助申請退款流程', 'trust') > gain(() => {}, 'e_refund', '依政策協助申請退款流程', 'trust') * 1.15, '玩家挺你沒有放大信任得分');
+  const bossBase = gain(() => {}, 'e_boss_campaign', '收到,馬上規劃', 'boss');
+  ok(gain(addB('bossAmp'), 'e_boss_campaign', '收到,馬上規劃', 'boss') > bossBase, '老闆在看沒有放大老闆得分');
+  { const t = mk([]); const uid = push(t, 'e_refund'); const opt = EVENTS.e_refund.options[0]; const it = t.inbox.find((i) => i.uid === uid)!;
+    const base = optionCost(t, it, opt); addB('prepared')(t); ok(optionCost(t, it, opt) === Math.max(0, base - 1), '有備而來沒有讓客訴選項少花 1 點');
+    const boss = push(t, 'e_boss_campaign'); const bi = t.inbox.find((i) => i.uid === boss)!;
+    ok(optionCost(t, bi, EVENTS.e_boss_campaign.options[1]) === EVENTS.e_boss_campaign.options[1].ap, '有備而來不該影響老闆事件'); }
+  { const a = mk([], 7); const b = mk([], 7); addB('hype')(a); endDay(a); endDay(b);
+    ok(a.players > b.players, '話題熱度沒有讓玩家人數多一點'); }
+  { const t = mk([]); t.buffs = [{ id: 'tired', until: t.day + 1 }]; endDay(t); ok(t.ap === t.maxAp - 1, '心很累沒有讓隔天少 1 點'); endDay(t); ok(t.ap === t.maxAp, '心很累應該只影響一天'); }
+  { const t = mk([]); t.buffs = [{ id: 'trustUp', until: t.day + 1 }]; ok(activeBuffs(t).length === 1 && activeBuffs(t)[0].left === 2, '剩餘天數不對'); endDay(t); endDay(t); ok(activeBuffs(t).length === 0 && !(t.buffs ?? []).length, '過期的狀態沒有清掉'); }
+  // 沒選的報告隔天過期;存檔讀回後報告與狀態還在,竄改的內容會被濾掉
+  { const t = mk([]); doAction(t, 'intel'); endDay(t); ok(!t.scout, '沒選的報告隔天還在'); }
+  { const t = mk([]); doAction(t, 'intel'); t.buffs = [{ id: 'hype', until: t.day + 2 }]; save(t); const l = load()!;
+    ok(l.scout?.cards.length === 3 && l.buffs?.[0].id === 'hype', '存檔讀回後報告或狀態不見了');
+    const raw = JSON.parse(JSON.stringify(t)); raw.scout.cards = ['calm', '<b>x</b>', 'nope']; raw.buffs = [{ id: 'evil', until: 5 }, { id: 'hype', until: 'x' }];
+    store.set([...store.keys()].find((k) => k.includes('save'))!, JSON.stringify(raw)); const l2 = load()!;
+    ok(l2.scout?.cards.length === 1 && l2.scout.cards[0] === 'calm' && l2.buffs?.length === 1, '竄改的卡片或狀態沒有被濾掉'); }
 }
 
 if (failed) throw new Error(`技能系統檢查失敗 ${failed} 項`);

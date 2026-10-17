@@ -945,3 +945,19 @@ button.cal.badge:hover { filter: brightness(1.05); transform: translateY(-1px); 
 .ver { font-size: 0.7rem; color: var(--muted, #8a93a3); opacity: 0.85; letter-spacing: 0.03em; }
 .start { position: relative; }
 .start > .ver { position: absolute; top: 4px; right: 4px; }
+
+/* 看輿情:持續狀態與輿情報告 */
+.buff-bar { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 6px; }
+.buff { font-size: 0.78rem; padding: 2px 8px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255, 255, 255, 0.06); white-space: nowrap; }
+.buff small { margin-left: 4px; opacity: 0.7; }
+.scout-modal { width: min(560px, 100%); }
+.scout-voices { margin: 6px 0 4px; padding-left: 18px; font-size: 0.9rem; }
+.scout-title { font-size: 0.95rem; margin: 12px 0 6px; }
+.scout-cards { display: flex; flex-direction: column; gap: 8px; }
+.scout-card { display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255, 255, 255, 0.04); color: inherit; cursor: pointer; }
+.scout-card:hover:not(:disabled) { border-color: var(--accent); }
+.scout-card:disabled { opacity: 0.45; cursor: not-allowed; }
+.scout-card.bad { border-style: dashed; }
+.scout-card .sc-icon { font-size: 1.5rem; }
+.scout-card .sc-body { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.scout-card .sc-body small { opacity: 0.8; line-height: 1.35; }

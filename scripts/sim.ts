@@ -1,4 +1,5 @@
-import { newGame, chooseOption, planCampaign, doAction, endDay, goalMet, EVENTS, eventOptions, optionCost } from '../src/engine';
+import { newGame, chooseOption, pickScout, planCampaign, doAction, endDay, goalMet, EVENTS, eventOptions, optionCost } from '../src/engine';
+import { scoutCard } from '../src/scout';
 import type { Difficulty, State } from '../src/types';
 
 declare const process: { env: Record<string, string | undefined> };
@@ -21,7 +22,11 @@ function play(strategy: 'random' | 'careful' | 'lazy', diff: Difficulty, seed: n
       }
       if (strategy === 'careful') {
         if (s.campaign?.phase === 'planned') { doAction(s, 'check'); doAction(s, 'polish'); doAction(s, 'polish'); }
-        if (!(s.intel.reward && s.intel.hated)) doAction(s, 'intel');
+        // LOOK=daily:每天都看輿情(選一張不壞、最划算的卡);預設只在還沒摸清喜好時看
+        if ((process.env.LOOK === 'daily' || !(s.intel.reward && s.intel.hated)) && doAction(s, 'intel') === null && s.scout) {
+          const pick = s.scout.cards.map((id) => scoutCard(id)!).filter((c) => !c.bad && c.ap <= s.ap).sort((a, b) => a.ap - b.ap)[0];
+          pickScout(s, pick?.id ?? null);
+        }
       }
       // 處理收件匣:careful 選最便宜的有效選項,random 隨機
       for (const it of [...s.inbox]) {

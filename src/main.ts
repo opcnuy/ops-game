@@ -1,4 +1,5 @@
 import './style.css';
+import { BUFFS, scoutCard } from './scout';
 import { CUP_EMPTY, CUP_FULL, CUP_PALETTE, SIREN, SIREN_PALETTE, computeLayout, renderOffice, spriteURL } from './scene/office';
 import type { Place } from './scene/office';
 import { ROOMS, renderRoom } from './scene/rooms';
@@ -6,7 +7,7 @@ import type { Room } from './scene/rooms';
 import { createFadeCanvas, dissolve } from './scene/fade';
 import { storageKey } from './storage';
 import {
-  CAMPAIGN_TARGET, CONTENT, DIFFS, pulseActive, pulseHint, EVENTS, computeRunXp, PHASES, phaseOf, GOAL_INFO, STORY_DAYS, chooseOption, clearSave, doAction, endDay,
+  CAMPAIGN_TARGET, CONTENT, DIFFS, activeBuffs, pickScout, pulseActive, pulseHint, EVENTS, computeRunXp, PHASES, phaseOf, GOAL_INFO, STORY_DAYS, chooseOption, clearSave, doAction, endDay,
   HABITS, find, goalMet, goalValue, hasSkill, makeReport, submitReport, estimateLift, itemOptions, eventText, load, newGame, optionCost, planCampaign, planCost, save, spendToday, weekdayLabel,
 } from './engine';
 import type { ActionKind, ReportQuiz } from './engine';
@@ -21,7 +22,7 @@ const app = document.getElementById('app') as HTMLDivElement;
 let S: State | null = load();
 let profile = loadProfile();
 let screen: 'start' | 'game' | 'skills' = 'start';
-type ModalKind = 'none' | 'planner' | 'summary' | 'intro' | 'settings' | 'gamemenu' | 'report' | 'rank';
+type ModalKind = 'none' | 'planner' | 'summary' | 'intro' | 'settings' | 'gamemenu' | 'report' | 'rank' | 'scout';
 let modal: ModalKind = 'none';
 let summary: DaySummary | null = null;
 let toast = '';
@@ -214,6 +215,38 @@ function renderProfile(): string {
     <div class="xpbar"><span style="--to:${xpPercent(profile.xp)}%"></span></div>
     <small>${nextHint()} · 已完成 ${profile.runs} 局</small>
     <button class="skills-btn" data-act="skills">${sceneOn() ? '📓 技能筆記本' : '🧠 技能'}${availableSp(profile) > 0 ? ` <em>${availableSp(profile)} 點可用</em>` : ` <small>已學 ${profile.skills.length} 個</small>`}</button></div>`;
+}
+
+/** 看輿情之後的報告:玩家心聲,加上三張發現卡選一張 */
+function renderScout(s: State): string {
+  const sc = s.scout;
+  if (!sc) return '';
+  const complaints = s.inbox.filter((i) => ['客訴', '輿情'].includes(EVENTS[i.eventId].kind)).length;
+  const mood = s.trust >= 70 ? '整體氣氛不錯' : s.trust >= 50 ? '氣氛普通' : '抱怨變多了';
+  const voices = [
+    sc.found ?? '',
+    `玩家信任 ${Math.round(s.trust)}:${mood}。`,
+    complaints ? `收件匣裡有 ${complaints} 件客訴或輿情還沒處理。` : '目前沒有待處理的客訴或輿情。',
+    sc.listened ? '你有在看,玩家感覺得到:「忽視玩家」的累積減 1。' : '',
+    '今明兩天,事件會先看得出氣氛、附上處理提示。',
+  ].filter(Boolean);
+  const cards = sc.cards.map((id) => {
+    const c = scoutCard(id);
+    if (!c) return '';
+    const poor = s.ap < c.ap;
+    return `<button class="scout-card ${c.bad ? 'bad' : ''}" data-act="scout-pick" data-id="${c.id}" ${poor ? 'disabled' : ''}>
+      <span class="sc-icon">${c.icon}</span>
+      <span class="sc-body"><b>${esc(c.name)}</b><small>${esc(c.desc)}</small></span>
+      <span class="cost">${c.ap ? '⚡'.repeat(c.ap) : '免費'}</span></button>`;
+  }).join('');
+  return `<div class="modal-bg"><div class="modal scout-modal">
+    <div class="modal-head"><h2>📡 輿情報告</h2><button class="x" data-act="scout-close" aria-label="先關閉,晚點再選">✕</button></div>
+    <ul class="scout-voices">${voices.map((v) => `<li>${esc(v)}</li>`).join('')}</ul>
+    <h3 class="scout-title">這次的發現:選一張</h3>
+    <div class="scout-cards">${cards}</div>
+    <div class="actions"><button data-act="scout-skip">先觀望,都不選</button></div>
+    <p class="muted report-foot">不選的話,報告明天就過期了。</p>
+  </div></div>`;
 }
 
 function renderReport(s: State): string {
@@ -420,7 +453,9 @@ function renderInbox(s: State): string {
   const banner = s.feed[0] ? `<div class="result-note">${renderFeedLine(s, s.feed[0]).replace(/^<li>|<\/li>$/g, '')}${lastInsight ? `<div class="insight">💡 ${esc(lastInsight)}</div>` : ''}</div>` : '';
   const ph = phaseOf(s.day);
   const phaseLine = ph.first ? `<div class="day-line">📌 ${PHASES[ph.key].name}:${esc(PHASES[ph.key].blurb)}</div>` : '';
-  const dayLine = (s.dayLine ? `<div class="day-line">🌤️ ${esc(s.dayLine)}</div>` : '') + phaseLine;
+  const buffs = activeBuffs(s);
+  const buffBar = buffs.length ? `<div class="buff-bar">${buffs.map((b) => `<span class="buff" title="${esc(BUFFS[b.id].desc)}">${BUFFS[b.id].icon} ${BUFFS[b.id].name}<small>${b.left} 天</small></span>`).join('')}</div>` : '';
+  const dayLine = buffBar + (s.dayLine ? `<div class="day-line">🌤️ ${esc(s.dayLine)}</div>` : '') + phaseLine;
   if (!sorted.length) return `${dayLine}${banner}<div class="card empty">收件匣是空的。<br>這種時刻通常撐不過一個小時。</div>`;
   const openable = sorted.filter((i) => !sceneRoomFor(EVENTS[i.eventId]));
   // 預設全部收合,由玩家自己展開
@@ -616,7 +651,6 @@ function renderGame(s: State): string {
   const prev = s.history[s.history.length - 1];
   const spend = spendToday(s);
   const days = s.mode === 'story' ? `${Math.min(s.day, STORY_DAYS)}/${STORY_DAYS}` : `第 ${s.day} 天`;
-  const intelDone = s.intel.reward && s.intel.hated && s.pulse === s.day;
   const camp = s.campaign && s.campaign.phase !== 'done';
   const tabs: [Tab, string][] = [
     ['inbox', `📥 收件匣 <em>${s.inbox.length}</em>`],
@@ -644,7 +678,9 @@ function renderGame(s: State): string {
   const tabsHtml = tabList.map(([k, label]) => `<button class="${tab === k ? 'sel' : ''}" data-act="tab" data-t="${k}">${label}</button>`).join('')
     + (sceneOn() ? '<button data-act="open-notebook">📓 筆記本</button>' : '');
   const dockHtml = `
-    <button data-act="intel" ${s.ap < 1 || intelDone ? 'disabled' : ''}><span>💬 看輿情${pulseActive(s) ? ' 📡' : ''}</span><span class="cost">⚡</span></button>
+    ${s.scout
+    ? '<button class="pulse" data-act="scout-open"><span>📡 輿情報告</span><span class="cost">待選</span></button>'
+    : `<button data-act="intel" ${s.ap < 1 || s.pulse === s.day ? 'disabled' : ''}><span>💬 看輿情${pulseActive(s) ? ' 📡' : ''}</span><span class="cost">⚡</span></button>`}
     <button data-act="report" ${(!hasSkill(s, 'auto_report') && s.ap < 1) || s.pendingReports <= 0 ? 'disabled' : ''}><span>📝 填日報${s.pendingReports ? ` (${s.pendingReports})` : ''}</span><span class="cost ${hasSkill(s, 'auto_report') ? 'down' : ''}">${hasSkill(s, 'auto_report') ? '免費' : '⚡'}</span></button>
     <button data-act="sloppy" ${s.pendingReports <= 0 ? 'disabled' : ''} title="不花點數,但會留下草率的紀錄"><span>🙈 隨便填</span><span class="cost">免費</span></button>
     <button class="primary end ${s.ap === 0 || !s.inbox.length ? 'pulse' : ''}" data-act="end"><span>${endArmed ? '再按一次結束' : '結束今天 ▶'}</span></button>`;
@@ -1102,6 +1138,7 @@ function render(): void {
   else if (modal === 'intro') html += renderIntro();
   else if (modal === 'gamemenu') html += renderGameMenu();
   else if (modal === 'report') html += renderReport(s);
+  else if (modal === 'scout') html += renderScout(s);
   else if (modal === 'settings') html += renderSettings();
   if (notebookOpen && sceneOn() && !s.over) html += renderNotebookOverlay(s);
   if (toast) html += `<div class="toast">${esc(toast)}</div>`;
@@ -1246,7 +1283,8 @@ document.addEventListener('keydown', (e) => {
     const next = app.querySelector<HTMLButtonElement>('.actions button.primary[data-act="close-modal"]');
     if (next) { e.preventDefault(); next.click(); return; }
   }
-  if (e.key === 'Escape' && modal === 'report') { modal = 'none'; reportQuiz = null; reportDone = null; render(); }
+  if (e.key === 'Escape' && modal === 'scout') { modal = 'none'; render(); }
+  else if (e.key === 'Escape' && modal === 'report') { modal = 'none'; reportQuiz = null; reportDone = null; render(); }
   else if (e.key === 'Escape' && planning && !transitioning) { void goPlace('desk', resetPlace); }
   else if (e.key === 'Escape' && (START_MODALS.includes(modal) || modal === 'gamemenu')) { modal = 'none'; render(); }
   else if (e.key === 'Escape' && notebookOpen) { notebookOpen = false; render(); }
@@ -1283,6 +1321,16 @@ app.addEventListener('click', (e) => {
       save(s);
       reportDone = res;
       render();
+      return;
+    }
+    case 'scout-open': if (s?.scout) { modal = 'scout'; render(); } return;
+    case 'scout-close': modal = 'none'; render(); return;
+    case 'scout-pick': case 'scout-skip': {
+      if (!s) return;
+      const err = pickScout(s, act === 'scout-skip' ? null : el.dataset.id ?? '');
+      if (err) { flash(err); return; }
+      modal = 'none'; save(s); render();
+      flash(resultOf(s.feed[0] ?? ''), 4500);
       return;
     }
     case 'report-done': case 'close-report': modal = 'none'; reportQuiz = null; reportDone = null; render(); return;
@@ -1388,7 +1436,7 @@ app.addEventListener('click', (e) => {
   } else if (act === 'polish' || act === 'check' || act === 'intel' || act === 'sloppy') {
     const err = doAction(s, act as ActionKind);
     if (err) flash(err);
-    else if (act === 'intel') { save(s); render(); flash(resultOf(s.feed[0] ?? ''), 4500); }
+    else if (act === 'intel') { modal = 'scout'; save(s); render(); }
     else { save(s); render(); }
   } else if (act === 'end') {
     const dueToday = s.inbox.filter((i) => i.deadline <= s.day).length;
