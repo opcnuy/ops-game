@@ -163,8 +163,7 @@
   "deadline": 2,
   "ignore": {
    "effects": {
-    "boss": -5,
-    "trust": -2
+    "boss": -5
    },
    "result": "原廠又寄了一封信,副本欄位多了三個你不認識的人。"
   },
@@ -176,7 +175,6 @@
      {
       "p": 0.65,
       "effects": {
-       "trust": 3,
        "boss": 3
       },
       "result": "是例行維護與公告時間重疊。你附上時間軸,原廠回:「了解。」"
@@ -221,8 +219,7 @@
      {
       "p": 0.6,
       "effects": {
-       "boss": -8,
-       "trust": -2
+       "boss": -8
       },
       "result": "原廠翻出同期對照圖,語氣變得非常客氣。",
       "habit": {
@@ -249,7 +246,7 @@
   "deadline": 2,
   "ignore": {
    "effects": {
-    "trust": -1
+    "boss": -1
    },
    "result": "查詢結果出來時已經沒人在等。"
   },
@@ -261,7 +258,7 @@
      {
       "p": 1,
       "effects": {
-       "trust": 1
+       "boss": 1
       },
       "result": "隔天結果出爐:是時區設定的小問題。"
      }
@@ -274,7 +271,7 @@
      {
       "p": 0.6,
       "effects": {
-       "trust": 2
+       "boss": 2
       },
       "result": "抽樣就看出問題了,你省下一天。"
      },
@@ -431,7 +428,6 @@
   "deadline": 1,
   "ignore": {
    "effects": {
-    "trust": 0,
     "boss": -1
    },
    "result": "排程維持原樣,阿宏默默加了一個備註。"
@@ -482,7 +478,6 @@
      {
       "p": 1,
       "effects": {
-       "trust": 2,
        "boss": 1
       },
       "result": "你們把 8 個功能砍到 5 個。最後一個是林總想要的。"
@@ -1255,8 +1250,7 @@
      {
       "p": 0.8,
       "effects": {
-       "boss": 2,
-       "trust": 1
+       "boss": 2
       },
       "result": "原來是時區與去重規則不同,你寫進備註。",
       "habit": {
@@ -1481,8 +1475,7 @@
   "deadline": 2,
   "ignore": {
    "effects": {
-    "boss": -9,
-    "trust": -2
+    "boss": -9
    },
    "result": "原廠改為正式發函,收件人欄位寫了老闆的全名。"
   },
@@ -1494,8 +1487,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 4,
-       "trust": 1
+       "boss": 4
       },
       "result": "全部對得上,原廠:「感謝配合。」你發現其中一筆公告的錯字是前任留下的。"
      }
@@ -1817,8 +1809,7 @@
      {
       "p": 0.4,
       "effects": {
-       "boss": 5,
-       "players": 2
+       "boss": 5
       },
       "result": "預算保住了一半,林總說你很有膽量。",
       "habit": {
@@ -2101,8 +2092,7 @@
       "p": 1,
       "result": "確認完了。",
       "effects": {
-       "boss": 2,
-       "trust": 1
+       "boss": 2
       }
      }
     ]
@@ -3359,8 +3349,7 @@
       "p": 0.5,
       "result": "老闆接受了折衷。",
       "effects": {
-       "boss": 2,
-       "trust": 1
+       "boss": 2
       },
       "habit": {
        "pushback": 1
@@ -3383,8 +3372,7 @@
       "p": 1,
       "result": "你的名字被寫進「可以找他」清單。",
       "effects": {
-       "boss": 2,
-       "trust": -3
+       "boss": -1
       },
       "habit": {
        "overtime": 2
@@ -3400,8 +3388,7 @@
       "p": 1,
       "result": "雙方都鬆口氣。",
       "effects": {
-       "boss": 1,
-       "trust": 1
+       "boss": 1
       }
      }
     ]
@@ -3457,8 +3444,7 @@
       "p": 1,
       "result": "成果會說話。",
       "effects": {
-       "boss": 2,
-       "trust": 1
+       "boss": 2
       }
      }
     ]
@@ -4674,7 +4660,7 @@
       "p": 1,
       "result": "小明被登記在案,阿宏很得意。",
       "effects": {
-       "trust": 1
+       "boss": 1
       }
      }
     ]
@@ -5677,8 +5663,7 @@
      {
       "p": 0.65,
       "effects": {
-       "boss": 5,
-       "players": 1
+       "boss": 5
       },
       "result": "「有 KPI 就有預算」,林總很喜歡。只是你把自己綁住了。"
      },
@@ -5721,8 +5706,7 @@
      {
       "p": 0.6,
       "effects": {
-       "boss": 6,
-       "players": 2
+       "boss": 6
       },
       "result": "董事會問了三個問題,你都有答案。林總散會後只說了一個字:「好。」"
      },

@@ -46,13 +46,13 @@ export const DIFFS: Record<Difficulty, DiffConfig> = {
   },
   normal: {
     label: '普通', desc: '3 個目標,事件偏多,選擇會連帶引出新的事。', maxAp: 6, boss: 60, trust: 60, ignoreMult: 1, deadlineDelta: 0, extraEvents: 1, extraFrom: 3, extraChance: 0.5,
-    goals: [{ key: 'players', target: 14300 }, { key: 'spend', target: 62 }, { key: 'trust', target: 70 }],
+    goals: [{ key: 'players', target: 13800 }, { key: 'spend', target: 60 }, { key: 'trust', target: 66 }],
   },
   hard: {
     label: '困難', desc: '5 個目標,每天少 1 點,事件更多更複雜,逾期代價更重。', maxAp: 5, boss: 60, trust: 58, ignoreMult: 1.1, deadlineDelta: 0, extraEvents: 1, extraFrom: 6, extraChance: 1,
     goals: [
-      { key: 'players', target: 14800 }, { key: 'retention', target: 39 }, { key: 'spend', target: 66 },
-      { key: 'trust', target: 72 }, { key: 'boss', target: 60 },
+      { key: 'players', target: 14300 }, { key: 'retention', target: 38 }, { key: 'spend', target: 63 },
+      { key: 'trust', target: 69 }, { key: 'boss', target: 60 },
     ],
   },
 };
