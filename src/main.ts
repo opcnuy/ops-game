@@ -242,10 +242,10 @@ function renderScout(s: State): string {
   return `<div class="modal-bg"><div class="modal scout-modal">
     <div class="modal-head"><h2>📡 輿情報告</h2><button class="x" data-act="scout-close" aria-label="先關閉,晚點再選">✕</button></div>
     <ul class="scout-voices">${voices.map((v) => `<li>${esc(v)}</li>`).join('')}</ul>
-    <h3 class="scout-title">這次的發現:選一張</h3>
+    <h3 class="scout-title">輿情裡冒出這幾件事。你今天顧得了哪一件?</h3>
     <div class="scout-cards">${cards}</div>
-    <div class="actions"><button data-act="scout-skip">先觀望,都不選</button></div>
-    <p class="muted report-foot">不選的話,報告明天就過期了。</p>
+    <div class="actions"><button data-act="scout-skip">都先不處理</button></div>
+    <p class="muted report-foot">只能顧一件,沒處理的事就讓它過去了(報告明天過期)。</p>
   </div></div>`;
 }
 

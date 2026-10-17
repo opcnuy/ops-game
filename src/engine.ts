@@ -559,7 +559,7 @@ export function pickScout(s: State, id: string | null): string | null {
   if (!s.scout) return '沒有待選的輿情報告';
   if (id === null) {
     s.scout = undefined;
-    pushFeed(s, '你把輿情報告看過一遍,決定先觀望。');
+    pushFeed(s, '你把輿情報告看過一遍,今天沒有餘力處理,讓這幾件事先過去。');
     return null;
   }
   if (!s.scout.cards.includes(id)) return '沒有這張卡';
