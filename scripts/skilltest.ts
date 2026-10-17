@@ -1,8 +1,9 @@
 // 技能系統檢查:資料自洽、學習規則、12 個技能各自的實際效果、存檔與職級的技能點帳目
 import {
-  DIFFS, EVENTS, activeBuffs, buffActive, moodOf, pickScout, pulseActive, pulseHint, chooseOption, doAction, endDay, eventOptions, hasSkill, load, makeReport, newGame, optionCost, planCampaign, save, submitReport,
+  DIFFS, EVENTS, activeBuffs, bossTrait, buffActive, communityTrait, eventText, moodOf, pickScout, styleFit, pulseActive, pulseHint, chooseOption, doAction, endDay, eventOptions, hasSkill, load, makeReport, newGame, optionCost, planCampaign, save, submitReport,
 } from '../src/engine';
 import { SCOUT_CARDS, scoutCard } from '../src/scout';
+import { BOSS_TRAITS, COMMUNITY_TRAITS, MOOD_CLUES } from '../src/traits';
 import { ACHIEVEMENTS, LINES, SKILLS, prereqMet, prereqText, sanitizeSkills, skillById } from '../src/skills';
 import { LEVELS, SP_PER_LEVEL, availableSp, levelFor, loadProfile, saveProfile, spentSp } from '../src/profile';
 import type { State } from '../src/types';
@@ -332,8 +333,8 @@ ok(hasSkill(mk(['quick_report', 'template', 'forecast']), 'forecast'), '預測�
 
 // 氣氛與結果浮動(插曲以外的所有事件):同一個選項,碰到不同的對象結果會不同
 {
-  const ev = EVENTS.e_gacha_complaint;
-  const label = '公布完整機率驗證報告';
+  const ev = EVENTS.e_guild;
+  const label = '公告釐清規則'; // 公開透明的做法:氣氛願意聽時更吃香,氣在頭上時反而火上加油
   const mkItem = (v: number, stage = 0) => ({ uid: 1, eventId: ev.id, arrived: 1, deadline: 9, stage, v });
   // 氣氛分布大約 3:5:2,被催第二次一律火氣大,插曲永遠普通
   const cnt = { receptive: 0, neutral: 0, hostile: 0 };
@@ -349,7 +350,7 @@ ok(hasSkill(mk(['quick_report', 'template', 'forecast']), 'forecast'), '預測�
   const run = (m: string) => {
     let good = 0; const vals = new Set<number>();
     seeds[m].forEach((v, i) => {
-      const t = mk([], 9000 + i); const uid = t.uid++;
+      const t = mk([], 9000 + i); t.traits = { boss: 'safe', community: 'kind', known: { boss: false, community: false } }; const uid = t.uid++;
       t.inbox.push({ uid, eventId: ev.id, arrived: t.day, deadline: t.day + 5, stage: 0, v });
       const before = t.trust;
       chooseOption(t, uid, optIndex(t, ev.id, label));
@@ -442,6 +443,70 @@ ok(hasSkill(mk(['quick_report', 'template', 'forecast']), 'forecast'), '預測�
     const raw = JSON.parse(JSON.stringify(t)); raw.scout.cards = ['calm', '<b>x</b>', 'nope']; raw.buffs = [{ id: 'evil', until: 5 }, { id: 'hype', until: 'x' }];
     store.set([...store.keys()].find((k) => k.includes('save'))!, JSON.stringify(raw)); const l2 = load()!;
     ok(l2.scout?.cards.length === 1 && l2.scout.cards[0] === 'calm' && l2.buffs?.length === 1, '竄改的卡片或狀態沒有被濾掉'); }
+}
+
+// 隱藏性格與做法類型:同一個選項,碰到不同的老闆、社群、氣氛,吃不吃香不一樣
+{
+  // 選項都有標做法類型(插曲除外)
+  let total = 0; let tagged = 0;
+  for (const ev of Object.values(EVENTS)) { if (ev.kind === '插曲') continue; for (const o of ev.options) { total++; if (o.style) tagged++; } }
+  ok(tagged / total > 0.9, `做法標記太少:${tagged}/${total}`);
+  // 性格抽樣平均,存檔讀回後還在,竄改的被濾掉
+  const cnt: Record<string, number> = {};
+  for (let i = 0; i < 600; i++) { const t = mk([], 80000 + i); const k = `${t.traits?.boss}/${t.traits?.community}`; cnt[k] = (cnt[k] ?? 0) + 1; }
+  ok(Object.keys(cnt).length === 9 && Math.min(...Object.values(cnt)) > 30, `性格分布不平均:${JSON.stringify(cnt)}`);
+  { const t = mk([], 5); t.traits = { boss: 'data', community: 'picky', known: { boss: true, community: false } }; save(t); const l = load()!;
+    ok(l.traits?.boss === 'data' && l.traits.community === 'picky' && l.traits.known.boss && !l.traits.known.community, '性格讀檔後不對');
+    const raw = JSON.parse(JSON.stringify(t)); raw.traits = { boss: 'evil', community: 'picky', known: {} };
+    store.set([...store.keys()].find((k) => k.includes('save'))!, JSON.stringify(raw));
+    ok(load()!.traits === undefined && bossTrait(load()!) === 'safe', '竄改的性格沒有被濾掉'); }
+  // 契合度方向與範圍
+  const evB = EVENTS.e_boss_campaign; const evC = EVENTS.e_gacha_complaint;
+  const withTraits = (b: string, c: string): State => { const t = mk([]); t.traits = { boss: b, community: c, known: { boss: false, community: false } }; return t; };
+  const optB = (style: string) => ({ label: 'x', ap: 0, style, outcomes: [{ p: 1, result: '' }] }) as never;
+  const itB = (v: number) => ({ uid: 1, eventId: evB.id, arrived: 1, deadline: 9, stage: 0, v });
+  const neutralV = NEUTRAL_V;
+  ok(styleFit(withTraits('data', 'kind'), evB, itB(neutralV), optB('rigor')).total === 2, '數據派吃查證應該 +2');
+  ok(styleFit(withTraits('data', 'kind'), evB, itB(neutralV), optB('fast')).total === -1, '數據派吃快速應該 -1');
+  ok(styleFit(withTraits('bold', 'kind'), evB, itB(neutralV), optB('fast')).total === 2, '衝勁派吃快速應該 +2');
+  ok(styleFit(withTraits('safe', 'picky'), evC, { ...itB(neutralV), eventId: evC.id }, optB('quiet')).total === -2, '愛追究的社群吃低調應該 -2');
+  ok(styleFit(withTraits('safe', 'picky'), EVENTS.i_tea, itB(neutralV), optB('quiet')).total === 0, '插曲不該有契合度');
+  { const t = withTraits('data', 'angry'); const it = { ...itB(neutralV), eventId: evC.id };
+    const all = Object.values(['open', 'private', 'quiet', 'generous', 'rigor', 'fast', 'hustle']).map((st) => styleFit(t, evC, it, optB(st)).total);
+    ok(all.every((v) => v >= -3 && v <= 3), '契合度超出 -3 到 3'); }
+  // 同一個選項:好說話的玩家社群比愛抱怨的更吃公開說明
+  const avgTrust = (comm: string): number => {
+    let sum = 0;
+    for (let i = 0; i < 400; i++) {
+      const t = mk([], 90000 + i); t.traits = { boss: 'safe', community: comm, known: { boss: false, community: false } };
+      const uid = t.uid++; t.inbox.push({ uid, eventId: 'e_guild', arrived: t.day, deadline: t.day + 5, stage: 0, v: NEUTRAL_V });
+      const before = t.trust; chooseOption(t, uid, optIndex(t, 'e_guild', '公告釐清規則')); sum += t.trust - before;
+    }
+    return sum / 400;
+  };
+  ok(avgTrust('kind') > avgTrust('angry') + 1, `公開說明在好說話與愛抱怨的社群應該有差:${avgTrust('kind').toFixed(2)} vs ${avgTrust('angry').toFixed(2)}`);
+  // 選完會有一句反應(只在契合度不為 0 時),且不直接說出性格名稱
+  { const t = withTraits('data', 'kind'); const uid = t.uid++;
+    t.inbox.push({ uid, eventId: evB.id, arrived: t.day, deadline: t.day + 5, stage: 0, v: neutralV });
+    chooseOption(t, uid, optIndex(t, evB.id, '請教三成的依據'));
+    ok(t.feed[0].includes('🧭') && !t.feed[0].includes('數據派'), `反應句不對:${t.feed[0]}`); }
+  // 氣氛線索:中性不會有、非中性約六成出現
+  { let withClue = 0; let nonNeutral = 0; let neutralWith = 0;
+    for (let v = 1; v < 3000; v++) {
+      const it = { uid: 1, eventId: 'e_gacha_complaint', arrived: 1, deadline: 9, stage: 0, v: v * 104729 };
+      const m = moodOf(it, EVENTS.e_gacha_complaint);
+      const clues = [...Object.values(MOOD_CLUES.player), ...Object.values(MOOD_CLUES.inner)].flat() as string[];
+      const hasClue = clues.some((c) => eventText(EVENTS.e_gacha_complaint, it).body.endsWith(c));
+      if (m === 'neutral') { if (hasClue) neutralWith++; } else { nonNeutral++; if (hasClue) withClue++; }
+    }
+    ok(neutralWith === 0, '氣氛普通卻出現線索'); near(withClue / nonNeutral, 0.6, 0.05, '氣氛線索的出現率'); }
+  // 看輿情:揭露性格的卡只在還沒摸清時抽得到,選了之後記下來
+  { const t = mk([], 77); t.traits = { boss: 'bold', community: 'angry', known: { boss: false, community: false } };
+    t.scout = { day: t.day, cards: ['read_boss', 'calm', 'guide'] }; t.ap = 3;
+    ok(pickScout(t, 'read_boss') === null && t.traits.known.boss && t.ap === 2 && t.feed[0].includes('衝勁派'), '摸清老闆性格沒有生效');
+    let seen = 0; for (let i = 0; i < 200; i++) { const u = mk([], 1000 + i); u.traits = { boss: 'bold', community: 'angry', known: { boss: true, community: true } }; doAction(u, 'intel'); if (u.scout?.cards.some((c) => c.startsWith('read_'))) seen++; }
+    ok(seen === 0, '都摸清了還抽到揭露性格的卡'); }
+  void BOSS_TRAITS; void COMMUNITY_TRAITS; void communityTrait;
 }
 
 if (failed) throw new Error(`技能系統檢查失敗 ${failed} 項`);

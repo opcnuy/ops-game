@@ -7,6 +7,7 @@ import optLabelData from './content/optlabels.json';
 import extraData from './content/extraOptions.json';
 import endingsData from './content/endings.json';
 import { BUFFS, SCOUT_CARDS, scoutCard, type BuffId, type ScoutCard } from './scout';
+import { BOSS_TRAITS, COMMUNITY_TRAITS, MOOD_CLUES, MOOD_FLAVOR, MOOD_LEVELS, type BossTrait, type CommunityTrait, type Mood } from './traits';
 
 const BUFF_IDS = BUFFS;
 import type {
@@ -250,6 +251,11 @@ export function newGame(mode: Mode, difficulty: Difficulty = 'normal', seed = Da
   s.taste.reward = CONTENT.rewards[Math.floor(rand(s) * CONTENT.rewards.length)].id;
   const hated = CONTENT.mechanics.filter((m) => m.hated);
   s.taste.hated = hated[Math.floor(rand(s) * hated.length)].id;
+  const bossKeys = Object.keys(BOSS_TRAITS); const commKeys = Object.keys(COMMUNITY_TRAITS);
+  s.traits = {
+    boss: bossKeys[Math.floor(rand(s) * bossKeys.length)], community: commKeys[Math.floor(rand(s) * commKeys.length)],
+    known: { boss: false, community: false },
+  };
   s.history.push({ day: 0, players: s.players, spend: spendToday(s) });
   spawnDay(s);
   return s;
@@ -335,6 +341,10 @@ function sanitizeState(raw: unknown): State | null {
   s.taste = { reward: cleanText(s.taste?.reward, 40), hated: cleanText(s.taste?.hated, 40) };
   s.intel = { reward: !!s.intel?.reward, hated: !!s.intel?.hated };
   if (s.pulse !== undefined) s.pulse = num(s.pulse, 0, 1e5, 0);
+  const rt = r.traits as { boss?: unknown; community?: unknown; known?: { boss?: unknown; community?: unknown } } | undefined;
+  s.traits = rt && typeof rt === 'object' && typeof rt.boss === 'string' && Object.hasOwn(BOSS_TRAITS, rt.boss) && typeof rt.community === 'string' && Object.hasOwn(COMMUNITY_TRAITS, rt.community)
+    ? { boss: rt.boss, community: rt.community, known: { boss: !!rt.known?.boss, community: !!rt.known?.community } }
+    : undefined;
   const rs = r.scout as { day?: unknown; cards?: unknown; listened?: unknown } | undefined;
   s.scout = rs && typeof rs === 'object' && Array.isArray(rs.cards)
     ? { day: num(rs.day, 0, 1e5, 0), cards: rs.cards.filter((id): id is string => typeof id === 'string' && !!scoutCard(id)).slice(0, 3), listened: !!rs.listened,
@@ -377,21 +387,21 @@ const isDataEvent = (ev: GameEvent): boolean => ev.kind === '數據' || DATA_EVE
 const SKILL_OPTIONS: { skill: string; match: (ev: GameEvent) => boolean; opt: EventOption }[] = [
   {
     skill: 'template', match: isDataEvent,
-    opt: { label: '用報表範本快速出表', ap: 1, outcomes: [
+    opt: { label: '用報表範本快速出表', ap: 1, style: 'fast', outcomes: [
       { p: 0.85, effects: { boss: 2 }, result: '範本一套,數字準時出爐。' },
       { p: 0.15, effects: { boss: -1 }, result: '範本欄位對不上,補了兩次。' },
     ] },
   },
   {
     skill: 'advocate', match: (ev) => ev.kind === '客訴' || ev.kind === '輿情',
-    opt: { label: '請核心玩家出面說明', ap: 1, outcomes: [
+    opt: { label: '請核心玩家出面說明', ap: 1, style: 'open', outcomes: [
       { p: 0.7, effects: { trust: 4 }, result: '玩家的話,比官方公告更有說服力。' },
       { p: 0.3, effects: { trust: -1 }, result: '核心玩家也有自己的想法,場面有點尷尬。' },
     ] },
   },
   {
     skill: 'network', match: (ev) => ev.kind === '技術' || ev.kind === '原廠',
-    opt: { label: '找熟人幫忙', ap: 1, outcomes: [
+    opt: { label: '找熟人幫忙', ap: 1, style: 'private', outcomes: [
       { p: 0.65, effects: { boss: 1, trust: 2 }, result: '熟人一通電話,事情就動起來了。' },
       { p: 0.35, effects: { boss: -1 }, result: '對方這週也很忙。' },
     ] },
@@ -426,7 +436,10 @@ const EXTRA = extraData as unknown as { chance: number; pools: Partial<Record<Ga
 export function eventText(ev: GameEvent, item?: InboxItem): EventText {
   const alts = VARIANTS[ev.id];
   const alt = alts?.length && varies(item) ? alts[variantIndex(seeded(item.v, 0)(), alts.length) - 1] : undefined;
-  return { from: ev.from, title: ev.title, brief: ev.brief, body: ev.body, ...alt };
+  const base = { from: ev.from, title: ev.title, brief: ev.brief, body: ev.body, ...alt };
+  const clue = moodClue(ev, item);
+  if (!clue) return base;
+  return { ...base, brief: base.brief ? `${base.brief}${clue}` : base.brief, body: `${base.body}${clue}` };
 }
 
 /** 這件事實際顯示的選項,以及它在 eventOptions 裡的原始編號(順序會被打散) */
@@ -480,8 +493,7 @@ function boostOutcomes(outs: Outcome[], boost: number): Outcome[] {
 }
 
 /** 每一件跟「人」有關的事(插曲除外)都有自己的氣氛:同樣的做法,碰到不同的對象結果會不同 */
-export type Mood = 'receptive' | 'neutral' | 'hostile';
-const MOOD_BOOST: Record<Mood, number> = { receptive: 0.12, neutral: 0, hostile: -0.12 };
+export type { Mood };
 const MOOD_TEXT: Record<GameEvent['kind'], Record<Mood, string>> = {
   客訴: { receptive: '這件事的氣氛不錯,對方願意聽官方怎麼說。', neutral: '這件事的氣氛普通,看你怎麼處理。', hostile: '這件事火氣很大,對方不太聽得進去。' },
   輿情: { receptive: '討論的風向偏友善,有人在幫官方說話。', neutral: '討論的風向普通,還看不出往哪邊倒。', hostile: '討論的風向很差,留言一面倒地不客氣。' },
@@ -493,7 +505,21 @@ const MOOD_TEXT: Record<GameEvent['kind'], Record<Mood, string>> = {
   插曲: { receptive: '', neutral: '', hostile: '' },
 };
 /** 氣氛主要牽動哪個數值:跟玩家有關的看信任,跟公司內部有關的看老闆 */
-const moodStat = (ev: GameEvent): 'trust' | 'boss' => (['客訴', '輿情', '原廠'].includes(ev.kind) ? 'trust' : 'boss');
+/** 這件事主要牽動哪個數值:玩家面的(信任、人數、留存)還是公司內部的(老闆好感) */
+const mainStatCache = new Map<string, 'trust' | 'boss'>();
+function moodStat(ev: GameEvent): 'trust' | 'boss' {
+  let m = mainStatCache.get(ev.id);
+  if (!m) {
+    let player = 0; let boss = 0;
+    for (const o of ev.options) for (const x of o.outcomes) {
+      player += Math.abs(x.effects?.trust ?? 0) + Math.abs(x.effects?.players ?? 0) * 0.5 + Math.abs(x.effects?.retention ?? 0);
+      boss += Math.abs(x.effects?.boss ?? 0);
+    }
+    m = player > boss ? 'trust' : (boss > player ? 'boss' : (['客訴', '輿情', '原廠'].includes(ev.kind) ? 'trust' : 'boss'));
+    mainStatCache.set(ev.id, m);
+  }
+  return m;
+}
 const hasMood = (ev: GameEvent): boolean => ev.kind !== '插曲';
 
 export function moodOf(item: InboxItem | undefined, ev: GameEvent): Mood {
@@ -519,6 +545,51 @@ function tuneEffects(s: State, ev: GameEvent, e: Effects | undefined, mood: Mood
   return out;
 }
 
+/* ---------- 隱藏性格與做法的契合度 ---------- */
+
+/** 每局開頭抽好的隱藏性格 */
+export const bossTrait = (s: State): BossTrait => (s.traits?.boss as BossTrait) in BOSS_TRAITS ? (s.traits?.boss as BossTrait) : 'safe';
+export const communityTrait = (s: State): CommunityTrait => (s.traits?.community as CommunityTrait) in COMMUNITY_TRAITS ? (s.traits?.community as CommunityTrait) : 'kind';
+
+/** 這個做法,在這局的性格與這件事的氣氛下,吃不吃香(-3 到 +3) */
+export function styleFit(s: State, ev: GameEvent, item: InboxItem | undefined, opt: EventOption): { trait: number; mood: number; total: number } {
+  if (!hasMood(ev) || !opt.style) return { trait: 0, mood: 0, total: 0 };
+  const table = moodStat(ev) === 'boss' ? BOSS_TRAITS[bossTrait(s)] : COMMUNITY_TRAITS[communityTrait(s)];
+  const trait = table.levels[opt.style] ?? 0;
+  const mood = MOOD_LEVELS[moodOf(item, ev)][opt.style] ?? 0;
+  return { trait, mood, total: Math.max(-3, Math.min(3, trait + mood)) };
+}
+
+/** 選完之後的一句反應:只透露「這個做法合不合對方的胃口」,不直接說性格是什麼 */
+function fitFlavor(s: State, ev: GameEvent, item: InboxItem, opt: EventOption): string {
+  const fit = styleFit(s, ev, item, opt);
+  const lines: string[] = [];
+  const table = moodStat(ev) === 'boss' ? BOSS_TRAITS[bossTrait(s)] : COMMUNITY_TRAITS[communityTrait(s)];
+  if (fit.trait) lines.push(fit.trait > 0 ? table.good : table.bad);
+  const mood = moodOf(item, ev);
+  if (fit.mood && mood !== 'neutral') lines.push(fit.mood > 0 ? MOOD_FLAVOR[mood].good : MOOD_FLAVOR[mood].bad);
+  return lines.length ? ` 🧭 ${lines.join('')}` : '';
+}
+
+/** 把契合度折成數值:主要數值加減 1 點(每一級) */
+function addFit(e: Effects | undefined, main: 'trust' | 'boss', total: number): Effects | undefined {
+  if (!total) return e;
+  const out: Effects = { ...(e ?? {}) };
+  out[main] = (out[main] ?? 0) + total;
+  return out;
+}
+
+/** 事件文字裡偶爾藏一句氣氛線索(約六成會出現,出現了就是真的;沒出現不代表氣氛普通) */
+function moodClue(ev: GameEvent, item?: InboxItem): string {
+  if (!varies(item)) return '';
+  const mood = moodOf(item, ev);
+  if (mood === 'neutral') return '';
+  const r = seeded(item.v, SALT.mood + 17);
+  if (r() >= 0.6) return '';
+  const pool = MOOD_CLUES[moodStat(ev) === 'boss' ? 'inner' : 'player'][mood];
+  return pool[Math.floor(r() * pool.length)];
+}
+
 /* ---------- 看輿情的發現卡與持續狀態 ---------- */
 
 export const buffActive = (s: State, id: BuffId): boolean => (s.buffs ?? []).some((b) => b.id === id && b.until >= s.day);
@@ -540,7 +611,8 @@ function buffEffects(s: State, e: Effects | undefined): Effects | undefined {
 
 /** 從卡池抽三張:不重複,至少一張不是壞的、至少一張不用花點數 */
 function drawScout(s: State): string[] {
-  const pool = SCOUT_CARDS.filter((c) => !(c.needs === 'reports' && s.pendingReports <= 0));
+  const pool = SCOUT_CARDS.filter((c) => !(c.needs === 'reports' && s.pendingReports <= 0)
+    && !(c.needs === 'boss' && (!s.traits || s.traits.known.boss)) && !(c.needs === 'community' && (!s.traits || s.traits.known.community)));
   const picked: ScoutCard[] = [];
   const rest = [...pool];
   while (picked.length < 3 && rest.length) {
@@ -572,6 +644,11 @@ export function pickScout(s: State, id: string | null): string | null {
   if (c.clearHabit) s.habits[c.clearHabit] = 0;
   if (c.reports) s.pendingReports = Math.max(0, s.pendingReports - c.reports);
   let extra = '';
+  if (c.reveal && s.traits) {
+    s.traits.known[c.reveal] = true;
+    const t = c.reveal === 'boss' ? BOSS_TRAITS[bossTrait(s)] : COMMUNITY_TRAITS[communityTrait(s)];
+    extra = ` 🧭 ${c.reveal === 'boss' ? '林總' : '玩家社群'}是「${t.name}」:${t.desc}`;
+  }
   if (c.complaintTomorrow) {
     const pool = Object.values(EVENTS).filter((e) => (e.kind === '客訴' || e.kind === '輿情') && (e.weight ?? 0) > 0
       && (e.minDay ?? 1) <= s.day + 1 && (e.minLevel ?? 1) <= s.level && !s.inbox.some((i) => i.eventId === e.id));
@@ -690,12 +767,13 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
   if (hasSkill(s, 'soothe') && (ev.kind === '客訴' || ev.kind === '輿情')) boost += 0.1;
   if (pulseActive(s) && isPulseEvent(ev)) boost += 0.1;
   const mood = moodOf(item, ev);
-  boost += MOOD_BOOST[mood];
+  const fit = styleFit(s, ev, item, opt);
+  boost += fit.total * 0.06;
   if (boost && outs.length > 1) outs = boostOutcomes(outs, boost);
   let r = rand(s);
   let out: Outcome = outs[outs.length - 1];
   for (const o of outs) { r -= o.p; if (r <= 0) { out = o; break; } }
-  const eff = buffEffects(s, hasMood(ev) ? tuneEffects(s, ev, out.effects, mood) : out.effects);
+  const eff = buffEffects(s, addFit(hasMood(ev) ? tuneEffects(s, ev, out.effects, mood) : out.effects, moodStat(ev), fit.total));
   applyEffects(s, eff);
   if (out.setFlag) s.flags[out.setFlag] = true;
   if (out.reports) s.pendingReports = Math.max(0, s.pendingReports + out.reports);
@@ -713,6 +791,7 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
   }
   let extra = '';
   if (out.reveal) extra = ' ' + revealIntel(s, out.reveal);
+  extra += fitFlavor(s, ev, item, opt);
   if (impactOf(eff) >= 5) {
     addMoment(s, impactOf(eff), netOf(eff) >= 0 ? '✨' : '⚠️', `${quoted(eventText(ev, item).title)}${opt.label}——${out.result}`);
   }

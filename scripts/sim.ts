@@ -1,4 +1,4 @@
-import { newGame, chooseOption, pickScout, planCampaign, doAction, endDay, goalMet, EVENTS, eventOptions, optionCost } from '../src/engine';
+import { newGame, chooseOption, pickScout, styleFit, planCampaign, doAction, endDay, goalMet, EVENTS, eventOptions, optionCost } from '../src/engine';
 import { scoutCard } from '../src/scout';
 import type { Difficulty, State } from '../src/types';
 
@@ -33,8 +33,10 @@ function play(strategy: 'random' | 'careful' | 'lazy', diff: Difficulty, seed: n
         const ev = EVENTS[it.eventId];
         const affordable = eventOptions(s, ev).map((o, i) => ({ o: { ...o, ap: optionCost(s, it, o) }, i })).filter(({ o }) => o.ap <= s.ap);
         if (!affordable.length) continue;
+        // INFORMED=1:知道這局的隱藏性格,優先挑契合度高的做法(其次才看花多少點)
+        const fitOf = (o: typeof affordable[number]['o']): number => (process.env.INFORMED ? styleFit(s, ev, it, o).total : 0);
         const pick = strategy === 'careful'
-          ? affordable.sort((a, b) => b.o.ap - a.o.ap)[0]
+          ? affordable.sort((a, b) => fitOf(b.o) - fitOf(a.o) || b.o.ap - a.o.ap)[0]
           : affordable[Math.floor(Math.random() * affordable.length)];
         chooseOption(s, it.uid, pick.i);
       }

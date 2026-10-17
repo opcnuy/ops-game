@@ -28,7 +28,11 @@ export interface Outcome {
   reports?: number;
 }
 
+/** 做法類型:決定這個選項在不同的老闆、玩家社群與氣氛下,吃不吃香 */
+export type Style = 'open' | 'private' | 'quiet' | 'generous' | 'rigor' | 'fast' | 'hustle';
+
 export interface EventOption {
+  style?: Style;
   label: string;
   ap: number;
   outcomes: Outcome[];
@@ -161,6 +165,8 @@ export interface State {
   intel: { reward: boolean; hated: boolean };
   /** 最近一次「看輿情」的那一天:當天與隔天,事件會先看得出氣氛,客訴、輿情也更好處理 */
   pulse?: number;
+  /** 這局隱藏的老闆與玩家社群性格,以及玩家有沒有摸清 */
+  traits?: { boss: string; community: string; known: { boss: boolean; community: boolean } };
   /** 看輿情後抽到、還沒選的發現卡(日期,三張卡,有沒有順便聽見玩家) */
   scout?: { day: number; cards: string[]; listened?: boolean; found?: string };
   /** 看輿情帶來的持續狀態,until 是最後一個有效的日子 */

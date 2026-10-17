@@ -1,5 +1,6 @@
 import './style.css';
 import { BUFFS, scoutCard } from './scout';
+import { BOSS_TRAITS, COMMUNITY_TRAITS } from './traits';
 import { CUP_EMPTY, CUP_FULL, CUP_PALETTE, SIREN, SIREN_PALETTE, computeLayout, renderOffice, spriteURL } from './scene/office';
 import type { Place } from './scene/office';
 import { ROOMS, renderRoom } from './scene/rooms';
@@ -7,7 +8,7 @@ import type { Room } from './scene/rooms';
 import { createFadeCanvas, dissolve } from './scene/fade';
 import { storageKey } from './storage';
 import {
-  CAMPAIGN_TARGET, CONTENT, DIFFS, activeBuffs, pickScout, pulseActive, pulseHint, EVENTS, computeRunXp, PHASES, phaseOf, GOAL_INFO, STORY_DAYS, chooseOption, clearSave, doAction, endDay,
+  CAMPAIGN_TARGET, CONTENT, DIFFS, activeBuffs, bossTrait, communityTrait, pickScout, pulseActive, pulseHint, EVENTS, computeRunXp, PHASES, phaseOf, GOAL_INFO, STORY_DAYS, chooseOption, clearSave, doAction, endDay,
   HABITS, find, goalMet, goalValue, hasSkill, makeReport, submitReport, itemOptions, eventText, load, newGame, optionCost, planCampaign, planCost, save, spendToday, weekdayLabel,
 } from './engine';
 import type { ActionKind, ReportQuiz } from './engine';
@@ -443,7 +444,12 @@ function renderInbox(s: State): string {
   const ph = phaseOf(s.day);
   const phaseLine = ph.first ? `<div class="day-line">📌 ${PHASES[ph.key].name}:${esc(PHASES[ph.key].blurb)}</div>` : '';
   const buffs = activeBuffs(s);
-  const buffBar = buffs.length ? `<div class="buff-bar">${buffs.map((b) => `<span class="buff" title="${esc(BUFFS[b.id].desc)}">${BUFFS[b.id].icon} ${BUFFS[b.id].name}<small>${b.left} 天</small></span>`).join('')}</div>` : '';
+  const known = s.traits?.known;
+  const traitChips = [
+    known?.boss ? `<span class="buff trait" title="${esc(BOSS_TRAITS[bossTrait(s)].desc)}">🧭 老闆:${BOSS_TRAITS[bossTrait(s)].name}</span>` : '',
+    known?.community ? `<span class="buff trait" title="${esc(COMMUNITY_TRAITS[communityTrait(s)].desc)}">🧭 玩家:${COMMUNITY_TRAITS[communityTrait(s)].name}</span>` : '',
+  ].join('');
+  const buffBar = buffs.length || traitChips ? `<div class="buff-bar">${traitChips}${buffs.map((b) => `<span class="buff" title="${esc(BUFFS[b.id].desc)}">${BUFFS[b.id].icon} ${BUFFS[b.id].name}<small>${b.left} 天</small></span>`).join('')}</div>` : '';
   const dayLine = buffBar + (s.dayLine ? `<div class="day-line">🌤️ ${esc(s.dayLine)}</div>` : '') + phaseLine;
   if (!sorted.length) return `${dayLine}${banner}<div class="card empty">收件匣是空的。<br>這種時刻通常撐不過一個小時。</div>`;
   const openable = sorted.filter((i) => !sceneRoomFor(EVENTS[i.eventId]));
@@ -790,7 +796,7 @@ function renderIntro(): string {
     <p>・處理收件匣的事件(老闆、原廠、玩家都在等你)<br>・規劃並打磨活動<br>・看輿情、填日報</p>
     <p>點數用不完不會累積,事情沒處理也不會消失,只會變成麻煩。<br>注意四個數字:<b>人數、留存、營收、信任</b>,還有老闆的臉色。</p>
     <hr><p><b>${S!.mode === 'story' ? '試用期結束時要達成:' : '第一次考核(第 10 天)要達成:'}</b><br>${S!.goals.map((g) => '・' + goalText(g)).join('<br>')}</p>
-    <p class="muted">提示:同樣的選擇,結果不一定一樣。先看輿情能摸清玩家喜好,今明兩天的事件也會先看得出氣氛。</p>
+    <p class="muted">提示:同樣的選擇,結果不一定一樣。老闆和玩家社群每局的脾氣都不同,從他們的反應慢慢摸索;看輿情也能幫你摸清。</p>
     <div class="actions"><button class="primary" data-act="close-modal">開始第一天</button></div>
   </div></div>`;
 }

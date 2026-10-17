@@ -32,8 +32,10 @@ export interface ScoutCard {
   complaintTomorrow?: boolean;
   /** 選下去之後顯示的結果 */
   result: string;
+  /** 揭露這局的隱藏性格(老闆或玩家社群) */
+  reveal?: 'boss' | 'community';
   /** 只有符合條件時才會出現在抽卡裡 */
-  needs?: 'reports';
+  needs?: 'reports' | 'boss' | 'community';
 }
 
 export const SCOUT_CARDS: ScoutCard[] = [
@@ -62,5 +64,13 @@ export const SCOUT_CARDS: ScoutCard[] = [
   { id: 'harsh', icon: '😮‍💨', name: '一堆傷人的留言', action: '硬著頭皮全部看完', ap: 0, weight: 2, bad: true,
     effects: { retention: 1 }, buff: { id: 'tired', days: 2 }, result: '看了一堆難聽的留言,心很累。不過你也看出玩家真正在意什麼。' },
 ];
+
+export const TRAIT_CARDS: ScoutCard[] = [
+  { id: 'read_boss', icon: '🧭', name: '林總最近的反應有跡可循', action: '花點時間整理他這陣子對各種做法的反應', ap: 1, weight: 3, needs: 'boss',
+    reveal: 'boss', result: '你把林總最近點頭和皺眉的時機排了一遍,心裡有底了。' },
+  { id: 'read_community', icon: '🧭', name: '玩家社群的脾氣越來越明顯', action: '翻幾個大串,看他們吃哪一套', ap: 1, weight: 3, needs: 'community',
+    reveal: 'community', result: '你翻完幾個大串,大概知道這群玩家吃哪一套了。' },
+];
+SCOUT_CARDS.push(...TRAIT_CARDS);
 
 export const scoutCard = (id: string): ScoutCard | undefined => SCOUT_CARDS.find((c) => c.id === id);
