@@ -21,9 +21,13 @@ const near = (v: number, target: number, tol: number, msg: string): void => {
   if (Math.abs(v - target) > tol) fail(`${msg}:實測 ${v.toFixed(3)},預期約 ${target}(±${tol})`);
 };
 
+// 事件的氣氛會影響機率:技能測試固定用「氣氛普通」的種子,才量得到技能本身的加成
+const NEUTRAL_V = ((): number => {
+  for (let v = 12345; ; v++) if (moodOf({ uid: 0, eventId: 'e_server_lag', arrived: 1, deadline: 1, stage: 0, v }, EVENTS.e_server_lag) === 'neutral') return v;
+})();
 const push = (s: State, eventId: string, stage = 0): number => {
   const uid = s.uid++;
-  s.inbox.push({ uid, eventId, arrived: s.day, deadline: s.day + 5, stage, v: 12345 });
+  s.inbox.push({ uid, eventId, arrived: s.day, deadline: s.day + 5, stage, v: NEUTRAL_V });
   return uid;
 };
 const optIndex = (s: State, eventId: string, label: string): number =>
@@ -272,7 +276,7 @@ ok(hasSkill(mk(['quick_report', 'template', 'forecast']), 'forecast'), '預測�
   const ap0 = s.ap;
   ok(doAction(s, 'intel') === null && s.ap === ap0 - 1 && pulseActive(s), '喜好都摸清後,看輿情沒有給風向');
   ok(doAction(s, 'intel') !== null && s.ap === ap0 - 1, '同一天重複看輿情不該再花點數');
-  ok(!!pulseHint(s, EVENTS.e_gacha_complaint) && !pulseHint(s, EVENTS.e_boss_campaign), '風向提示只該出現在客訴/輿情事件');
+  ok(!!pulseHint(s, EVENTS.e_gacha_complaint) && !!pulseHint(s, EVENTS.e_boss_campaign) && !pulseHint(s, EVENTS.i_tea), '風向提示該出現在各種事件,但插曲不用');
   endDay(s);
   ok(pulseActive(s), '隔天風向應該還在');
   endDay(s);
@@ -308,18 +312,19 @@ ok(hasSkill(mk(['quick_report', 'template', 'forecast']), 'forecast'), '預測�
   ok(s.habits.overtime === 1, '第 3 天之後熬夜加班應該要累積');
 }
 
-// 氣氛與結果浮動(客訴、輿情):同一個選項,碰到不同的對象結果會不同
+// 氣氛與結果浮動(插曲以外的所有事件):同一個選項,碰到不同的對象結果會不同
 {
   const ev = EVENTS.e_gacha_complaint;
   const label = '公布完整機率驗證報告';
   const mkItem = (v: number, stage = 0) => ({ uid: 1, eventId: ev.id, arrived: 1, deadline: 9, stage, v });
-  // 氣氛分布大約 3:5:2,被催第二次一律火氣大,非客訴/輿情事件永遠普通
+  // 氣氛分布大約 3:5:2,被催第二次一律火氣大,插曲永遠普通
   const cnt = { receptive: 0, neutral: 0, hostile: 0 };
   for (let v = 1; v <= 3000; v++) cnt[moodOf(mkItem(v * 7919), ev)]++;
   near(cnt.receptive / 3000, 0.3, 0.04, `願意聽的比例不對:${cnt.receptive}`);
   near(cnt.hostile / 3000, 0.2, 0.04, `火氣大的比例不對:${cnt.hostile}`);
   ok(moodOf(mkItem(5, 1), ev) === 'hostile', '被催第二次應該火氣很大');
-  ok(moodOf(mkItem(5), EVENTS.e_boss_campaign) === 'neutral', '老闆事件不該有氣氛');
+  ok(moodOf(mkItem(5), EVENTS.i_tea) === 'neutral', '插曲不該有氣氛');
+  ok(['receptive', 'neutral', 'hostile'].includes(moodOf(mkItem(5), EVENTS.e_boss_campaign)), '老闆事件也該有氣氛');
   // 找出三種氣氛各一個種子,比較成功率與數值
   const seeds: Record<string, number[]> = { receptive: [], neutral: [], hostile: [] };
   for (let v = 1; v < 5000; v++) { const m = moodOf(mkItem(v), ev); if (seeds[m].length < 500) seeds[m].push(v); }

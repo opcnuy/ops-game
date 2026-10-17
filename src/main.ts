@@ -776,7 +776,7 @@ function renderIntro(): string {
     <p>・處理收件匣的事件(老闆、原廠、玩家都在等你)<br>・規劃並打磨活動<br>・看輿情、填日報</p>
     <p>點數用不完不會累積,事情沒處理也不會消失,只會變成麻煩。<br>注意四個數字:<b>人數、留存、營收、信任</b>,還有老闆的臉色。</p>
     <hr><p><b>${S!.mode === 'story' ? '試用期結束時要達成:' : '第一次考核(第 10 天)要達成:'}</b><br>${S!.goals.map((g) => '・' + goalText(g)).join('<br>')}</p>
-    <p class="muted">提示:選項旁的 🎲 代表結果有風險。先看輿情能摸清玩家喜好,今明兩天的客訴與輿情事件也會附上處理提示。</p>
+    <p class="muted">提示:選項旁的 🎲 代表結果有風險。先看輿情能摸清玩家喜好,今明兩天的事件也會先看得出氣氛、附上處理提示。</p>
     <div class="actions"><button class="primary" data-act="close-modal">開始第一天</button></div>
   </div></div>`;
 }

@@ -467,45 +467,55 @@ function boostOutcomes(outs: Outcome[], boost: number): Outcome[] {
   return outs.map((o, i) => (i === best ? { ...o, p: o.p + m } : i === worst ? { ...o, p: o.p - m } : o));
 }
 
-/** 客訴、輿情這類「人」的事:每一件有自己的氣氛,同樣的做法,碰到不同的對象結果會不同 */
+/** 每一件跟「人」有關的事(插曲除外)都有自己的氣氛:同樣的做法,碰到不同的對象結果會不同 */
 export type Mood = 'receptive' | 'neutral' | 'hostile';
-const MOODS: Record<Mood, { text: string; boost: number }> = {
-  receptive: { text: '這件事的氣氛不錯,對方願意聽官方怎麼說。', boost: 0.12 },
-  neutral: { text: '這件事的氣氛普通,看你怎麼處理。', boost: 0 },
-  hostile: { text: '這件事火氣很大,對方不太聽得進去。', boost: -0.12 },
+const MOOD_BOOST: Record<Mood, number> = { receptive: 0.12, neutral: 0, hostile: -0.12 };
+const MOOD_TEXT: Record<GameEvent['kind'], Record<Mood, string>> = {
+  客訴: { receptive: '這件事的氣氛不錯,對方願意聽官方怎麼說。', neutral: '這件事的氣氛普通,看你怎麼處理。', hostile: '這件事火氣很大,對方不太聽得進去。' },
+  輿情: { receptive: '討論的風向偏友善,有人在幫官方說話。', neutral: '討論的風向普通,還看不出往哪邊倒。', hostile: '討論的風向很差,留言一面倒地不客氣。' },
+  老闆: { receptive: '林總今天心情不錯,比較聽得進去。', neutral: '林總看起來和平常一樣。', hostile: '林總今天壓力很大,講話比較急。' },
+  技術: { receptive: '工程師手上剛好有空檔,願意多幫一點。', neutral: '工程師的排程和平常差不多。', hostile: '工程師這週排程爆滿,心情也不太好。' },
+  原廠: { receptive: '原廠窗口今天挺好說話。', neutral: '原廠的態度公事公辦。', hostile: '原廠這次很嚴格,不太留餘地。' },
+  數據: { receptive: '這批資料比較乾淨,好整理。', neutral: '資料品質普通。', hostile: '資料亂得很,怎麼做都容易出錯。' },
+  雜務: { receptive: '對方很客氣,不太催。', neutral: '對方的態度普通。', hostile: '對方很趕,語氣有點急。' },
+  插曲: { receptive: '', neutral: '', hostile: '' },
 };
+/** 氣氛主要牽動哪個數值:跟玩家有關的看信任,跟公司內部有關的看老闆 */
+const moodStat = (ev: GameEvent): 'trust' | 'boss' => (['客訴', '輿情', '原廠'].includes(ev.kind) ? 'trust' : 'boss');
+const hasMood = (ev: GameEvent): boolean => ev.kind !== '插曲';
 
 export function moodOf(item: InboxItem | undefined, ev: GameEvent): Mood {
-  if (!isPulseEvent(ev) || !item) return 'neutral';
+  if (!hasMood(ev) || !item) return 'neutral';
   if (item.stage) return 'hostile'; // 上次沒處理才被催第二次,對方當然不開心
   if (item.v === undefined) return 'neutral';
   const r = seeded(item.v, SALT.mood)();
   return r < 0.3 ? 'receptive' : r < 0.8 ? 'neutral' : 'hostile';
 }
 
-/** 結果的數值不是固定的:大致落在原本的 0.6 到 1.4 倍,而且氣氛會讓信任的得失放大或縮小(正負號與「有沒有變動」不變) */
-function tuneEffects(s: State, e: Effects | undefined, mood: Mood): Effects | undefined {
+/** 結果的數值不是固定的:大致落在原本的 0.6 到 1.4 倍,而且氣氛會讓主要數值的得失放大或縮小(正負號與「有沒有變動」不變) */
+function tuneEffects(s: State, ev: GameEvent, e: Effects | undefined, mood: Mood): Effects | undefined {
   if (!e) return e;
   const out: Effects = { ...e };
+  const main = moodStat(ev);
   for (const k of ['players', 'trust', 'boss'] as const) {
     const v = e[k];
     if (!v) continue;
     let f = 0.6 + rand(s) * 0.8;
-    if (k === 'trust') f *= v > 0 ? (mood === 'receptive' ? 1.2 : mood === 'hostile' ? 0.8 : 1) : (mood === 'hostile' ? 1.3 : 1);
-    const n = Math.round(Math.abs(v) * f);
-    out[k] = Math.sign(v) * Math.max(1, n);
+    if (k === main) f *= v > 0 ? (mood === 'receptive' ? 1.2 : mood === 'hostile' ? 0.8 : 1) : (mood === 'hostile' ? 1.3 : 1);
+    out[k] = Math.sign(v) * Math.max(1, Math.round(Math.abs(v) * f));
   }
   return out;
 }
 
 /** 看過輿情之後,當天與隔天都掌握得到風向 */
 export const pulseActive = (s: State): boolean => s.pulse !== undefined && s.day - s.pulse <= 1;
+/** 看輿情直接加成的事件(客訴、輿情);其他事件掌握風向只會看到氣氛與提示 */
 const isPulseEvent = (ev: GameEvent): boolean => ev.kind === '客訴' || ev.kind === '輿情';
 
-/** 掌握風向時,客訴、輿情事件在處理前就先看得出氣氛,並給一句處理方向 */
+/** 掌握風向時,事件在處理前就先看得出氣氛,並給一句處理方向 */
 export function pulseHint(s: State, ev: GameEvent, item?: InboxItem): string | undefined {
-  if (!pulseActive(s) || !isPulseEvent(ev)) return undefined;
-  return `${MOODS[moodOf(item, ev)].text}${ev.insight ?? ''}`;
+  if (!pulseActive(s) || !hasMood(ev)) return undefined;
+  return `${MOOD_TEXT[ev.kind][moodOf(item, ev)]}${ev.insight ?? ''}`;
 }
 
 const ESCALATE_HINT = '上次沒處理,對方又來催了。';
@@ -600,12 +610,12 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
   if (hasSkill(s, 'soothe') && (ev.kind === '客訴' || ev.kind === '輿情')) boost += 0.1;
   if (pulseActive(s) && isPulseEvent(ev)) boost += 0.1;
   const mood = moodOf(item, ev);
-  boost += MOODS[mood].boost;
+  boost += MOOD_BOOST[mood];
   if (boost && outs.length > 1) outs = boostOutcomes(outs, boost);
   let r = rand(s);
   let out: Outcome = outs[outs.length - 1];
   for (const o of outs) { r -= o.p; if (r <= 0) { out = o; break; } }
-  const eff = isPulseEvent(ev) ? tuneEffects(s, out.effects, mood) : out.effects;
+  const eff = hasMood(ev) ? tuneEffects(s, ev, out.effects, mood) : out.effects;
   applyEffects(s, eff);
   if (out.setFlag) s.flags[out.setFlag] = true;
   if (out.reports) s.pendingReports = Math.max(0, s.pendingReports + out.reports);
@@ -699,7 +709,7 @@ export function doAction(s: State, kind: ActionKind): string | null {
       if (!s.intel.hated) found.push(revealIntel(s, 'hated'));
     } else if (!intelDone) found.push(revealIntel(s, s.intel.reward ? 'hated' : 'reward'));
     s.pulse = s.day;
-    pushFeed(s, `你花了一段時間爬論壇與社群。${found.join(' ')} 📡 掌握了風向:今明兩天的客訴與輿情事件會附上處理提示,有風險的選項也更穩。`.replace('  ', ' '));
+    pushFeed(s, `你花了一段時間爬論壇與社群。${found.join(' ')} 📡 掌握了風向:今明兩天的事件會先看得出氣氛、附上處理提示,客訴與輿情的風險選項也更穩。`.replace('  ', ' '));
   } else if (kind === 'sloppy') {
     if (s.pendingReports <= 0) return '沒有待填的日報';
     s.pendingReports--;
