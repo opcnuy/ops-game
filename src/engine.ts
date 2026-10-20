@@ -170,6 +170,17 @@ const QUOTES_OK = ['「還行啦,不過上次的比較好玩。」', '「獎勵�
 const QUOTES_MISS = ['「所以……這個活動是在做什麼?」', '「我以為是公告,結果是活動。」', '「蛤?已經結束了?我才剛看到。」'];
 const REPORT_ASIDES = ['隔壁座位的同事也在填日報,表情很認真。', '你瞄到鄰座的日報,他寫了一整頁。', '印表機那邊,又有人在吐日報。', '遠處有人在問:「日報寫好了嗎?」', '你桌上的咖啡已經涼了,日報還沒寫完。'];
 
+/** 同事的口頭禪:同意你的做法、平常閒聊、闖了禍 */
+const MATE_LINES: Record<Style, { agree: string[]; idle: string[]; oops: string }> = {
+  open: { agree: ['「對,大家都有權利知道。」', '「這樣講出來,心裡舒服多了。」'], idle: ['「我在想要不要多回覆幾則留言。」', '「有些事講開就好了啊。」'], oops: '「呃……我好像講太多了。」' },
+  private: { agree: ['「這種事就是要好好聊。」', '「私下講,對方比較聽得進去。」'], idle: ['「我昨天跟一位玩家聊了很久。」', '「有些話,不適合在公開場合講。」'], oops: '「那個……我私下跟對方說了一些話。」' },
+  quiet: { agree: ['「對,不用把事情搞大。」', '「低調處理,最好。」'], idle: ['「安靜的一天,真好。」', '「有些事,放一放就過了。」'], oops: '「我本來想先壓著……」' },
+  generous: { agree: ['「大方一點,大家都開心。」', '「這點誠意,值得。」'], idle: ['「我在想有什麼小禮物可以送。」', '「玩家這麼支持,我們也該回饋一下。」'], oops: '「我當場答應了,希望沒問題。」' },
+  rigor: { agree: ['「對,凡事要有憑據。」', '「你查得比我還仔細。」'], idle: ['「我又發現一個數字對不上。」', '「資料不會騙人,但報表會。」'], oops: '「我再查一下,應該快好了……」' },
+  fast: { agree: ['「對,就是要這種速度。」', '「先動手,再調整!」'], idle: ['「我有個更快的做法,等一下跟你說。」', '「時間就是一切。」'], oops: '「我趕出來了,應該沒問題吧?」' },
+  hustle: { agree: ['「對,自己動手最踏實。」', '「這種事,扛起來就對了!」'], idle: ['「我再撐一下就好。」', '「今天又是一個咖啡日。」'], oops: '「我沒事,真的,再一下就好。」' },
+};
+
 const pickOf = <T,>(s: State, a: T[]): T => a[Math.floor(rand(s) * a.length)];
 
 function dayOpeningLine(s: State): string {
@@ -321,6 +332,7 @@ function sanitizeState(raw: unknown): State | null {
   const col = r.colleague as { style?: unknown; level?: unknown; title?: unknown } | undefined;
   s.colleague = col && typeof col.style === 'string' && (STYLES as string[]).includes(col.style)
     ? { style: col.style as Style, level: num(col.level, 1, 3, 1), title: cleanText(col.title, 30) } : undefined;
+  s.colSay = typeof s.colSay === 'string' ? cleanText(s.colSay, 60) : undefined;
   s.colHelp = s.colHelp && typeof s.colHelp === 'object' ? { day: num(s.colHelp.day, 0, 1e5, 0), n: num(s.colHelp.n, 0, 9, 0) } : undefined;
   s.persona = sanitizePersona(r.persona, 3); s.styleUse = sanitizePersona(r.styleUse, 999);
   if (s.over) {
@@ -776,8 +788,15 @@ function spawnDay(s: State): void {
     addEvent(s, pick.id);
   }
   // 同事偶爾自作主張,闖出一點麻煩(他擅長的做法,也是他容易用過頭的做法)
+  s.colSay = s.colleague && rand(s) < 0.45 ? pickOf(s, MATE_LINES[s.colleague.style].idle) : undefined;
   if (s.colleague && s.day >= 3 && rand(s) < 0.2 + 0.08 * s.colleague.level) {
     addEvent(s, `col_${s.colleague.style}`, '同事自作主張,事情有了後續。');
+    s.colSay = MATE_LINES[s.colleague.style].oops;
+  }
+  // 只有帶了同事才有的事:同事提議、來請教、帶來消息(約兩成的日子多一件)
+  if (s.colleague && s.day >= 2 && s.inbox.length < 8 && rand(s) < 0.2) {
+    let pool = Object.values(EVENTS).filter((e) => e.colleague && (!e.colStyle || e.colStyle === s.colleague!.style) && !s.inbox.some((i) => i.eventId === e.id));
+    if (pool.length) { pool = leastSeen(s, pool); addEvent(s, pickOf(s, pool).id); }
   }
   // 小插曲:不佔事件名額、沒有逾期懲罰,偶爾穿插一下
   if (s.day >= 2 && rand(s) < 0.4) {
@@ -844,6 +863,7 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
     addMoment(s, impactOf(eff), netOf(eff) >= 0 ? '✨' : '⚠️', `${quoted(eventText(ev, item).title)}${opt.label}——${out.result}`);
   }
   // 默契:連續選中對方胃口的做法會累積,三次就進入「默契」狀態;選到不合的做法就中斷
+  if (s.colleague && opt.style === s.colleague.style) s.colSay = pickOf(s, MATE_LINES[s.colleague.style].agree);
   let rapportNote = helped ? ' 👥 同事幫了一把,少花 1 點。' : '';
   if (hasMood(ev) && opt.style) {
     if (fit.total > 0) {
@@ -879,7 +899,13 @@ function effectNote(e?: Effects): string {
   return parts.length ? `(${parts.join(' ')})` : '';
 }
 
-function revealIntel(s: State, kind: 'reward' | 'hated'): string {
+function revealIntel(s: State, kind: 'reward' | 'hated' | 'boss' | 'community'): string {
+  if (kind === 'boss' || kind === 'community') {
+    if (!s.traits || s.traits.known[kind]) return '';
+    s.traits.known[kind] = true;
+    const tr = kind === 'boss' ? BOSS_TRAITS[bossTrait(s)] : COMMUNITY_TRAITS[communityTrait(s)];
+    return `🧭 ${kind === 'boss' ? '林總' : '玩家社群'}是「${tr.name}」:${tr.desc}`;
+  }
   if (kind === 'reward') {
     s.intel.reward = true;
     return `發現:玩家最近特別想要「${find(CONTENT.rewards, s.taste.reward).name}」。`;

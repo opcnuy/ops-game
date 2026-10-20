@@ -993,3 +993,5 @@ body.shake-screen { animation: shake 0.45s; }
 .col-pick { flex: 1; text-align: left; display: flex; flex-direction: column; gap: 2px; }
 .col-row.sel .col-pick { box-shadow: 0 0 0 2px var(--accent); }
 .col-pick small { opacity: 0.75; }
+
+.col-say { font-style: italic; }

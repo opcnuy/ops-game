@@ -6876,5 +6876,902 @@
     ]
    }
   ]
+ },
+ {
+  "id": "col_g_lunch",
+  "kind": "雜務",
+  "from": "同事",
+  "title": "同事約你去茶水間聊聊",
+  "brief": "同事想私下跟你分享他聽到的事。",
+  "insight": "同事的消息來源常常比公告更即時,但要自己判斷可不可信。",
+  "body": "同事端著咖啡過來:「有空嗎?我知道一些你可能想聽的。」",
+  "deadline": 2,
+  "colleague": true,
+  "ignore": {
+   "effects": {},
+   "result": "同事等了一下,說:「那下次吧。」"
+  },
+  "phase": [
+   "prep",
+   "launch",
+   "ops",
+   "review"
+  ],
+  "options": [
+   {
+    "label": "一起去,聽聽他知道的",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.65,
+      "result": "他說起林總平常在會議上的反應,你默默記了下來。",
+      "reveal": "boss"
+     },
+     {
+      "p": 0.35,
+      "result": "聊了半天都是八卦,但至少氣氛變好了。",
+      "effects": {
+       "boss": 1
+      }
+     }
+    ],
+    "style": "private"
+   },
+   {
+    "label": "改天吧",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "同事點點頭,端著咖啡走了。"
+     }
+    ],
+    "style": "quiet"
+   }
+  ]
+ },
+ {
+  "id": "col_g_report",
+  "kind": "雜務",
+  "from": "同事",
+  "title": "同事說要幫你填日報",
+  "brief": "同事主動說要幫你填日報。",
+  "insight": "把工作交給別人時,事先講清楚格式與重點,比事後修正省力。",
+  "body": "同事看你桌上的日報堆得有點高:「我今天比較閒,要不要我幫你填幾份?」",
+  "deadline": 2,
+  "colleague": true,
+  "ignore": {
+   "effects": {},
+   "result": "同事見你沒回應,默默回座位了。"
+  },
+  "phase": [
+   "prep",
+   "launch",
+   "ops",
+   "review"
+  ],
+  "options": [
+   {
+    "label": "好,麻煩你了",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.8,
+      "result": "同事很快填好兩份,你的日報少了一些。",
+      "reports": -2
+     },
+     {
+      "p": 0.2,
+      "result": "同事的日報格式和平常不太一樣,林總看了皺眉。",
+      "effects": {
+       "boss": -3
+      },
+      "reports": -1
+     }
+    ],
+    "style": "quiet"
+   },
+   {
+    "label": "我自己來,但請他幫忙檢查",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "兩個人一起核對,日報交得又快又準。",
+      "effects": {
+       "boss": 2
+      },
+      "reports": -1
+     }
+    ],
+    "style": "rigor"
+   }
+  ]
+ },
+ {
+  "id": "col_g_praise",
+  "kind": "雜務",
+  "from": "同事",
+  "title": "同事在群組幫你說話",
+  "brief": "同事在群組替你說話。",
+  "insight": "同事幫你說話是好事,但仍要接得住那句話,把承諾落實。",
+  "body": "林總在群組問活動進度,同事搶先回:「這個他有在處理,上次的報告很完整。」",
+  "deadline": 2,
+  "colleague": true,
+  "ignore": {
+   "effects": {},
+   "result": "群組的話題很快滑過去了。"
+  },
+  "phase": [
+   "prep",
+   "launch",
+   "ops",
+   "review"
+  ],
+  "options": [
+   {
+    "label": "回一句謝謝,補上最新進度",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.75,
+      "result": "林總看到進度,點了個讚。",
+      "effects": {
+       "boss": 4
+      }
+     },
+     {
+      "p": 0.25,
+      "result": "你補的進度和同事說的對不上,有點尷尬。",
+      "effects": {
+       "boss": -2
+      }
+     }
+    ],
+    "style": "open"
+   },
+   {
+    "label": "低調不回",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "林總只回了個「好」。",
+      "effects": {
+       "boss": 1
+      }
+     }
+    ],
+    "style": "quiet"
+   }
+  ]
+ },
+ {
+  "id": "col_g_ask",
+  "kind": "雜務",
+  "from": "同事",
+  "title": "同事來請教你一件事",
+  "brief": "同事來請教你怎麼處理客訴。",
+  "insight": "教別人的過程,常常也會讓自己把做法整理得更清楚。",
+  "body": "同事拿著筆電過來:「這個客訴我不太會處理,你可以教我一下嗎?」",
+  "deadline": 2,
+  "colleague": true,
+  "ignore": {
+   "effects": {
+    "boss": -1
+   },
+   "result": "同事自己去問了別人,你聽到他們聊得很開心。"
+  },
+  "phase": [
+   "prep",
+   "launch",
+   "ops",
+   "review"
+  ],
+  "options": [
+   {
+    "label": "坐下來認真教",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "教的過程中你自己也想通了幾個地方,同事很感謝。",
+      "effects": {
+       "boss": 3,
+       "trust": 1
+      }
+     }
+    ],
+    "style": "open"
+   },
+   {
+    "label": "簡單講重點",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "result": "他點點頭,大致懂了。",
+      "effects": {
+       "boss": 1
+      }
+     },
+     {
+      "p": 0.4,
+      "result": "他沒聽懂,處理時又出了小差錯。",
+      "effects": {
+       "boss": -2
+      }
+     }
+    ],
+    "style": "fast"
+   },
+   {
+    "label": "請他先自己想想",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "他有點失望地回座位了。",
+      "effects": {
+       "boss": -1
+      }
+     }
+    ],
+    "style": "quiet"
+   }
+  ]
+ },
+ {
+  "id": "col_g_cover",
+  "kind": "雜務",
+  "from": "同事",
+  "title": "同事想請你代個班",
+  "brief": "同事想請你幫他盯半天。",
+  "insight": "幫忙之前先問清楚範圍與時間,免得變成無底洞。",
+  "body": "同事下午要請半天假,問你能不能幫他盯一下手上的事。",
+  "deadline": 2,
+  "colleague": true,
+  "ignore": {
+   "effects": {
+    "boss": -1
+   },
+   "result": "同事自己想辦法處理,看起來有點為難。"
+  },
+  "phase": [
+   "prep",
+   "launch",
+   "ops",
+   "review"
+  ],
+  "options": [
+   {
+    "label": "答應,但問清楚要盯什麼",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "result": "事情不多,你順手就處理好了,同事欠你一次。",
+      "effects": {
+       "boss": 3
+      }
+     },
+     {
+      "p": 0.3,
+      "result": "結果比說的複雜,你忙了一下午。",
+      "effects": {
+       "boss": -2
+      }
+     }
+    ],
+    "style": "private"
+   },
+   {
+    "label": "全部接下來,什麼都不問",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "你把事情處理得漂漂亮亮,同事感動得不得了。",
+      "effects": {
+       "boss": 5
+      }
+     },
+     {
+      "p": 0.5,
+      "result": "漏了一件沒交代的事,林總問起你才知道。",
+      "effects": {
+       "boss": -4
+      }
+     }
+    ],
+    "style": "generous"
+   },
+   {
+    "label": "婉拒",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "同事說沒關係,但看起來有點失落。",
+      "effects": {
+       "boss": -1
+      }
+     }
+    ],
+    "style": "quiet"
+   }
+  ]
+ },
+ {
+  "id": "col_g_rumor",
+  "kind": "雜務",
+  "from": "同事",
+  "title": "同事聽說林總對這季有想法",
+  "brief": "同事帶來一則和林總有關的小道消息。",
+  "insight": "小道消息只能當線索,真要決策還是得回到數據與老闆本人確認。",
+  "body": "同事壓低聲音:「我剛聽說林總這季好像在意某件事。」你要不要多問?",
+  "deadline": 2,
+  "colleague": true,
+  "ignore": {
+   "effects": {},
+   "result": "消息很快被其他話題蓋過去了。"
+  },
+  "phase": [
+   "prep",
+   "launch",
+   "ops",
+   "review"
+  ],
+  "options": [
+   {
+    "label": "多打聽一下",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "result": "同事說得很具體,你大概知道林總喜歡什麼樣的做法了。",
+      "reveal": "boss"
+     },
+     {
+      "p": 0.4,
+      "result": "消息對不上,你反而被問「你在打聽什麼」。",
+      "effects": {
+       "boss": -1
+      }
+     }
+    ],
+    "style": "private"
+   },
+   {
+    "label": "聽聽就好",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "你把這件事放在心裡。"
+     }
+    ],
+    "style": "quiet"
+   }
+  ]
+ },
+ {
+  "id": "col_s_open",
+  "kind": "輿情",
+  "from": "同事",
+  "title": "同事提議辦一場公開問答",
+  "brief": "同事想辦公開問答。",
+  "insight": "公開問答要先整理常見問題、決定哪些不回答,避免現場被牽著走。",
+  "body": "同事很有興致:「要不要辦一場玩家問答,把大家的問題一次回覆?」",
+  "deadline": 2,
+  "colleague": true,
+  "ignore": {
+   "effects": {},
+   "result": "同事的熱情冷卻了一點。"
+  },
+  "phase": [
+   "prep",
+   "launch",
+   "ops",
+   "review"
+  ],
+  "options": [
+   {
+    "label": "贊成,馬上辦",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "result": "問答氣氛很熱絡,玩家覺得官方很誠懇。",
+      "effects": {
+       "trust": 7
+      }
+     },
+     {
+      "p": 0.4,
+      "result": "有幾個問題答不出來,場面有點尷尬。",
+      "effects": {
+       "trust": -4
+      }
+     }
+    ],
+    "style": "open"
+   },
+   {
+    "label": "先小範圍試一次",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "小範圍的回饋不錯,下次可以放大辦。",
+      "effects": {
+       "trust": 2
+      }
+     }
+    ],
+    "style": "private"
+   },
+   {
+    "label": "婉拒",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "同事說「好吧」,有點可惜。"
+     }
+    ],
+    "style": "quiet"
+   }
+  ],
+  "colStyle": "open"
+ },
+ {
+  "id": "col_s_private",
+  "kind": "輿情",
+  "from": "同事",
+  "title": "同事認識一位核心玩家",
+  "brief": "同事能牽線給一位核心玩家。",
+  "insight": "核心玩家的意見很有價值,但別把個人想法當成所有玩家的想法。",
+  "body": "同事說:「我認識一位很活躍的玩家,他願意跟你聊聊。」",
+  "deadline": 2,
+  "colleague": true,
+  "ignore": {
+   "effects": {},
+   "result": "這個機會過去了,同事也沒再提。"
+  },
+  "phase": [
+   "prep",
+   "launch",
+   "ops",
+   "review"
+  ],
+  "options": [
+   {
+    "label": "約他聊聊",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.65,
+      "result": "對方很坦白地說了社群的心情,你學到不少。",
+      "effects": {
+       "trust": 2
+      },
+      "reveal": "community"
+     },
+     {
+      "p": 0.35,
+      "result": "對方只想抱怨自己的問題,聊了半小時沒什麼收穫。",
+      "effects": {
+       "trust": -1
+      }
+     }
+    ],
+    "style": "private"
+   },
+   {
+    "label": "公開邀請他來當玩家代表",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 0.6,
+      "result": "玩家看到官方願意聽,反應很好。",
+      "effects": {
+       "trust": 5
+      }
+     },
+     {
+      "p": 0.4,
+      "result": "其他玩家覺得為什麼是他,吵了起來。",
+      "effects": {
+       "trust": -3
+      }
+     }
+    ],
+    "style": "open"
+   },
+   {
+    "label": "不用了",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "同事聳聳肩。"
+     }
+    ],
+    "style": "quiet"
+   }
+  ],
+  "colStyle": "private"
+ },
+ {
+  "id": "col_s_quiet",
+  "kind": "客訴",
+  "from": "同事",
+  "title": "同事幫你壓下一則小抱怨",
+  "brief": "同事悄悄處理掉一則抱怨。",
+  "insight": "悄悄處理小事沒問題,但要留紀錄,免得之後同樣的事再出現。",
+  "body": "同事悄悄說:「剛有一則小抱怨,我先私下處理掉了,你不用擔心。」",
+  "deadline": 2,
+  "colleague": true,
+  "ignore": {
+   "effects": {},
+   "result": "沒人再提起這件事。"
+  },
+  "phase": [
+   "prep",
+   "launch",
+   "ops",
+   "review"
+  ],
+  "options": [
+   {
+    "label": "謝謝,不用再說了",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.5,
+      "result": "沒有後續,風平浪靜。"
+     },
+     {
+      "p": 0.5,
+      "result": "過了一陣子,同樣的抱怨又冒出來,而且更多人。",
+      "effects": {
+       "trust": -3
+      }
+     }
+    ],
+    "style": "quiet"
+   },
+   {
+    "label": "請他把處理過程記下來",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "有了紀錄,下次遇到類似的事就有依據。",
+      "effects": {
+       "boss": 2,
+       "trust": 1
+      }
+     }
+    ],
+    "style": "rigor"
+   },
+   {
+    "label": "請他改成公開回覆",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "result": "公開說明之後,其他玩家也看到官方有回應。",
+      "effects": {
+       "trust": 3
+      }
+     },
+     {
+      "p": 0.3,
+      "result": "公開之後引來更多人來追問。",
+      "effects": {
+       "trust": -2
+      }
+     }
+    ],
+    "style": "open"
+   }
+  ],
+  "colStyle": "quiet"
+ },
+ {
+  "id": "col_s_generous",
+  "kind": "輿情",
+  "from": "同事",
+  "title": "同事想辦個小回饋",
+  "brief": "同事想送玩家一份小禮物。",
+  "insight": "回饋要先算成本與影響,才不會變成之後每次都被期待。",
+  "body": "同事興沖沖地說:「最近大家很辛苦,我們送點小禮物吧!」",
+  "deadline": 2,
+  "colleague": true,
+  "ignore": {
+   "effects": {},
+   "result": "同事的提案不了了之。"
+  },
+  "phase": [
+   "prep",
+   "launch",
+   "ops",
+   "review"
+  ],
+  "options": [
+   {
+    "label": "同意,馬上辦",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "玩家很開心,林總看到帳單挑了一下眉。",
+      "effects": {
+       "trust": 5,
+       "boss": -1
+      }
+     }
+    ],
+    "style": "generous"
+   },
+   {
+    "label": "要他先控管預算再辦",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "縮小規模,但每個人都有拿到,反應不錯。",
+      "effects": {
+       "boss": 2,
+       "trust": 1
+      }
+     }
+    ],
+    "style": "rigor"
+   },
+   {
+    "label": "不辦",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "同事有點失望,私下說了句「好可惜」。",
+      "effects": {
+       "trust": -1
+      }
+     }
+    ],
+    "style": "quiet"
+   }
+  ],
+  "colStyle": "generous"
+ },
+ {
+  "id": "col_s_rigor",
+  "kind": "數據",
+  "from": "同事",
+  "title": "同事幫你整理了一份資料",
+  "brief": "同事自己整理了一份查證資料。",
+  "insight": "別人整理的資料,至少要抽查幾個關鍵數字再採用。",
+  "body": "同事遞過來一份厚厚的整理:「我查了這陣子的紀錄,應該有幫助。」",
+  "deadline": 2,
+  "colleague": true,
+  "ignore": {
+   "effects": {},
+   "result": "那份資料就放在桌上,慢慢蒙了灰。"
+  },
+  "phase": [
+   "prep",
+   "launch",
+   "ops",
+   "review"
+  ],
+  "options": [
+   {
+    "label": "認真複核後採用",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "資料很完整,你把它整合進報告,林總很滿意。",
+      "effects": {
+       "boss": 4
+      }
+     }
+    ],
+    "style": "rigor"
+   },
+   {
+    "label": "直接拿來用",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "result": "資料沒什麼問題,省了你不少時間。",
+      "effects": {
+       "boss": 2
+      }
+     },
+     {
+      "p": 0.3,
+      "result": "有一個數字抄錯了,會議上被問倒。",
+      "effects": {
+       "boss": -5
+      }
+     }
+    ],
+    "style": "fast"
+   },
+   {
+    "label": "謝謝,但暫時用不到",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "同事把資料收回去,有點失落。",
+      "effects": {
+       "boss": -1
+      }
+     }
+    ],
+    "style": "quiet"
+   }
+  ],
+  "colStyle": "rigor"
+ },
+ {
+  "id": "col_s_fast",
+  "kind": "技術",
+  "from": "同事",
+  "title": "同事提議用比較簡單的方法",
+  "brief": "同事想用快速的方法解決事情。",
+  "insight": "快速的做法要先說清楚能不能回頭修正,不然後續成本會更高。",
+  "body": "同事說:「這件事不用那麼複雜,我有個快速的做法,半天就能搞定。」",
+  "deadline": 2,
+  "colleague": true,
+  "ignore": {
+   "effects": {},
+   "result": "事情照原本的速度慢慢走。"
+  },
+  "phase": [
+   "prep",
+   "launch",
+   "ops",
+   "review"
+  ],
+  "options": [
+   {
+    "label": "採納,馬上做",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.7,
+      "result": "果然半天就完成,林總很滿意速度。",
+      "effects": {
+       "boss": 4
+      }
+     },
+     {
+      "p": 0.3,
+      "result": "快速的做法漏掉一個例外,後面補了很久。",
+      "effects": {
+       "boss": -4
+      }
+     }
+    ],
+    "style": "fast"
+   },
+   {
+    "label": "加上一道確認再做",
+    "ap": 2,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "多花了一點時間,但沒有出錯。",
+      "effects": {
+       "boss": 3
+      }
+     }
+    ],
+    "style": "rigor"
+   },
+   {
+    "label": "不採納",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "同事聳聳肩:「好吧,就照你的。」"
+     }
+    ],
+    "style": "quiet"
+   }
+  ],
+  "colStyle": "fast"
+ },
+ {
+  "id": "col_s_hustle",
+  "kind": "雜務",
+  "from": "同事",
+  "title": "同事說願意週末加班趕進度",
+  "brief": "同事想用週末加班補進度。",
+  "insight": "加班可以救急,但長期下來要找出進度落後的真正原因。",
+  "body": "同事拍胸脯:「這週的進度我來扛,週末我可以進來。」",
+  "deadline": 2,
+  "colleague": true,
+  "ignore": {
+   "effects": {
+    "boss": -1
+   },
+   "result": "進度還是原本的速度,有點緊。"
+  },
+  "phase": [
+   "prep",
+   "launch",
+   "ops",
+   "review"
+  ],
+  "options": [
+   {
+    "label": "謝絕,改成重新分工",
+    "ap": 1,
+    "outcomes": [
+     {
+      "p": 0.8,
+      "result": "重新分工後,進度剛好追上,大家都有休息。",
+      "effects": {
+       "boss": 3
+      }
+     },
+     {
+      "p": 0.2,
+      "result": "分工有點亂,進度只追回一半。",
+      "effects": {
+       "boss": -2
+      }
+     }
+    ],
+    "style": "private"
+   },
+   {
+    "label": "好,麻煩你",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "同事週末把事情做完了,只是週一看起來很疲倦。",
+      "effects": {
+       "boss": 4
+      },
+      "habit": {
+       "overtime": 1
+      }
+     }
+    ],
+    "style": "hustle"
+   },
+   {
+    "label": "我陪你一起加班",
+    "ap": 3,
+    "outcomes": [
+     {
+      "p": 1,
+      "result": "兩個人一起趕,進度超前。你們都有點熬夜的樣子。",
+      "effects": {
+       "boss": 5,
+       "trust": 1
+      },
+      "habit": {
+       "overtime": 1
+      }
+     }
+    ],
+    "style": "hustle"
+   }
+  ],
+  "colStyle": "hustle"
  }
 ]

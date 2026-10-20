@@ -1,4 +1,6 @@
 /** 像素風辦公室場景:全部用程式畫,內部解析度很小,再用 CSS 整數倍放大 */
+import { drawMate } from './mate';
+import type { Style } from '../types';
 
 export interface Rect { x: number; y: number; w: number; h: number }
 
@@ -169,7 +171,7 @@ export function paintWindow(ctx: Ctx, win: Rect, st: Stage): void {
 
 /* ---------- 靜態底圖(每個尺寸、每個時段只畫一次) ---------- */
 
-function paintBackground(ctx: Ctx, L: SceneLayout, st: Stage): void {
+function paintBackground(ctx: Ctx, L: SceneLayout, st: Stage, mate?: Style): void {
   const { W, H, topH, deskY, mon, scr, win } = L;
 
   // 牆面
@@ -191,6 +193,12 @@ function paintBackground(ctx: Ctx, L: SceneLayout, st: Stage): void {
   if (mon.x >= 14) {
     drawPlant(ctx, mon.x - 12, deskY, true);
     drawPlant(ctx, mon.x + mon.w + 4, deskY, true);
+  }
+
+  // 隔壁座位的同事:從螢幕後面探出頭來(牆面右欄有空位才畫,避開時鐘)
+  if (mate) {
+    const room = topH - 2 - (L.clock.cy + L.clock.r + 3);
+    if (room >= 19) drawMate(ctx, mon.x + mon.w - Math.floor(L.rightW / 2) - 2, topH + 1, mate, 1);
   }
 
   // 桌面
@@ -229,7 +237,7 @@ function paintBackground(ctx: Ctx, L: SceneLayout, st: Stage): void {
 const bgCache = new Map<string, HTMLCanvasElement>();
 
 /** 畫整個場景。timeFrac:0 = 一天開始,1 = 一天結束 */
-export function renderOffice(canvas: HTMLCanvasElement, L: SceneLayout, timeFrac: number): void {
+export function renderOffice(canvas: HTMLCanvasElement, L: SceneLayout, timeFrac: number, mate?: Style): void {
   if (canvas.width !== L.W || canvas.height !== L.H) {
     canvas.width = L.W;
     canvas.height = L.H;
@@ -237,14 +245,14 @@ export function renderOffice(canvas: HTMLCanvasElement, L: SceneLayout, timeFrac
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   const stage = stageFor(timeFrac);
-  const key = `${L.W}x${L.H}:${stage}`;
+  const key = `${L.W}x${L.H}:${stage}:${mate ?? ''}`;
   let bg = bgCache.get(key);
   if (!bg) {
     bg = document.createElement('canvas');
     bg.width = L.W;
     bg.height = L.H;
     const bctx = bg.getContext('2d');
-    if (bctx) paintBackground(bctx, L, STAGES[stage]);
+    if (bctx) paintBackground(bctx, L, STAGES[stage], mate);
     if (bgCache.size > 12) bgCache.clear();
     bgCache.set(key, bg);
   }

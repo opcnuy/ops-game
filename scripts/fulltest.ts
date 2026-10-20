@@ -40,10 +40,12 @@ for (const e of Object.values(EVENTS)) {
       if (!out.result) fail(`${e.id} 選項 ${i} 有結果沒文字`);
       if (out.followUp && !EVENTS[out.followUp.eventId]) fail(`${e.id} 選項 ${i} 連到不存在的事件 ${out.followUp.eventId}`);
       for (const k of Object.keys(out.habit ?? {})) if (!HABITS[k]) fail(`${e.id} 用了未定義的習慣 ${k}`);
-      if (out.reveal && out.reveal !== 'reward' && out.reveal !== 'hated') fail(`${e.id} reveal 不合法`);
+      if (out.reveal && !['reward', 'hated', 'boss', 'community'].includes(out.reveal)) fail(`${e.id} reveal 不合法`);
     }
   }
   for (const k of Object.keys(e.ignore.habit ?? {})) if (!HABITS[k]) fail(`${e.id} ignore 用了未定義的習慣 ${k}`);
+  if (e.colleague && (e.weight ?? 0) > 0) fail(`${e.id} 是同事專屬事件,不該進一般隨機池`);
+  if (e.colStyle && !e.colleague) fail(`${e.id} 有指定風格卻沒標同事專屬`);
   if (e.trigger && !HABITS[e.trigger.habit]) fail(`${e.id} 的觸發習慣不存在:${e.trigger.habit}`);
   if (e.trigger && !e.hint) fail(`${e.id} 是連鎖事件但沒有因果說明`);
 }

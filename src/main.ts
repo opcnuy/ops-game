@@ -525,7 +525,8 @@ function renderInbox(s: State): string {
   const streak = s.rapport ?? 0;
   const rapportChip = streak > 0 ? `<span class="buff trait" title="連續選中對方胃口的做法三次,會進入「默契」狀態">🤝 默契 ${'●'.repeat(streak)}${'○'.repeat(Math.max(0, RAPPORT_NEED - streak))}</span>` : '';
   const buffBar = buffs.length || traitChips || rapportChip || personaChip || colChip ? `<div class="buff-bar">${personaChip}${colChip}${traitChips}${rapportChip}${buffs.map((b) => `<span class="buff" title="${esc(BUFFS[b.id].desc)}">${BUFFS[b.id].icon} ${BUFFS[b.id].name}<small>${b.left} 天</small></span>`).join('')}</div>` : '';
-  const dayLine = buffBar + (s.dayLine ? `<div class="day-line">🌤️ ${esc(s.dayLine)}</div>` : '') + phaseLine;
+  const colLine = s.colleague && s.colSay ? `<div class="day-line col-say">👥 ${esc(s.colleague.title)}:${esc(s.colSay)}</div>` : '';
+  const dayLine = buffBar + (s.dayLine ? `<div class="day-line">🌤️ ${esc(s.dayLine)}</div>` : '') + phaseLine + colLine;
   if (!sorted.length) return `${dayLine}${banner}<div class="card empty">收件匣是空的。<br>這種時刻通常撐不過一個小時。</div>`;
   const openable = sorted.filter((i) => !sceneRoomFor(EVENTS[i.eventId]));
   // 預設全部收合,由玩家自己展開
@@ -1123,7 +1124,7 @@ function syncScene(): void {
   document.documentElement.style.setProperty('--cup', `${cup}px`);
   document.documentElement.style.setProperty('--cup-wrap', L.W > L.H ? 'nowrap' : 'wrap');
   const crowd = inGame && where === 'meeting' && planning;
-  const key = `${vw}x${vh}:${screen}:${where}${crowd ? ':plan' : ''}:${Math.round(t * 100)}`;
+  const key = `${vw}x${vh}:${screen}:${where}${crowd ? ':plan' : ''}:${Math.round(t * 100)}:${inGame ? S?.colleague?.style ?? '' : ''}`;
   if (key === sceneKey) return;
   const layoutChanged = !sceneKey.startsWith(`${vw}x${vh}:`);
   sceneKey = key;
@@ -1152,8 +1153,9 @@ function syncScene(): void {
     sceneCanvas.style.width = px(L.W);
     sceneCanvas.style.height = px(L.H);
   }
-  if (where === 'desk') renderOffice(sceneCanvas, L, t);
-  else renderRoom(sceneCanvas, L, where as Room, t, crowd);
+  const mate = inGame ? S?.colleague?.style : undefined;
+  if (where === 'desk') renderOffice(sceneCanvas, L, t, mate);
+  else renderRoom(sceneCanvas, L, where as Room, t, crowd, mate);
 }
 
 let resizeQueued = false;

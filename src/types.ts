@@ -21,7 +21,7 @@ export interface Outcome {
   result: string;
   followUp?: { eventId: string; afterDays: number };
   setFlag?: string;
-  reveal?: 'reward' | 'hated';
+  reveal?: 'reward' | 'hated' | 'boss' | 'community';
   /** 累計習慣(日常行為的累積,會在之後引發連鎖事件) */
   habit?: Record<string, number>;
   /** 直接減少待填日報數 */
@@ -77,6 +77,9 @@ export interface GameEvent {
   minDifficulty?: Difficulty;
   /** 職級達到才會出現在隨機事件池 */
   minLevel?: number;
+  /** 只有帶了同事卡才會出現;colStyle 有填的話,還要同事擅長那種做法 */
+  colleague?: boolean;
+  colStyle?: Style;
   /** 連鎖事件:某習慣累計達標時才會出現 */
   trigger?: { habit: string; min: number };
   /** 連鎖事件出現時顯示的因果說明 */
@@ -171,6 +174,8 @@ export interface State {
   colleague?: { style: Style; level: number; title: string };
   /** 同事今天已經幫過幾次 */
   colHelp?: { day: number; n: number };
+  /** 同事今天說的一句話 */
+  colSay?: string;
   /** 這局各種做法用了幾次 */
   styleUse?: Partial<Record<Style, number>>;
   /** 連續選中對方胃口的次數 */

@@ -93,6 +93,28 @@ for (let k = 0; k < 40; k++) {
 console.log(`同事闖禍:40 局裡 ${trouble} 局出現`);
 ok(trouble >= 20 && trouble <= 40, '同事闖禍的頻率不在預期內:' + trouble);
 
+// 同事專屬事件:沒帶同事絕不出現;帶了之後會出現,且風格專屬的只在對應風格出現
+const colIds = Object.values(EVENTS).filter((e) => e.colleague).map((e) => e.id);
+let withoutMate = 0, withMate = 0; const wrongStyle: string[] = [];
+for (let k = 0; k < 60; k++) {
+  const a = newGame('story', 'normal', 900 + k, 1, []);
+  const b = newGame('story', 'normal', 900 + k, 1, [], {}, {}, { style: 'rigor', level: 2, title: 't' });
+  for (let d = 0; d < 9; d++) {
+    if (a.inbox.some((i) => colIds.includes(i.eventId))) withoutMate++;
+    for (const i of b.inbox) { const e = EVENTS[i.eventId]; if (e.colleague) { withMate++; if (e.colStyle && e.colStyle !== 'rigor') wrongStyle.push(e.id); } }
+    a.inbox = []; b.inbox = []; endDay(a); endDay(b);
+  }
+}
+console.log(`同事專屬事件:沒帶同事 ${withoutMate} 次;帶同事 60 局共 ${withMate} 次`);
+ok(withoutMate === 0, '沒帶同事卻出現同事專屬事件');
+ok(withMate >= 60 && wrongStyle.length === 0, '帶同事時專屬事件頻率或風格不對:' + withMate + wrongStyle.join());
+// 同事專屬事件可以揭露老闆或社群性格
+const rv = newGame('story', 'normal', 5, 1, [], {}, {}, { style: 'private', level: 1, title: 't' });
+rv.inbox = [{ uid: 70, eventId: 'col_g_lunch', arrived: 1, deadline: 9, v: NEUTRAL }]; rv.ap = 6;
+let learned = false;
+for (let k = 0; k < 30 && !learned; k++) { const c = JSON.parse(JSON.stringify(rv)) as State; c.rng = k * 977 + 3; chooseOption(c, 70, eventOptions(c, EVENTS.col_g_lunch, c.inbox[0]).findIndex((o) => o.style === 'private')); learned = !!c.traits?.known.boss; }
+ok(learned, '同事的消息應該能揭露老闆性格');
+
 // 存檔往返
 save(c3); const back2 = load() as State;
 ok(back2.colleague?.style === 'rigor' && back2.colleague.level === 3, '存檔後同事資料遺失');

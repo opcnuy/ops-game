@@ -1,6 +1,8 @@
 /** 其他地點的像素場景:老闆辦公室、會議室、茶水間(人物都是剪影) */
 import { STAGES, clamp, drawPlant, paintWindow, rect, seeded, stageFor } from './office';
 import type { Ctx, Place, SceneLayout } from './office';
+import { drawMate } from './mate';
+import type { Style } from '../types';
 
 export type Room = Exclude<Place, 'desk'>;
 
@@ -151,7 +153,7 @@ function paintMeeting(ctx: Ctx, L: SceneLayout, crowd: boolean): void {
   drawPlant(ctx, 8, rh - 22, false);
 }
 
-function paintPantry(ctx: Ctx, L: SceneLayout): void {
+function paintPantry(ctx: Ctx, L: SceneLayout, mate?: Style): void {
   const { W, H } = L;
   const rh = L.dlg.y;
   tile(ctx, 0, 0, W, rh, '#cfe3d6', '#bcd4c6', 8);
@@ -178,12 +180,13 @@ function paintPantry(ctx: Ctx, L: SceneLayout): void {
   rect(ctx, W - 56, rh - 36, 10, 8, '#4a5368');
   rect(ctx, W - 44, rh - 35, 2, 2, '#4cd4a0');
   // 同事剪影,手拿馬克杯
-  drawPerson(ctx, Math.floor(W * 0.4), rh - 22, 'coworker', 2);
+  if (mate) drawMate(ctx, Math.floor(W * 0.4), rh - 22, mate, 2);
+  else drawPerson(ctx, Math.floor(W * 0.4), rh - 22, 'coworker', 2);
 }
 
 const roomCache = new Map<string, HTMLCanvasElement>();
 
-export function renderRoom(canvas: HTMLCanvasElement, L: SceneLayout, room: Room, timeFrac: number, crowd = false): void {
+export function renderRoom(canvas: HTMLCanvasElement, L: SceneLayout, room: Room, timeFrac: number, crowd = false, mate?: Style): void {
   if (canvas.width !== L.W || canvas.height !== L.H) {
     canvas.width = L.W;
     canvas.height = L.H;
@@ -191,7 +194,7 @@ export function renderRoom(canvas: HTMLCanvasElement, L: SceneLayout, room: Room
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   const stage = stageFor(timeFrac);
-  const key = `${L.W}x${L.H}:${room}:${stage}:${crowd ? 'c' : ''}`;
+  const key = `${L.W}x${L.H}:${room}:${stage}:${crowd ? 'c' : ''}:${mate ?? ''}`;
   let bg = roomCache.get(key);
   if (!bg) {
     bg = document.createElement('canvas');
@@ -201,7 +204,7 @@ export function renderRoom(canvas: HTMLCanvasElement, L: SceneLayout, room: Room
     if (c) {
       if (room === 'boss') paintBoss(c, L, stage);
       else if (room === 'meeting') paintMeeting(c, L, crowd);
-      else paintPantry(c, L);
+      else paintPantry(c, L, mate);
       // 傍晚與夜晚:整體蓋一層色調
       if (stage === 3) rect(c, 0, 0, L.W, L.H, 'rgba(255,140,60,0.10)');
       if (stage === 4) rect(c, 0, 0, L.W, L.H, 'rgba(10,20,60,0.38)');
