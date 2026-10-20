@@ -21,7 +21,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 2
+       "boss": 3
       },
       "result": "你點頭如搗蒜,同時在心裡問:三成是怎麼來的?"
      }
@@ -35,7 +35,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": -1
+       "boss": -2
       },
       "result": "林總沉默三秒:「業界平均。」你決定不再追問。"
      }
@@ -84,7 +84,7 @@
      {
       "p": 0.45,
       "effects": {
-       "boss": -7
+       "boss": -11
       },
       "result": "會議上有人問起分母,你才發現抓錯期間。",
       "habit": {
@@ -107,7 +107,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 6
+       "boss": 10
       },
       "result": "你花了整個下午,林總只在會議上用了其中一張圖。但那張圖很漂亮。"
      }
@@ -121,7 +121,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": -2
+       "boss": -3
       },
       "result": "林總:「那我先說『分析中』。」"
      }
@@ -135,7 +135,7 @@
      {
       "p": 0.75,
       "effects": {
-       "boss": 3
+       "boss": 5
       },
       "result": "分析師的數字加上你的結論。林總:「很清楚。」"
      },
@@ -180,7 +180,7 @@
      {
       "p": 0.65,
       "effects": {
-       "boss": 3
+       "boss": 5
       },
       "result": "是例行維護與公告時間重疊。你附上時間軸,原廠回:「了解。」"
      },
@@ -226,7 +226,7 @@
      {
       "p": 0.6,
       "effects": {
-       "boss": -8
+       "boss": -13
       },
       "result": "原廠翻出同期對照圖,語氣變得非常客氣。",
       "habit": {
@@ -329,8 +329,8 @@
      {
       "p": 0.7,
       "effects": {
-       "trust": 8,
-       "retention": 1
+       "trust": 13,
+       "retention": 2
       },
       "result": "報告很清楚,討論串轉為「營運好認真」。",
       "habit": {
@@ -361,7 +361,7 @@
      {
       "p": 1,
       "effects": {
-       "trust": 2
+       "trust": 3
       },
       "result": "公告寫「持續關注」,玩家寫「持續觀望」。",
       "followUp": {
@@ -386,8 +386,8 @@
      {
       "p": 0.5,
       "effects": {
-       "trust": -8,
-       "retention": -2
+       "trust": -13,
+       "retention": -3
       },
       "result": "有人做了統計圖,被轉到別的平台。",
       "habit": {
@@ -454,7 +454,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 3
+       "boss": 5
       },
       "setFlag": "rushedTech",
       "result": "林總很滿意。阿宏在筆記本上寫了什麼,你沒看到。",
@@ -477,7 +477,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": -3
+       "boss": -5
       },
       "result": "阿宏點頭,像是鬆了一口氣。林總的表情則沒有。",
       "habit": {
@@ -494,7 +494,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 1
+       "boss": 2
       },
       "result": "你們把 8 個功能砍到 5 個。最後一個是林總想要的。"
      }
@@ -527,7 +527,7 @@
      {
       "p": 1,
       "effects": {
-       "trust": 3
+       "trust": 5
       },
       "result": "補償到位,玩家說「好吧,下次別這樣」。"
      }
@@ -548,7 +548,7 @@
      {
       "p": 0.4,
       "effects": {
-       "trust": -3
+       "trust": -5
       },
       "result": "修好一個,另一個冒出來。"
      }
@@ -587,8 +587,8 @@
      {
       "p": 0.5,
       "effects": {
-       "trust": 6,
-       "players": 2
+       "trust": 10,
+       "players": 3
       },
       "result": "「泡麵是有誠意的」這句被截圖,反而被大量轉發。",
       "followUp": {
@@ -613,7 +613,7 @@
      {
       "p": 1,
       "effects": {
-       "trust": 2
+       "trust": 3
       },
       "reveal": "reward",
       "result": "你把留言分類:大家其實很清楚自己想要什麼。"
@@ -628,7 +628,7 @@
      {
       "p": 1,
       "effects": {
-       "trust": -1
+       "trust": -2
       },
       "result": "迷因沒有消失,但至少你沒有火上加油。",
       "habit": {
@@ -668,7 +668,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 2
+       "boss": 3
       },
       "result": "同事收到後只說了「感謝」。三天後他又來了。",
       "habit": {
@@ -707,7 +707,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": -1
+       "boss": -2
       },
       "result": "同事:「好喔……」(你聽出了什麼。)"
      }
@@ -769,8 +769,8 @@
      {
       "p": 0.5,
       "effects": {
-       "trust": 5,
-       "players": 1
+       "trust": 8,
+       "players": 2
       },
       "result": "補償剛好夠大家開心,又不會被下次期待。",
       "habit": {
@@ -784,8 +784,8 @@
      {
       "p": 0.5,
       "effects": {
-       "trust": 5,
-       "players": 1
+       "trust": 8,
+       "players": 2
       },
       "result": "補償剛好夠大家開心,又不會被下次期待。",
       "habit": {
@@ -809,7 +809,7 @@
      {
       "p": 0.5,
       "effects": {
-       "trust": -3
+       "trust": -5
       },
       "result": "「處理中」被解讀成「不知道」。"
      }
@@ -830,8 +830,8 @@
      {
       "p": 0.6,
       "effects": {
-       "trust": -6,
-       "retention": -2
+       "trust": -10,
+       "retention": -3
       },
       "result": "兩小時後才有人想起公告。",
       "habit": {
@@ -872,8 +872,8 @@
      {
       "p": 0.5,
       "effects": {
-       "players": 3,
-       "boss": 3,
+       "players": 5,
+       "boss": 5,
        "trust": -1
       },
       "result": "有撐住。代價是下次玩家期待你也送一百抽。",
@@ -888,8 +888,8 @@
      {
       "p": 0.5,
       "effects": {
-       "players": 3,
-       "boss": 3,
+       "players": 5,
+       "boss": 5,
        "trust": -1
       },
       "result": "有撐住。代價是下次玩家期待你也送一百抽。",
@@ -929,8 +929,8 @@
      {
       "p": 0.5,
       "effects": {
-       "players": -4,
-       "retention": -2
+       "players": -6,
+       "retention": -3
       },
       "result": "玩家短暫轉移,有些沒再回來。"
      }
@@ -969,7 +969,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 4
+       "boss": 6
       },
       "result": "47 個欄位全部有填。其中 12 個你用了「待補」。"
      }
@@ -993,7 +993,7 @@
      {
       "p": 0.4,
       "effects": {
-       "boss": -3
+       "boss": -5
       },
       "result": "被退回補件,原因:「欄位 23 空白」。",
       "habit": {
@@ -1038,7 +1038,7 @@
      {
       "p": 1,
       "effects": {
-       "trust": 5
+       "trust": 8
       },
       "result": "這件事沒有成功不成功,只有處理得好不好。你選了好好處理。",
       "habit": {
@@ -1055,7 +1055,7 @@
      {
       "p": 1,
       "effects": {
-       "trust": 1
+       "trust": 2
       },
       "result": "客服接手了。回覆晚了一天,但有回。"
      }
@@ -1069,7 +1069,7 @@
      {
       "p": 1,
       "effects": {
-       "trust": -8
+       "trust": -13
       },
       "result": "這封回信被截圖轉發了 3000 次。",
       "habit": {
@@ -1111,8 +1111,8 @@
      {
       "p": 0.7,
       "effects": {
-       "trust": 4,
-       "boss": 2
+       "trust": 6,
+       "boss": 3
       },
       "result": "是漏洞,已修補;你順手加了監控。"
      },
@@ -1140,7 +1140,7 @@
      {
       "p": 0.5,
       "effects": {
-       "trust": -5
+       "trust": -8
       },
       "result": "被凍結的是大額玩家,客服電話被打爆。",
       "followUp": {
@@ -1162,8 +1162,8 @@
      {
       "p": 0.5,
       "effects": {
-       "players": -2,
-       "trust": -4
+       "players": -3,
+       "trust": -6
       },
       "result": "資源通膨開始了。"
      }
@@ -1212,7 +1212,7 @@
      {
       "p": 0.3,
       "effects": {
-       "boss": -4
+       "boss": -6
       },
       "result": "林總:「你這是質疑我嗎?」",
       "habit": {
@@ -1229,9 +1229,9 @@
      {
       "p": 1,
       "effects": {
-       "boss": 3,
+       "boss": 5,
        "trust": -3,
-       "players": 3
+       "players": 5
       },
       "result": "短期很爆炸,長期玩家問下次還送什麼。",
       "habit": {
@@ -1291,7 +1291,7 @@
      {
       "p": 0.8,
       "effects": {
-       "boss": 2
+       "boss": 3
       },
       "result": "原來是時區與去重規則不同,你寫進備註。",
       "habit": {
@@ -1336,7 +1336,7 @@
      {
       "p": 0.5,
       "effects": {
-       "boss": -5
+       "boss": -8
       },
       "result": "另一份剛好是對方在用的。",
       "habit": {
@@ -1353,7 +1353,7 @@
      {
       "p": 0.7,
       "effects": {
-       "boss": 2
+       "boss": 3
       },
       "result": "同事找到差異原因:時區。你請他喝了一杯。"
      },
@@ -1399,7 +1399,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 2
+       "boss": 3
       },
       "result": "大綱只有五行,但林總看起來很滿意。"
      }
@@ -1423,7 +1423,7 @@
      {
       "p": 0.5,
       "effects": {
-       "boss": -3
+       "boss": -5
       },
       "result": "林總:「你先做,我再看。」",
       "habit": {
@@ -1458,7 +1458,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 3
+       "boss": 5
       },
       "result": "週報很完整。有人看到的機率是 40%。"
      }
@@ -1499,7 +1499,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": -6
+       "boss": -10
       },
       "result": "你的名字出現在未繳名單。"
      }
@@ -1537,7 +1537,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 4
+       "boss": 6
       },
       "result": "全部對得上,原廠:「感謝配合。」你發現其中一筆公告的錯字是前任留下的。"
      }
@@ -1558,7 +1558,7 @@
      {
       "p": 0.5,
       "effects": {
-       "boss": -5
+       "boss": -8
       },
       "result": "原廠:「請補充原始紀錄。」"
      }
@@ -1572,7 +1572,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": -4
+       "boss": -6
       },
       "result": "原廠:「那我們三天後再來問。」"
      }
@@ -1613,8 +1613,8 @@
      {
       "p": 0.6,
       "effects": {
-       "boss": 3,
-       "trust": 2
+       "boss": 5,
+       "trust": 3
       },
       "result": "你找到一個兩邊都勉強能接受的方案。"
      },
@@ -1636,7 +1636,7 @@
       "p": 1,
       "effects": {
        "boss": 3,
-       "trust": -4
+       "trust": -6
       },
       "result": "老闆滿意,但玩家感覺到被催促營收。",
       "habit": {
@@ -1692,7 +1692,7 @@
      {
       "p": 1,
       "effects": {
-       "trust": 2,
+       "trust": 3,
        "players": -1
       },
       "result": "討論很快轉向。你損失了一些曝光,但保住了信譽。"
@@ -1732,7 +1732,7 @@
      {
       "p": 0.6,
       "effects": {
-       "trust": -7
+       "trust": -11
       },
       "result": "沉默被解讀為默許。"
      }
@@ -1802,8 +1802,8 @@
      {
       "p": 0.6,
       "effects": {
-       "trust": 6,
-       "boss": 2
+       "trust": 10,
+       "boss": 3
       },
       "result": "你熬了一個晚上,隔天沒人記得,但數字記得。",
       "habit": {
@@ -1856,7 +1856,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 3
+       "boss": 5
       },
       "result": "你把五個活動砍成三個,每個都更聚焦。"
      }
@@ -1897,8 +1897,8 @@
      {
       "p": 1,
       "effects": {
-       "players": -2,
-       "retention": -1
+       "players": -3,
+       "retention": -2
       },
       "result": "活動變少了,玩家有感,你也有感。",
       "habit": {
@@ -1939,7 +1939,7 @@
       "p": 1,
       "result": "更正了。迷因還在。",
       "effects": {
-       "trust": 1
+       "trust": 2
       }
      }
     ],
@@ -1953,8 +1953,8 @@
       "p": 0.6,
       "result": "「三年」成了本季名場面。",
       "effects": {
-       "trust": 4,
-       "players": 1
+       "trust": 6,
+       "players": 2
       }
      },
      {
@@ -1979,7 +1979,7 @@
       "p": 0.5,
       "result": "截圖早就存了。",
       "effects": {
-       "trust": -4
+       "trust": -6
       }
      }
     ],
@@ -2016,7 +2016,7 @@
       "p": 1,
       "result": "玩家接受了。",
       "effects": {
-       "trust": 3
+       "trust": 5
       }
      }
     ],
@@ -2037,7 +2037,7 @@
       "p": 0.5,
       "result": "被說敷衍。",
       "effects": {
-       "trust": -3
+       "trust": -5
       }
      }
     ],
@@ -2055,8 +2055,8 @@
       "p": 0.5,
       "result": "玩家炸鍋。",
       "effects": {
-       "trust": -6,
-       "retention": -2
+       "trust": -10,
+       "retention": -3
       },
       "habit": {
        "ignored_players": 1
@@ -2094,8 +2094,8 @@
       "p": 0.7,
       "result": "雙方都開心。",
       "effects": {
-       "trust": 5,
-       "players": 1
+       "trust": 8,
+       "players": 2
       }
      },
      {
@@ -2116,7 +2116,7 @@
       "p": 1,
       "result": "畫師很開心。",
       "effects": {
-       "trust": 3
+       "trust": 5
       }
      }
     ],
@@ -2164,7 +2164,7 @@
       "p": 1,
       "result": "確認完了。",
       "effects": {
-       "boss": 2
+       "boss": 3
       }
      }
     ],
@@ -2217,7 +2217,7 @@
       "p": 0.5,
       "result": "有一條要改。",
       "effects": {
-       "boss": -7
+       "boss": -11
       },
       "habit": {
        "sloppy_report": 1
@@ -2261,7 +2261,7 @@
       "p": 1,
       "result": "他很感激。以後可以請他幫忙。",
       "effects": {
-       "boss": 2
+       "boss": 3
       }
      }
     ],
@@ -2334,7 +2334,7 @@
       "p": 0.7,
       "result": "玩家服氣了。",
       "effects": {
-       "trust": 4
+       "trust": 6
       },
       "habit": {
        "transparency": 1
@@ -2379,7 +2379,7 @@
       "p": 0.4,
       "result": "玩家覺得被敷衍。",
       "effects": {
-       "trust": -4
+       "trust": -6
       }
      }
     ],
@@ -2417,7 +2417,7 @@
       "p": 0.6,
       "result": "他理解了。",
       "effects": {
-       "trust": 3
+       "trust": 5
       }
      },
      {
@@ -2438,7 +2438,7 @@
       "p": 1,
       "result": "其他玩家還是知道了。",
       "effects": {
-       "trust": -3
+       "trust": -5
       }
      }
     ],
@@ -2488,8 +2488,8 @@
       "p": 0.6,
       "result": "談成了,新玩家來了。",
       "effects": {
-       "players": 3,
-       "trust": 1
+       "players": 5,
+       "trust": 2
       }
      },
      {
@@ -2584,7 +2584,7 @@
       "p": 0.5,
       "result": "被說不尊重。",
       "effects": {
-       "trust": -3
+       "trust": -5
       }
      }
     ],
@@ -2598,8 +2598,8 @@
       "p": 1,
       "result": "流程變更嚴謹。",
       "effects": {
-       "boss": 1,
-       "trust": 1
+       "boss": 2,
+       "trust": 2
       }
      }
     ],
@@ -2659,7 +2659,7 @@
       "p": 1,
       "result": "三個主要問題整理好了。",
       "effects": {
-       "trust": 2
+       "trust": 3
       }
      }
     ],
@@ -2680,7 +2680,7 @@
       "p": 0.5,
       "result": "被說買好評。",
       "effects": {
-       "trust": -4
+       "trust": -6
       }
      }
     ],
@@ -2698,7 +2698,7 @@
       "p": 0.5,
       "result": "繼續下滑。",
       "effects": {
-       "players": -2
+       "players": -3
       }
      }
     ],
@@ -2735,7 +2735,7 @@
       "p": 1,
       "result": "他不開心,但沒再寫了。",
       "effects": {
-       "trust": -1
+       "trust": -2
       }
      }
     ],
@@ -2749,7 +2749,7 @@
       "p": 1,
       "result": "他很感動。但消息傳開了。",
       "effects": {
-       "trust": 2
+       "trust": 3
       },
       "habit": {
        "precedent": 1
@@ -2810,8 +2810,8 @@
       "p": 0.5,
       "result": "話題熱了。",
       "effects": {
-       "players": 3,
-       "boss": 2
+       "players": 5,
+       "boss": 3
       }
      },
      {
@@ -2836,7 +2836,7 @@
       "p": 0.5,
       "result": "老闆從別人那聽到。",
       "effects": {
-       "boss": -6
+       "boss": -10
       }
      }
     ],
@@ -2885,7 +2885,7 @@
       "p": 1,
       "result": "撈到了。",
       "effects": {
-       "boss": 1
+       "boss": 2
       }
      }
     ],
@@ -2899,7 +2899,7 @@
       "p": 1,
       "result": "老闆皺了眉。",
       "effects": {
-       "boss": -2
+       "boss": -3
       }
      }
     ],
@@ -2935,7 +2935,7 @@
       "p": 1,
       "result": "老闆覺得你有想法。",
       "effects": {
-       "boss": 3
+       "boss": 5
       }
      }
     ],
@@ -3001,8 +3001,8 @@
       "p": 1,
       "result": "投放很準。",
       "effects": {
-       "boss": 3,
-       "players": 3
+       "boss": 5,
+       "players": 5
       },
       "habit": {
        "overtime": 1
@@ -3026,8 +3026,8 @@
       "p": 0.5,
       "result": "買來的人很快就走。",
       "effects": {
-       "players": -1,
-       "boss": -1
+       "players": -2,
+       "boss": -2
       }
      }
     ],
@@ -3041,7 +3041,7 @@
       "p": 1,
       "result": "行銷皺眉。",
       "effects": {
-       "boss": -2
+       "boss": -3
       }
      }
     ],
@@ -3079,7 +3079,7 @@
       "p": 0.7,
       "result": "吵架結束。",
       "effects": {
-       "trust": 4
+       "trust": 6
       },
       "habit": {
        "transparency": 1
@@ -3103,7 +3103,7 @@
       "p": 0.5,
       "result": "兩邊都給面子。",
       "effects": {
-       "trust": 3
+       "trust": 5
       }
      },
      {
@@ -3121,7 +3121,7 @@
       "p": 1,
       "result": "被說太強硬。",
       "effects": {
-       "trust": -5
+       "trust": -8
       }
      }
     ],
@@ -3159,7 +3159,7 @@
       "p": 1,
       "result": "玩家理解了。",
       "effects": {
-       "trust": 3
+       "trust": 5
       }
      }
     ],
@@ -3180,7 +3180,7 @@
       "p": 0.4,
       "result": "有人已兌換,覺得不公平。",
       "effects": {
-       "trust": -4
+       "trust": -6
       }
      }
     ],
@@ -3198,7 +3198,7 @@
       "p": 0.5,
       "result": "討論串一直長。",
       "effects": {
-       "trust": -6
+       "trust": -10
       },
       "habit": {
        "ignored_players": 1
@@ -3239,8 +3239,8 @@
       "p": 1,
       "result": "簡單但實用。",
       "effects": {
-       "boss": 3,
-       "players": 1
+       "boss": 5,
+       "players": 2
       }
      }
     ],
@@ -3264,7 +3264,7 @@
       "p": 0.5,
       "result": "老闆不太開心。",
       "effects": {
-       "boss": -3
+       "boss": -5
       },
       "habit": {
        "pushback": 1
@@ -3281,7 +3281,7 @@
       "p": 1,
       "result": "大家都很累,但效果好。",
       "effects": {
-       "boss": 4
+       "boss": 6
       },
       "habit": {
        "overtime": 1
@@ -3333,7 +3333,7 @@
       "p": 1,
       "result": "找到另外兩處錯誤。",
       "effects": {
-       "boss": 3
+       "boss": 5
       }
      }
     ],
@@ -3351,7 +3351,7 @@
       "p": 0.6,
       "result": "原廠查過了,沒問題。",
       "effects": {
-       "boss": -6
+       "boss": -10
       }
      }
     ],
@@ -3389,8 +3389,8 @@
       "p": 0.7,
       "result": "玩家願意再信一次。",
       "effects": {
-       "trust": 6,
-       "retention": 1
+       "trust": 10,
+       "retention": 2
       },
       "habit": {
        "transparency": 1
@@ -3414,7 +3414,7 @@
       "p": 1,
       "result": "玩家很感動。",
       "effects": {
-       "trust": 8
+       "trust": 13
       },
       "habit": {
        "overtime": 1
@@ -3435,7 +3435,7 @@
       "p": 0.6,
       "result": "連署數增加。",
       "effects": {
-       "trust": -6
+       "trust": -10
       }
      }
     ],
@@ -3482,7 +3482,7 @@
       "p": 0.5,
       "result": "老闆不開心。",
       "effects": {
-       "boss": -4
+       "boss": -6
       }
      }
     ],
@@ -3496,7 +3496,7 @@
       "p": 1,
       "result": "你的名字被寫進「可以找他」清單。",
       "effects": {
-       "boss": -1
+       "boss": -2
       },
       "habit": {
        "overtime": 2
@@ -3513,7 +3513,7 @@
       "p": 1,
       "result": "雙方都鬆口氣。",
       "effects": {
-       "boss": 1
+       "boss": 2
       }
      }
     ],
@@ -3550,7 +3550,7 @@
       "p": 0.7,
       "result": "老闆理解了。",
       "effects": {
-       "boss": 3
+       "boss": 5
       }
      },
      {
@@ -3571,7 +3571,7 @@
       "p": 1,
       "result": "成果會說話。",
       "effects": {
-       "boss": 2
+       "boss": 3
       }
      }
     ],
@@ -3589,7 +3589,7 @@
       "p": 0.5,
       "result": "氣氛變尷尬。",
       "effects": {
-       "boss": -3
+       "boss": -5
       }
      }
     ],
@@ -3626,7 +3626,7 @@
       "p": 1,
       "result": "更正完成。",
       "effects": {
-       "trust": 1
+       "trust": 2
       }
      }
     ],
@@ -3640,7 +3640,7 @@
       "p": 0.5,
       "result": "玩家覺得有趣。",
       "effects": {
-       "trust": 4
+       "trust": 6
       }
      },
      {
@@ -3665,7 +3665,7 @@
       "p": 0.6,
       "result": "截圖早就傳開。",
       "effects": {
-       "trust": -5
+       "trust": -8
       }
      }
     ],
@@ -3717,7 +3717,7 @@
       "p": 0.5,
       "result": "你把信寄給錯的人。",
       "effects": {
-       "boss": -3
+       "boss": -5
       }
      }
     ],
@@ -3770,8 +3770,8 @@
       "p": 1,
       "result": "玩家很開心。",
       "effects": {
-       "trust": 3,
-       "players": 2
+       "trust": 5,
+       "players": 3
       }
      }
     ],
@@ -3837,8 +3837,8 @@
       "p": 1,
       "result": "有規則就好談。",
       "effects": {
-       "trust": 4,
-       "boss": 1
+       "trust": 6,
+       "boss": 2
       }
      }
     ],
@@ -3867,7 +3867,7 @@
       "p": 1,
       "result": "玩家很生氣。",
       "effects": {
-       "trust": -6
+       "trust": -10
       }
      }
     ],
@@ -3904,7 +3904,7 @@
       "p": 1,
       "result": "補完了。",
       "effects": {
-       "boss": 1
+       "boss": 2
       },
       "reports": -2
      }
@@ -3919,14 +3919,14 @@
       "p": 0.5,
       "result": "老闆勉強接受。",
       "effects": {
-       "boss": -1
+       "boss": -2
       }
      },
      {
       "p": 0.5,
       "result": "老闆不太相信。",
       "effects": {
-       "boss": -4
+       "boss": -6
       }
      }
     ],
@@ -3940,7 +3940,7 @@
       "p": 1,
       "result": "老闆沒說話。",
       "effects": {
-       "boss": -3
+       "boss": -5
       }
      }
     ],
@@ -3976,7 +3976,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 3
+       "boss": 5
       },
       "result": "清單歸零。老闆沒說話,但看起來滿意。"
      }
@@ -4015,7 +4015,7 @@
      {
       "p": 0.6,
       "effects": {
-       "boss": -4
+       "boss": -6
       },
       "result": "老闆:「大家都很多。」"
      }
@@ -4053,8 +4053,8 @@
       "p": 0.7,
       "result": "說明得很清楚,報導很正面。",
       "effects": {
-       "trust": 5,
-       "players": 2
+       "trust": 8,
+       "players": 3
       }
      },
      {
@@ -4093,7 +4093,7 @@
       "p": 0.5,
       "result": "記者寫了「官方不回應」。",
       "effects": {
-       "trust": -3
+       "trust": -5
       }
      }
     ],
@@ -4124,8 +4124,8 @@
       "p": 1,
       "result": "小活動很受歡迎,新玩家進來了。",
       "effects": {
-       "players": 4,
-       "boss": 2
+       "players": 6,
+       "boss": 3
       },
       "habit": {
        "overtime": 1
@@ -4188,7 +4188,7 @@
       "result": "延後了,但避免了一場事故。",
       "effects": {
        "boss": -1,
-       "trust": 2
+       "trust": 3
       }
      }
     ],
@@ -4228,8 +4228,8 @@
       "p": 0.5,
       "result": "上線後 bug 爆了。",
       "effects": {
-       "trust": -6,
-       "players": -2
+       "trust": -10,
+       "players": -3
       }
      }
     ],
@@ -4262,7 +4262,7 @@
       "p": 1,
       "result": "算出來的數字讓老闆沉默了一下。",
       "effects": {
-       "boss": 2
+       "boss": 3
       }
      }
     ],
@@ -4276,7 +4276,7 @@
       "p": 1,
       "result": "老闆有點不開心。",
       "effects": {
-       "boss": -1
+       "boss": -2
       }
      }
     ],
@@ -4290,7 +4290,7 @@
       "p": 1,
       "result": "財務說:那我等。",
       "effects": {
-       "boss": -2
+       "boss": -3
       }
      }
     ],
@@ -4323,7 +4323,7 @@
       "p": 1,
       "result": "補了驗證,質疑平息。",
       "effects": {
-       "boss": 1
+       "boss": 2
       }
      }
     ],
@@ -4337,7 +4337,7 @@
       "p": 1,
       "result": "坦白反而沒被追究。",
       "effects": {
-       "boss": -2
+       "boss": -3
       }
      }
     ],
@@ -4355,7 +4355,7 @@
       "p": 0.5,
       "result": "對方不接受。",
       "effects": {
-       "boss": -4
+       "boss": -6
       }
      }
     ],
@@ -4388,7 +4388,7 @@
       "p": 1,
       "result": "數據補上了,原廠沒再追問。",
       "effects": {
-       "boss": 1
+       "boss": 2
       }
      }
     ],
@@ -4420,7 +4420,7 @@
       "p": 1,
       "result": "原廠很不高興。",
       "effects": {
-       "boss": -5
+       "boss": -8
       }
      }
     ],
@@ -4453,7 +4453,7 @@
       "p": 1,
       "result": "限制加上了,後面的人不會被影響。",
       "effects": {
-       "trust": 1
+       "trust": 2
       }
      }
     ],
@@ -4467,7 +4467,7 @@
       "p": 0.6,
       "result": "抓到一批,處理掉了。",
       "effects": {
-       "trust": 3
+       "trust": 5
       }
      },
      {
@@ -4489,7 +4489,7 @@
       "p": 0.5,
       "result": "越來越多人跟進。",
       "effects": {
-       "trust": -3
+       "trust": -5
       }
      }
     ],
@@ -4522,7 +4522,7 @@
       "p": 0.7,
       "result": "確認他是被誤判,解凍並道歉。",
       "effects": {
-       "trust": 3
+       "trust": 5
       }
      },
      {
@@ -4540,7 +4540,7 @@
       "p": 1,
       "result": "玩家很不滿。",
       "effects": {
-       "trust": -2
+       "trust": -3
       }
      }
     ],
@@ -4554,7 +4554,7 @@
       "p": 1,
       "result": "客服說:你們是不是沒講清楚?",
       "effects": {
-       "boss": -1
+       "boss": -2
       }
      }
     ],
@@ -4587,7 +4587,7 @@
       "p": 1,
       "result": "時程錯開,都保住了。",
       "effects": {
-       "boss": 1
+       "boss": 2
       }
      }
     ],
@@ -4601,7 +4601,7 @@
       "p": 1,
       "result": "兩檔都上了,你整個人快散了。",
       "effects": {
-       "players": 2
+       "players": 3
       },
       "habit": {
        "overtime": 1
@@ -4618,8 +4618,8 @@
       "p": 1,
       "result": "砍掉一檔,有人不高興。",
       "effects": {
-       "boss": -2,
-       "trust": -1
+       "boss": -3,
+       "trust": -2
       }
      }
     ],
@@ -4652,7 +4652,7 @@
       "p": 1,
       "result": "改好了,法務簽核通過。",
       "effects": {
-       "boss": 1
+       "boss": 2
       }
      }
     ],
@@ -4677,7 +4677,7 @@
       "p": 1,
       "result": "法務很不滿。",
       "effects": {
-       "boss": -3
+       "boss": -5
       }
      }
     ],
@@ -4710,7 +4710,7 @@
      {
       "p": 0.7,
       "effects": {
-       "boss": 1
+       "boss": 2
       },
       "result": "講開了,對方沒再追究。"
      },
@@ -4731,7 +4731,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 1
+       "boss": 2
       },
       "result": "你更正了日報,對方消氣了。"
      }
@@ -4749,7 +4749,7 @@
      {
       "p": 0.6,
       "effects": {
-       "boss": -4
+       "boss": -6
       },
       "result": "對方在群組點名你。"
      }
@@ -4840,7 +4840,7 @@
       "p": 1,
       "result": "小明被登記在案,阿宏很得意。",
       "effects": {
-       "boss": 1
+       "boss": 2
       }
      }
     ]
@@ -4888,8 +4888,8 @@
       "p": 1,
       "result": "他回了一個大大的謝謝,說會繼續玩下去。",
       "effects": {
-       "trust": 2,
-       "retention": 1
+       "trust": 3,
+       "retention": 2
       }
      }
     ]
@@ -4940,7 +4940,7 @@
       "p": 1,
       "result": "林總很滿意。",
       "effects": {
-       "boss": 1
+       "boss": 2
       }
      }
     ]
@@ -4967,7 +4967,7 @@
       "p": 0.3,
       "result": "林總在群組問:有人看到嗎?",
       "effects": {
-       "boss": -1
+       "boss": -2
       }
      }
     ]
@@ -5095,7 +5095,7 @@
       "p": 1,
       "result": "你多了一個朋友。",
       "effects": {
-       "boss": 1
+       "boss": 2
       }
      }
     ]
@@ -5143,8 +5143,8 @@
       "p": 0.6,
       "result": "官方的幽默被玩家稱讚。",
       "effects": {
-       "trust": 2,
-       "players": 1
+       "trust": 3,
+       "players": 2
       }
      },
      {
@@ -5502,7 +5502,7 @@
       "p": 1,
       "result": "蛋糕很甜,壽星很感動。",
       "effects": {
-       "boss": 1
+       "boss": 2
       }
      }
     ]
@@ -5559,7 +5559,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 4
+       "boss": 6
       },
       "result": "你做了十二頁。林總只看了第三頁和最後一頁,但他說「很完整」。"
      }
@@ -5580,7 +5580,7 @@
      {
       "p": 0.3,
       "effects": {
-       "boss": -2
+       "boss": -3
       },
       "result": "有人問第二頁在哪,你說沒有第二頁。"
      }
@@ -5605,7 +5605,7 @@
      {
       "p": 0.4,
       "effects": {
-       "boss": -3
+       "boss": -5
       },
       "result": "高層問:「那你打算怎麼辦?」你還沒想好。"
      }
@@ -5643,7 +5643,7 @@
      {
       "p": 0.65,
       "effects": {
-       "boss": 4
+       "boss": 6
       },
       "result": "數字說話。林總:「你比我想的有條理。」"
      },
@@ -5671,7 +5671,7 @@
      {
       "p": 0.5,
       "effects": {
-       "boss": -4
+       "boss": -6
       },
       "result": "林總翻出上週的逾期清單,兩個人安靜了一分鐘。"
      }
@@ -5685,7 +5685,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 2
+       "boss": 3
       },
       "result": "前輩給你一份範本,還有一句:「別寫太老實。」"
      }
@@ -5747,7 +5747,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 3
+       "boss": 5
       },
       "result": "時間線貼上去,吵架停了。有人悄悄把頭低下去。"
      }
@@ -5771,7 +5771,7 @@
      {
       "p": 0.5,
       "effects": {
-       "boss": -4
+       "boss": -6
       },
       "result": "林總聽完:「所以營運覺得自己沒問題?」",
       "habit": {
@@ -5840,7 +5840,7 @@
      {
       "p": 0.4,
       "effects": {
-       "boss": -4
+       "boss": -6
       },
       "result": "財務拿出你上季的使用率,桌上多了一張尷尬。"
      }
@@ -5854,7 +5854,7 @@
      {
       "p": 0.65,
       "effects": {
-       "boss": 5
+       "boss": 8
       },
       "result": "「有 KPI 就有預算」,林總很喜歡。只是你把自己綁住了。"
      },
@@ -5898,7 +5898,7 @@
      {
       "p": 0.6,
       "effects": {
-       "boss": 6
+       "boss": 10
       },
       "result": "董事會問了三個問題,你都有答案。林總散會後只說了一個字:「好。」"
      },
@@ -5978,7 +5978,7 @@
      {
       "p": 0.7,
       "effects": {
-       "boss": 3
+       "boss": 5
       },
       "result": "排程對齊。原廠窗口:「很專業。」"
      },
@@ -5999,8 +5999,8 @@
      {
       "p": 0.5,
       "effects": {
-       "boss": 4,
-       "players": 1
+       "boss": 6,
+       "players": 2
       },
       "result": "你搶到了週年慶旁邊的黃金檔期。"
      },
@@ -6021,8 +6021,8 @@
      {
       "p": 1,
       "effects": {
-       "boss": -1,
-       "players": -1
+       "boss": -2,
+       "players": -2
       },
       "result": "活動被排在連假第一天,沒有人有空。"
      }
@@ -6061,9 +6061,9 @@
      {
       "p": 1,
       "effects": {
-       "boss": 2,
-       "trust": 4,
-       "players": 2
+       "boss": 3,
+       "trust": 6,
+       "players": 3
       },
       "result": "天亮時問題收斂了。你的眼睛像兩顆荷包蛋。",
       "habit": {
@@ -6087,7 +6087,7 @@
      {
       "p": 0.3,
       "effects": {
-       "trust": -3
+       "trust": -5
       },
       "result": "窗口回覆的口氣被截圖貼上論壇。"
      }
@@ -6101,9 +6101,9 @@
      {
       "p": 1,
       "effects": {
-       "boss": 1,
-       "trust": 3,
-       "players": 1
+       "boss": 2,
+       "trust": 5,
+       "players": 2
       },
       "result": "公告發出後,留言從罵人變成問時間。"
      }
@@ -6141,9 +6141,9 @@
      {
       "p": 0.7,
       "effects": {
-       "boss": 2,
-       "trust": 4,
-       "players": 2
+       "boss": 3,
+       "trust": 6,
+       "players": 3
       },
       "result": "你一條一條回,留言區慢慢翻盤。"
      },
@@ -6172,7 +6172,7 @@
      {
       "p": 0.4,
       "effects": {
-       "trust": -2
+       "trust": -3
       },
       "result": "聲明被引用成「營運避重就輕」。"
      }
@@ -6194,8 +6194,8 @@
      {
       "p": 0.5,
       "effects": {
-       "boss": -1,
-       "trust": -1
+       "boss": -2,
+       "trust": -2
       },
       "result": "作者把你的私訊截圖貼了出來。"
      }
@@ -6233,7 +6233,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 1
+       "boss": 2
       },
       "result": "獵頭:「好的,未來有機會再聯絡。」"
      }
@@ -6251,7 +6251,7 @@
      {
       "p": 0.5,
       "effects": {
-       "boss": -2
+       "boss": -3
       },
       "result": "隔天林總在走廊:「聽說你最近很忙?」你不知道他從哪聽來的。"
      }
@@ -6311,7 +6311,7 @@
      {
       "p": 0.7,
       "effects": {
-       "boss": -2,
+       "boss": -3,
        "trust": 2
       },
       "result": "玩家收到回收通知,罵聲意外地小。新人看你的眼神像看恩人。"
@@ -6319,7 +6319,7 @@
      {
       "p": 0.3,
       "effects": {
-       "boss": -4
+       "boss": -6
       },
       "result": "林總:「你是主管,這是你的問題。」(確實是。)"
      }
@@ -6334,15 +6334,15 @@
       "p": 0.5,
       "effects": {
        "boss": 2,
-       "trust": -1
+       "trust": -2
       },
       "result": "新人寫得很誠懇,他這輩子都會記得這一天。"
      },
      {
       "p": 0.5,
       "effects": {
-       "boss": -2,
-       "trust": -4
+       "boss": -3,
+       "trust": -6
       },
       "result": "說明寫得像道歉信,玩家覺得不夠。"
      }
@@ -6355,9 +6355,9 @@
      {
       "p": 1,
       "effects": {
-       "boss": 1,
-       "trust": 2,
-       "players": 1
+       "boss": 2,
+       "trust": 3,
+       "players": 2
       },
       "result": "公告發出去時,新人在旁邊遞了一杯咖啡。"
      }
