@@ -80,6 +80,12 @@ export interface GameEvent {
   /** 只有帶了同事卡才會出現;colStyle 有填的話,還要同事擅長那種做法 */
   colleague?: boolean;
   colStyle?: Style;
+  /** 首領事件:固定每 5 天出現一個,依你的流派挑選;answers 是對它有幫助的流派 */
+  boss?: boolean;
+  answers?: string[];
+  /** 風格事件:風格達到指定等級才會出現(跨局風格的專屬機會) */
+  persona?: Style;
+  personaLv?: number;
   /** 連鎖事件:某習慣累計達標時才會出現 */
   trigger?: { habit: string; min: number };
   /** 連鎖事件出現時顯示的因果說明 */
@@ -126,6 +132,8 @@ export interface InboxItem {
   hint?: string;
   /** 0 = 初次;1 = 逾期後再次催辦(處理成本 +1,再逾期就不了了之) */
   stage?: number;
+  /** 突發事件:一天中途才冒出來,當天就到期 */
+  sudden?: boolean;
   /** 這件事的隨機種子:決定敘述版本、選項順序與額外選項 */
   v?: number;
 }
@@ -187,6 +195,11 @@ export interface State {
   role?: string;
   /** 這局選的挑戰(整局固定) */
   curse?: string;
+  /** 明天要登場的首領事件(前一天結算時決定並預告) */
+  bossNext?: string;
+  /** 今天預定的突發事件(下午、晚上)與最新的突發通知 */
+  sudden?: { at: 'pm' | 'eve'; fired?: boolean }[];
+  alert?: string;
   xp?: number;
   lv?: number;
   pendingPicks?: number;

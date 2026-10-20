@@ -6,9 +6,11 @@ export type PersonaPoints = Partial<Record<Style, number>>;
 export const STYLES: Style[] = ['open', 'private', 'quiet', 'generous', 'rigor', 'fast', 'hustle'];
 
 /** 累積到這些點數,風格升到 Lv1、Lv2、Lv3 */
-export const PERSONA_STEPS = [8, 24, 48];
+export const PERSONA_STEPS = [6, 18, 40];
 /** 每局每種風格最多算幾點,避免一局猛按同一種就練滿 */
-export const PERSONA_RUN_CAP = 12;
+export const PERSONA_RUN_CAP = 10;
+/** 這局用得最多的那種風格(至少 3 次)額外 +3,鼓勵專精 */
+export const PERSONA_FOCUS_BONUS = 3;
 
 export const PERSONA_INFO: Record<Style, { name: string; titles: [string, string, string]; blurb: string }> = {
   open: { name: '公開透明', titles: ['愛說明的人', '透明派', '公開透明的代言人'], blurb: '凡事攤開來講,玩家看得到你在做什麼。' },
@@ -47,18 +49,24 @@ export function sanitizePersona(v: unknown, max = 9999): PersonaPoints {
   return out;
 }
 
-/** 這局的使用次數併進跨局累計,回傳新的累計與要顯示的說明 */
+/** 這局的使用次數併進跨局累計,回傳新的累計與要顯示的說明(含離下一級還差多少) */
 export function mergePersona(p: PersonaPoints, use: PersonaPoints): { next: PersonaPoints; lines: string[] } {
   const next: PersonaPoints = { ...p };
   const lines: string[] = [];
+  const used = STYLES.filter((st) => (use[st] ?? 0) > 0);
+  const top = used.sort((a, b) => (use[b] ?? 0) - (use[a] ?? 0))[0];
   for (const st of STYLES) {
-    const add = Math.min(PERSONA_RUN_CAP, use[st] ?? 0);
+    let add = Math.min(PERSONA_RUN_CAP, use[st] ?? 0);
     if (!add) continue;
+    const focus = st === top && (use[st] ?? 0) >= 3;
+    if (focus) add += PERSONA_FOCUS_BONUS;
     const from = p[st] ?? 0;
     const to = Math.min(9999, from + add);
     next[st] = to;
     const lv0 = personaLevel(from), lv1 = personaLevel(to);
-    lines.push(`${PERSONA_INFO[st].name} +${add}${lv1 > lv0 ? `,升到 Lv${lv1}「${PERSONA_INFO[st].titles[lv1 - 1]}」` : ''}`);
+    const nxt = PERSONA_STEPS[lv1];
+    const prog = nxt === undefined ? '已精通' : `${to}/${nxt}`;
+    lines.push(`${PERSONA_INFO[st].name} +${add}${focus ? '(主打)' : ''} · ${prog}${lv1 > lv0 ? `,升到 Lv${lv1}「${PERSONA_INFO[st].titles[lv1 - 1]}」,解鎖新的風格事件` : ''}`);
   }
   return { next, lines };
 }

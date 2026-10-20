@@ -1,6 +1,6 @@
 import './style.css';
 import { colleagueBlurb, decodeCard, encodeCard } from './colleague';
-import { PERSONA_INFO, PERSONA_STEPS, STYLES, mergePersona, personaLevel, personaLevels, personaTitle } from './persona';
+import { PERSONA_FOCUS_BONUS, PERSONA_INFO, PERSONA_STEPS, STYLES, mergePersona, personaLevel, personaLevels, personaTitle } from './persona';
 import { BUFFS, scoutCard } from './scout';
 import { BOSS_TRAITS, COMMUNITY_TRAITS } from './traits';
 import { CURSES, ROLES, SHOP, STRATEGIES, curseById, roleById, strategyById, xpNeed } from './cards';
@@ -13,7 +13,7 @@ import type { Room } from './scene/rooms';
 import { createFadeCanvas, dissolve } from './scene/fade';
 import { storageKey } from './storage';
 import {
-  CAMPAIGN_TARGET, RAPPORT_NEED, combosFor, CONTENT, DIFFS, activeBuffs, bossTrait, communityTrait, pickScout, pickCard, stratLv, pulseActive, pulseHint, EVENTS, computeRunXp, PHASES, LIVE_DAYS, phaseOf, GOAL_INFO, STORY_DAYS, chooseOption, clearSave, doAction, endDay,
+  CAMPAIGN_TARGET, RAPPORT_NEED, combosFor, CONTENT, DIFFS, activeBuffs, bossTrait, communityTrait, pickScout, pickCard, stratLv, threatLevel, paceOf, pulseActive, pulseHint, EVENTS, computeRunXp, PHASES, LIVE_DAYS, phaseOf, GOAL_INFO, STORY_DAYS, chooseOption, clearSave, doAction, endDay,
   HABITS, find, goalMet, goalValue, hasSkill, makeReport, submitReport, itemOptions, eventOptions, styleFit, eventText, load, newGame, optionCost, planCampaign, planCost, save, spendToday, weekdayLabel,
 } from './engine';
 import type { ActionKind, ReportQuiz } from './engine';
@@ -28,7 +28,7 @@ const app = document.getElementById('app') as HTMLDivElement;
 let S: State | null = load();
 let profile = loadProfile();
 let screen: 'start' | 'game' | 'skills' | 'archive' = 'start';
-type ModalKind = 'none' | 'newgame' | 'summary' | 'intro' | 'settings' | 'gamemenu' | 'report' | 'rank' | 'scout' | 'colleague' | 'cards';
+type ModalKind = 'none' | 'newgame' | 'strats' | 'persona' | 'summary' | 'intro' | 'settings' | 'gamemenu' | 'report' | 'rank' | 'scout' | 'colleague' | 'cards';
 let modal: ModalKind = 'none';
 let summary: DaySummary | null = null;
 let toast = '';
@@ -133,7 +133,6 @@ let difficulty: Difficulty = 'normal';
 let modeSel: Mode = 'story';
 type Tab = 'inbox' | 'camp' | 'goals' | 'log';
 let tab: Tab = 'inbox';
-let stratOpen = false;
 let openUid: number | null = null;
 
 /* ---------- 地點(場景模式):老闆辦公室、會議室、茶水間 ---------- */
@@ -305,6 +304,7 @@ function renderPersona(): string {
       <div class="xpbar mini"><span style="--to:${pct}%"></span></div><small class="muted">${PERSONA_INFO[st].blurb}</small></div>`;
   }).join('');
   return `<div class="persona"><h3>🎭 我的風格${pt ? `:${pt.title}` : ''}</h3>
+    <p class="muted">每局用過的做法累積成點數;Lv1、Lv2 會解鎖專屬事件,這局用最多的風格額外 +${PERSONA_FOCUS_BONUS}。</p>
     ${encodeCard(p) ? '<button data-act="col-copy" class="share-btn">📋 複製我的同事卡代碼</button>' : ''}<p class="muted">用過的做法會累積成熟練度,Lv1 有稱號,可打包成同事卡。</p>${rows}</div>`;
 }
 
@@ -340,6 +340,15 @@ function renderColleague(): string {
   </div></div>`;
 }
 
+/** 風格:每種做法的熟練度、離下一級還差多少、各級解鎖什麼 */
+function renderPersonaModal(): string {
+  return `<div class="modal-bg"><div class="modal persona-modal">
+    <div class="modal-head"><h2>🎭 風格</h2><button class="x" data-act="close-modal" aria-label="關閉">✕</button></div>
+    ${renderPersona()}
+    <div class="actions"><button class="primary" data-act="close-modal">關閉</button></div>
+  </div></div>`;
+}
+
 function renderRank(): string {
   const cur = levelFor(profile.xp);
   const rows = LEVELS.map((l) => {
@@ -352,16 +361,15 @@ function renderRank(): string {
     <div class="xpbar"><span style="--to:${xpPercent(profile.xp)}%"></span></div>
     <p class="muted">經驗 ${profile.xp}· ${nextHint()} · 已完成 ${profile.runs} 局</p>
     ${rows}
-    ${renderPersona()}
     <p class="muted">每局結算得到經驗,升級得技能點。</p>
     <div class="actions"><button class="primary" data-act="close-rank">關閉</button></div>
   </div></div>`;
 }
 
 /** 主頁可開的彈窗(設定、職級詳情) */
-const START_MODALS: ModalKind[] = ['settings', 'rank', 'colleague', 'newgame'];
+const START_MODALS: ModalKind[] = ['settings', 'rank', 'colleague', 'newgame', 'persona'];
 function renderStartModal(): string {
-  return modal === 'settings' ? renderSettings() : modal === 'rank' ? renderRank() : modal === 'colleague' ? renderColleague() : modal === 'newgame' ? renderNewGame() : '';
+  return modal === 'settings' ? renderSettings() : modal === 'rank' ? renderRank() : modal === 'colleague' ? renderColleague() : modal === 'newgame' ? renderNewGame() : modal === 'persona' ? renderPersonaModal() : '';
 }
 
 function renderSettings(): string {
@@ -391,6 +399,7 @@ function renderStart(): string {
       <button class="${has ? '' : 'primary'}" data-act="open-new">${has ? '新遊戲' : '開始遊戲'}</button>
       <div class="title-row">
         <button data-act="archive">🗂️ 檔案${buyable > 0 ? ` <em>${buyable}</em>` : ''}</button>
+        <button data-act="open-persona">🎭 風格</button>
         <button data-act="skills">📓 技能${sp > 0 ? ` <em>${sp}</em>` : ''}</button>
         <button data-act="open-colleague">👥 同事</button>
         <button data-act="open-settings">⚙️ 設定</button>
@@ -470,7 +479,7 @@ function renderSide(s: State): string {
     const d = base + i;
     const ph = phaseOf(d).key;
     const live = !!c && d >= c.launchDay && d < c.launchDay + LIVE_DAYS;
-    const mark = d === s.day ? '' : c && d === c.launchDay ? '🎪' : (s.mode === 'story' ? d === STORY_DAYS : d % 10 === 0) ? '🏁' : '';
+    const mark = d === s.day ? '' : c && d === c.launchDay ? '🎪' : d % 5 === 0 ? '💀' : '';
     const due = dueOn(d);
     return `<div class="dn ${ph}${d < s.day ? ' past' : ''}${d === s.day ? ' now' : ''}${live ? ' live' : ''}" title="第 ${d} 天 · ${PHASES[ph].name}${due ? ` · ${due} 件到期` : ''}"><span>${d}</span>${mark ? `<i>${mark}</i>` : ''}${due ? `<u>${due}</u>` : ''}</div>`;
   }).join('');
@@ -497,22 +506,40 @@ function renderCards(s: State): string {
   </div></div>`;
 }
 
-/** 本局策略:平常只顯示小圖示與等級,點了才展開 */
+/** 本局策略:平常只顯示小圖示與等級,點了開彈窗看詳情 */
+function stratEntries(s: State): { icon: string; name: string; tone: string; lv: string; good?: string; bad?: string; extra?: string; kind: string }[] {
+  const out: { icon: string; name: string; tone: string; lv: string; good?: string; bad?: string; extra?: string; kind: string }[] = [];
+  const role = roleById(s.role ?? 'intern');
+  if (role) out.push({ icon: role.icon, name: role.name, tone: 'role', lv: '', good: `${role.trait}:${role.traitDesc}`, kind: '職位' });
+  const curse = curseById(s.curse ?? '');
+  if (curse) out.push({ icon: curse.icon, name: curse.name, tone: 'curse', lv: '', bad: curse.desc, extra: `資歷 ×${curse.mult}`, kind: '挑戰' });
+  for (const c of STRATEGIES) {
+    const l = stratLv(s, c.id);
+    if (l > 0) out.push({ icon: c.icon, name: c.name, tone: c.tone, lv: c.max > 1 ? `Lv${l}` : '進化', good: c.good(l), bad: c.bad(l), kind: '策略' });
+  }
+  return out;
+}
+
 function renderStratBar(s: State): string {
   const owned = STRATEGIES.filter((c) => stratLv(s, c.id) > 0);
   const role = roleById(s.role ?? 'intern');
   const curse = curseById(s.curse ?? '');
   if (!owned.length && !role && !curse) return '';
-  const roleIcon = role ? `<button class="si role" data-act="strat-toggle" title="${esc(role.name)}">${role.icon}</button>` : '';
-  const curseIcon = curse ? `<button class="si curse" data-act="strat-toggle" title="${esc(curse.name)}">${curse.icon}</button>` : '';
-  const icons = roleIcon + curseIcon + owned.map((c) => `<button class="si ${c.tone}" data-act="strat-toggle" title="${esc(c.name)}">${c.icon}<i>${c.max > 1 ? stratLv(s, c.id) : '★'}</i></button>`).join('');
-  const roleDetail = role ? `<div class="sd role"><b>${role.icon} ${esc(role.name)}・${esc(role.trait)}</b><span>👍 ${esc(role.traitDesc)}</span></div>` : '';
-  const curseDetail = curse ? `<div class="sd curse"><b>${curse.icon} 挑戰・${esc(curse.name)}</b><span>👎 ${esc(curse.desc)}</span><span>資歷 ×${curse.mult}</span></div>` : '';
-  const detail = stratOpen ? `<div class="sdetail">${roleDetail}${curseDetail}${owned.map((c) => {
-    const l = stratLv(s, c.id);
-    return `<div class="sd ${c.tone}"><b>${c.icon} ${esc(c.name)}${c.max > 1 ? ` Lv${l}` : ''}</b><span>👍 ${esc(c.good(l))}</span><span>👎 ${esc(c.bad(l))}</span></div>`;
-  }).join('')}</div>` : '';
-  return `<div class="strats"><div class="srow">${icons}</div>${detail}</div>`;
+  const icons = (role ? `<button class="si role" data-act="strat-open" title="${esc(role.name)}">${role.icon}</button>` : '')
+    + (curse ? `<button class="si curse" data-act="strat-open" title="${esc(curse.name)}">${curse.icon}</button>` : '')
+    + owned.map((c) => `<button class="si ${c.tone}" data-act="strat-open" title="${esc(c.name)}">${c.icon}<i>${c.max > 1 ? stratLv(s, c.id) : '★'}</i></button>`).join('');
+  return `<div class="strats"><div class="srow">${icons}</div></div>`;
+}
+
+function renderStratModal(s: State): string {
+  const rows = stratEntries(s).map((e) => `<div class="sd ${e.tone}"><b>${e.icon} ${esc(e.name)}${e.lv ? ` <em>${e.lv}</em>` : ''}</b>${e.good ? `<span>👍 ${esc(e.good)}</span>` : ''}${e.bad ? `<span>👎 ${esc(e.bad)}</span>` : ''}${e.extra ? `<span>${esc(e.extra)}</span>` : ''}</div>`).join('');
+  const used = STYLES.filter((st) => (s.styleUse?.[st] ?? 0) > 0).sort((a, b) => (s.styleUse?.[b] ?? 0) - (s.styleUse?.[a] ?? 0));
+  const style = `<div class="sd persona"><b>🎭 本局風格</b><span>${used.length ? used.slice(0, 5).map((st) => `${PERSONA_INFO[st].name} ×${s.styleUse?.[st]}`).join(' · ') : '還沒有'}</span><span>結算時累積,Lv1 起會遇到專屬事件</span></div>`;
+  return `<div class="modal-bg"><div class="modal strat-modal">
+    <div class="modal-head"><h2>本局策略</h2><button class="x" data-act="close-modal" aria-label="關閉">✕</button></div>
+    <div class="sdetail">${rows}${style}</div>
+    <div class="actions"><button data-act="open-persona">🎭 風格進度</button><button class="primary" data-act="close-modal">關閉</button></div>
+  </div></div>`;
 }
 
 function renderSkillChips(s: State): string {
@@ -572,7 +599,8 @@ function renderInbox(s: State): string {
   const buffBar = buffs.length || traitChips || rapportChip || personaChip || colChip ? `<div class="buff-bar">${personaChip}${colChip}${traitChips}${rapportChip}${buffs.map((b) => `<span class="buff" title="${esc(BUFFS[b.id].desc)}">${BUFFS[b.id].icon} ${BUFFS[b.id].name}<small>${b.left} 天</small></span>`).join('')}</div>` : '';
   const dueN = s.inbox.filter((i) => i.deadline <= s.day).length;
   const todo = dueN || s.pendingReports ? `<div class="day-line todo-line">${dueN ? `🔥 今天截止 ${dueN} 件` : ''}${dueN && s.pendingReports ? ' · ' : ''}${s.pendingReports ? `📝 日報 ${s.pendingReports} 份` : ''}</div>` : '';
-  const dayLine = buffBar + todo;
+  const alertNote = s.alert ? `<div class="alert-note">🚨 ${esc(s.alert)}</div>` : '';
+  const dayLine = alertNote + buffBar + todo;
   if (!sorted.length) return `${dayLine}${banner}<div class="card empty">收件匣是空的。<br>這種時刻通常撐不過一個小時。</div>`;
   const openable = sorted.filter((i) => !sceneRoomFor(EVENTS[i.eventId]));
   // 預設全部收合,由玩家自己展開
@@ -596,10 +624,10 @@ function renderInbox(s: State): string {
       ${pulseHint(s, ev, it) ? `<div class="hint pulse">📡 風向:${esc(pulseHint(s, ev, it) ?? '')}</div>` : ''}
       ${tx.brief && tx.brief !== tx.body ? `<details class="more"><summary>詳情</summary><div>${esc(tx.body)}</div></details>` : ''}
       <div class="opts">${opts}</div></div>` : '';
-    return `<div class="card mail ${open ? 'open' : ''} ${isNew ? 'enter' : ''} ${it.stage ? 'escalated' : ''}" style="--i:${delay}">
+    return `<div class="card mail ${ev.boss ? 'boss' : ''} ${it.sudden ? 'sudden' : ''} ${open ? 'open' : ''} ${isNew ? 'enter' : ''} ${it.stage ? 'escalated' : ''}" style="--i:${delay}">
       <button class="mail-head" data-act="toggle" data-uid="${it.uid}" aria-expanded="${open}">
         <span class="k k-${ev.kind}">${KIND_ICON[ev.kind] ?? '📌'}</span>
-        <span class="mh"><b>${it.stage ? '🔥 ' : ''}${esc(tx.title)}</b>${open ? '' : `<small>${esc(tx.brief ?? tx.body)}</small>`}</span>
+        <span class="mh"><b>${it.stage ? '🔥 ' : ''}${it.sudden ? '🚨 ' : ''}${ev.boss ? '💀 ' : ''}${ev.persona ? '🎭 ' : ''}${esc(tx.title)}</b>${open ? '' : `<small>${esc(tx.brief ?? tx.body)}</small>`}</span>
         <span class="due ${left <= 0 ? 'urgent' : ''}">${due}</span>${room ? `<span class="go">🚪 ${ROOMS[room].name}</span>` : `<span class="chev">${open ? '▾' : '▸'}</span>`}
       </button>${detail}</div>`;
   }).join('');
@@ -736,7 +764,7 @@ function renderRoomUI(s: State, hud: string): string {
     const ev = EVENTS[it.eventId];
     const tx = eventText(ev, it);
     speaker = tx.from;
-    title = tx.title;
+    title = `${ev.boss ? '💀 ' : ''}${tx.title}`;
     text = tx.brief ?? tx.body;
     const hint = it.stage ? '上次沒處理,對方又來催了。這次處理要多花 1 點。' : it.hint && showHints(s.difficulty) ? `🦋 ${it.hint}` : '';
     const ph = pulseHint(s, ev, it);
@@ -798,7 +826,7 @@ function renderGame(s: State): string {
     <button class="primary end ${s.ap === 0 || !s.inbox.length ? 'pulse' : ''}" data-act="end"><span>${endArmed ? '再按一次結束' : '結束今天 ▶'}</span></button>`;
   const xpPct = Math.min(100, Math.round(((s.xp ?? 0) / xpNeed(s.lv ?? 1)) * 100));
   const hudHtml = `<header class="hud">
-    <div class="xpline"><b>Lv ${s.lv ?? 1}</b><span class="xpbar"><span data-bar="xp" data-w="${xpPct}" style="width:${xpPct}%"></span></span></div>
+    <div class="xpline"><b>Lv ${s.lv ?? 1}</b><span class="xpbar"><span data-bar="xp" data-w="${xpPct}" style="width:${xpPct}%"></span></span><span class="threat t${Math.min(5, threatLevel(s))}" title="危機等級:事件更多,逾期與失敗的代價更重${paceOf(s).mode === 'press' ? '。你領先目標,導演加壓' : paceOf(s).mode === 'ease' ? '。你落後目標,導演放水' : ''}">☠ ${threatLevel(s)}${paceOf(s).mode === 'press' ? '▲' : paceOf(s).mode === 'ease' ? '▼' : ''}</span></div>
     <div class="topbar">
       <div class="day ${prevDay >= 0 && prevDay !== s.day ? 'bump' : ''}">${weekdayLabel(s.day)} <span class="muted">${days} · ${PHASES[phaseOf(s.day).key].name} · ${s.mode === 'story' ? '劇情' : '無限'} · ${DIFFS[s.difficulty].label}</span></div>
       <div class="ap" title="今天能做的事有限,用完就只能結束這一天">
@@ -1110,7 +1138,10 @@ if (!noMotion) {
 }
 
 /** 場景下方的一句話:每個階段第一天講階段重點,其他時候是同事的口頭禪或當天的氛圍 */
+let lastAlert = '';
 function sceneCaption(s: State): string {
+  if (s.alert) return `🚨 ${s.alert}`;
+  if (s.bossNext && s.day % 5 === 4) return `💀 明天首領:${EVENTS[s.bossNext].title.replace('首領:', '')}`;
   const ph = phaseOf(s.day);
   if (ph.first) return `📌 ${PHASES[ph.key].name}:${PHASES[ph.key].blurb}`;
   if (s.colleague && s.colSay) return `👥 ${s.colleague.title}:${s.colSay}`;
@@ -1218,6 +1249,8 @@ function render(): void {
   else if (modal === 'summary') html += renderSummary();
   else if (modal === 'intro') html += renderIntro();
   else if (modal === 'cards') html += renderCards(s);
+  else if (modal === 'strats') html += renderStratModal(s);
+  else if (modal === 'persona') html += renderPersonaModal();
   else if (modal === 'gamemenu') html += renderGameMenu();
   else if (modal === 'report') html += renderReport(s);
   else if (modal === 'scout') html += renderScout(s);
@@ -1229,7 +1262,13 @@ function render(): void {
   const modalTop = prevModal && key === lastModal ? prevModal.scrollTop : 0;
   const pageY = window.scrollY;
   const stageTop = app.querySelector('.stage')?.scrollTop ?? 0;
+  const appTop = app.scrollTop;
+  const sideTop = app.querySelector('.side-ui')?.scrollTop ?? 0;
   app.innerHTML = html;
+  // 右側(或下方)的遊玩區是會捲動的容器:重畫後把位置還原,不要每次選完都跳回最上面
+  app.scrollTop = appTop;
+  const sideEl = app.querySelector('.side-ui');
+  if (sideEl) sideEl.scrollTop = sideTop;
   const stage = app.querySelector('.stage');
   if (stage) stage.scrollTop = stageTop;
   const nextModal = app.querySelector('.modal') as HTMLElement | null;
@@ -1238,6 +1277,7 @@ function render(): void {
   const opening = key !== 'none' && key !== lastModal;
   if (opening) app.querySelector('.modal-bg')?.classList.add('open');
   lastModal = key;
+  if (s.alert && s.alert !== lastAlert) { lastAlert = s.alert; flash(`🚨 ${s.alert}`, 3200); } else if (!s.alert) lastAlert = '';
   if (opening) modalEffects(key, s);
   lastScreen = 'game';
   syncScene();
@@ -1374,12 +1414,26 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && modal === 'scout') { modal = 'none'; render(); }
   else if (e.key === 'Escape' && modal === 'report') { modal = 'none'; reportQuiz = null; reportDone = null; render(); }
   else if (e.key === 'Escape' && planning && !transitioning) { void goPlace('desk', resetPlace); }
-  else if (e.key === 'Escape' && (START_MODALS.includes(modal) || modal === 'gamemenu')) { modal = 'none'; render(); }
+  else if (e.key === 'Escape' && (START_MODALS.includes(modal) || modal === 'gamemenu' || modal === 'strats')) { modal = 'none'; render(); }
 });
 
 // 動畫或換場期間的點擊(可能落在換場遮罩上):記下位置,結束後補做
+let unstickTimer = 0;
+/** 萬一互動鎖(動畫、換場)沒有解開,按鈕會全部被忽略:被擋住的點擊 1.5 秒後強制解鎖並補做 */
+function unstickLater(): void {
+  if (unstickTimer) return;
+  unstickTimer = window.setTimeout(() => {
+    unstickTimer = 0;
+    if (busy || transitioning) {
+      busy = false;
+      transitioning = false;
+      fadeCanvas.style.display = 'none';
+      flushPendingClick();
+    }
+  }, 1500);
+}
 document.addEventListener('click', (e) => {
-  if (busy || transitioning) pendingClick = { x: e.clientX, y: e.clientY };
+  if (busy || transitioning) { pendingClick = { x: e.clientX, y: e.clientY }; unstickLater(); }
 }, true);
 
 app.addEventListener('click', (e) => {
@@ -1408,7 +1462,8 @@ app.addEventListener('click', (e) => {
       render();
       return;
     }
-    case 'strat-toggle': stratOpen = !stratOpen; render(); return;
+    case 'open-persona': modal = 'persona'; render(); return;
+    case 'strat-open': modal = 'strats'; render(); return;
     case 'pick-card': if (s && el.dataset.id && pickCard(s, el.dataset.id) === null) { modal = 'none'; save(s); render(); } return;
     case 'scout-open': if (s?.scout) { modal = 'scout'; render(); } return;
     case 'scout-close': modal = 'none'; render(); return;

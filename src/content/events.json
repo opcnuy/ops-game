@@ -7724,5 +7724,1141 @@
    }
   ],
   "colStyle": "hustle"
+ },
+ {
+  "id": "boss_storm",
+  "kind": "輿情",
+  "from": "玩家社群",
+  "title": "首領:輿論風暴",
+  "boss": true,
+  "answers": [
+   "trust"
+  ],
+  "deadline": 1,
+  "weight": 0,
+  "brief": "玩家大規模抱怨,論壇與社群同時炸開。",
+  "body": "玩家大規模抱怨,論壇與社群同時炸開,媒體也開始轉載。",
+  "ignore": {
+   "effects": {
+    "trust": -12,
+    "players": -4
+   },
+   "result": "沒人出面回應,風暴自己燒了一整天。"
+  },
+  "options": [
+   {
+    "label": "公開道歉,宣布補償",
+    "ap": 1,
+    "style": "generous",
+    "outcomes": [
+     {
+      "p": 0.6,
+      "effects": {
+       "trust": 10,
+       "players": 2,
+       "boss": -2
+      },
+      "result": "道歉加補償,風向轉了,但預算吃緊。"
+     },
+     {
+      "p": 0.4,
+      "effects": {
+       "trust": 3,
+       "boss": -5
+      },
+      "result": "補償被嫌不夠,老闆也不滿意。"
+     }
+    ]
+   },
+   {
+    "label": "查證後逐點澄清",
+    "ap": 1,
+    "style": "rigor",
+    "outcomes": [
+     {
+      "p": 0.55,
+      "effects": {
+       "trust": 9,
+       "boss": 3
+      },
+      "result": "逐點澄清,誤會解開,老闆看見你的專業。"
+     },
+     {
+      "p": 0.45,
+      "effects": {
+       "trust": 1,
+       "boss": -3
+      },
+      "result": "澄清太慢,玩家已經不想聽。"
+     }
+    ]
+   },
+   {
+    "label": "先靜觀其變",
+    "ap": 0,
+    "style": "quiet",
+    "outcomes": [
+     {
+      "p": 0.3,
+      "effects": {
+       "trust": -2
+      },
+      "result": "風頭自己過了,算你運氣好。"
+     },
+     {
+      "p": 0.7,
+      "effects": {
+       "trust": -9,
+       "players": -3
+      },
+      "result": "沉默被當成默認,流失更多玩家。"
+     }
+    ]
+   }
+  ],
+  "insight": "危機溝通要快、要具體、要有人負責:先承認問題,再說明做法與時程。"
+ },
+ {
+  "id": "boss_growth",
+  "kind": "老闆",
+  "from": "林總",
+  "title": "首領:成長質詢",
+  "boss": true,
+  "answers": [
+   "revenue",
+   "boss"
+  ],
+  "deadline": 1,
+  "weight": 0,
+  "brief": "林總要看到這季的成長交代。",
+  "body": "林總:「這季成長要有個交代,今天講清楚。」",
+  "ignore": {
+   "effects": {
+    "boss": -12
+   },
+   "result": "林總等不到你的回應,當場在群組點名。"
+  },
+  "options": [
+   {
+    "label": "用活動成績與數據說服",
+    "ap": 1,
+    "style": "rigor",
+    "outcomes": [
+     {
+      "p": 0.55,
+      "effects": {
+       "boss": 10,
+       "trust": 1
+      },
+      "result": "數據擺出來,林總點頭。"
+     },
+     {
+      "p": 0.45,
+      "effects": {
+       "boss": -2
+      },
+      "result": "數字不夠漂亮,林總沒說話。"
+     }
+    ]
+   },
+   {
+    "label": "承諾下一檔拉高目標",
+    "ap": 1,
+    "style": "hustle",
+    "outcomes": [
+     {
+      "p": 0.5,
+      "effects": {
+       "boss": 8,
+       "trust": -3
+      },
+      "result": "林總很滿意,你給自己挖了個洞。"
+     },
+     {
+      "p": 0.5,
+      "effects": {
+       "boss": -6,
+       "trust": -2
+      },
+      "result": "林總:「說到要做到。」"
+     }
+    ]
+   },
+   {
+    "label": "請他看玩家口碑",
+    "ap": 1,
+    "style": "open",
+    "outcomes": [
+     {
+      "p": 0.5,
+      "effects": {
+       "boss": 5,
+       "trust": 4
+      },
+      "result": "口碑是長期資產,林總聽進去了。"
+     },
+     {
+      "p": 0.5,
+      "effects": {
+       "boss": -5
+      },
+      "result": "林總:「我要的是營收。」"
+     }
+    ]
+   }
+  ],
+  "insight": "向上報告要用對方在意的指標說話,並把短期與長期的取捨講清楚。"
+ },
+ {
+  "id": "boss_audit",
+  "kind": "原廠",
+  "from": "原廠",
+  "title": "首領:突擊稽核",
+  "boss": true,
+  "answers": [
+   "boss",
+   "data"
+  ],
+  "deadline": 1,
+  "weight": 0,
+  "brief": "原廠稽核小組突然登門,要看營運紀錄。",
+  "body": "原廠稽核小組突然登門,要看帳目、日報與活動紀錄。",
+  "ignore": {
+   "effects": {
+    "boss": -12,
+    "trust": -3
+   },
+   "result": "你沒準備,稽核報告寫得很難看。"
+  },
+  "options": [
+   {
+    "label": "全面配合,資料全給",
+    "ap": 1,
+    "style": "open",
+    "outcomes": [
+     {
+      "p": 0.65,
+      "effects": {
+       "boss": 6,
+       "trust": 3
+      },
+      "result": "資料齊全,稽核過關。"
+     },
+     {
+      "p": 0.35,
+      "effects": {
+       "boss": -4
+      },
+      "result": "資料裡挖出幾個小問題。"
+     }
+    ]
+   },
+   {
+    "label": "只交必要的資料",
+    "ap": 1,
+    "style": "quiet",
+    "outcomes": [
+     {
+      "p": 0.5,
+      "effects": {
+       "boss": 2
+      },
+      "result": "資料夠用,沒被追問。"
+     },
+     {
+      "p": 0.5,
+      "effects": {
+       "boss": -8,
+       "trust": -2
+      },
+      "result": "被抓到有保留,稽核更嚴。"
+     }
+    ]
+   },
+   {
+    "label": "請老闆出面協調",
+    "ap": 1,
+    "style": "private",
+    "outcomes": [
+     {
+      "p": 0.5,
+      "effects": {
+       "boss": 7
+      },
+      "result": "老闆出面,稽核放鬆。"
+     },
+     {
+      "p": 0.5,
+      "effects": {
+       "boss": -6
+      },
+      "result": "老闆:「這點小事也要我?」"
+     }
+    ]
+   }
+  ],
+  "insight": "稽核前先自查,資料與紀錄要一致;誠實面對問題,比事後被挖出來好。"
+ },
+ {
+  "id": "boss_outage",
+  "kind": "技術",
+  "from": "技術",
+  "title": "首領:系統大當機",
+  "boss": true,
+  "answers": [
+   "grind",
+   "trust"
+  ],
+  "deadline": 1,
+  "weight": 0,
+  "brief": "遊戲伺服器當機,玩家全被踢出去。",
+  "body": "遊戲伺服器當機,玩家全被踢出去,客服電話被打爆。",
+  "ignore": {
+   "effects": {
+    "trust": -12,
+    "boss": -4,
+    "players": -3
+   },
+   "result": "沒人主導搶修,當機拖了半天。"
+  },
+  "options": [
+   {
+    "label": "每小時公開更新進度",
+    "ap": 1,
+    "style": "open",
+    "outcomes": [
+     {
+      "p": 0.6,
+      "effects": {
+       "trust": 8
+      },
+      "result": "進度透明,玩家願意等。"
+     },
+     {
+      "p": 0.4,
+      "effects": {
+       "trust": -2,
+       "boss": -2
+      },
+      "result": "更新幾次都沒進展,玩家火大。"
+     }
+    ]
+   },
+   {
+    "label": "全員加班搶修",
+    "ap": 2,
+    "style": "hustle",
+    "outcomes": [
+     {
+      "p": 0.7,
+      "effects": {
+       "trust": 5,
+       "boss": 4
+      },
+      "result": "連夜搶修,隔天順利恢復。"
+     },
+     {
+      "p": 0.3,
+      "effects": {
+       "trust": -4,
+       "boss": -3
+      },
+      "result": "搶修出錯,反而當更久。"
+     }
+    ]
+   },
+   {
+    "label": "先補償再說",
+    "ap": 1,
+    "style": "generous",
+    "outcomes": [
+     {
+      "p": 0.5,
+      "effects": {
+       "trust": 6,
+       "boss": -4
+      },
+      "result": "補償安撫了人,預算吃緊。"
+     },
+     {
+      "p": 0.5,
+      "effects": {
+       "trust": -3,
+       "boss": -5
+      },
+      "result": "問題沒解決就補償,被批沒誠意。"
+     }
+    ]
+   }
+  ],
+  "insight": "重大故障要同時處理三件事:修復、溝通、補償,並指定一個人負責對外說明。"
+ },
+ {
+  "id": "ps_open_1",
+  "kind": "插曲",
+  "from": "你的風格",
+  "title": "玩家想看營運怎麼運作",
+  "brief": "論壇有人問:營運每天到底在忙什麼?",
+  "body": "論壇有人問:營運每天到底在忙什麼?",
+  "persona": "open",
+  "personaLv": 1,
+  "weight": 0,
+  "deadline": 3,
+  "ignore": {
+   "effects": {},
+   "result": "機會過去了。"
+  },
+  "options": [
+   {
+    "label": "寫一篇公開說明",
+    "ap": 1,
+    "style": "open",
+    "outcomes": [
+     {
+      "p": 0.8,
+      "effects": {
+       "trust": 4
+      },
+      "result": "公開說明很受歡迎,留言一片「原來如此」。"
+     },
+     {
+      "p": 0.2,
+      "effects": {
+       "trust": 1
+      },
+      "result": "說明太長,沒什麼人看完。"
+     }
+    ]
+   },
+   {
+    "label": "簡單回一句",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": 1
+      },
+      "result": "簡短回覆,算是有交代。"
+     }
+    ]
+   }
+  ],
+  "insight": "公開透明的成本是時間,回報是信任;說明要短、要具體。"
+ },
+ {
+  "id": "ps_open_2",
+  "kind": "插曲",
+  "from": "你的風格",
+  "title": "社群自發整理了營運紀錄",
+  "brief": "玩家把你們公開的紀錄做成了懶人包。",
+  "body": "玩家把你們公開的紀錄做成了懶人包。",
+  "persona": "open",
+  "personaLv": 2,
+  "weight": 0,
+  "deadline": 3,
+  "ignore": {
+   "effects": {},
+   "result": "機會過去了。"
+  },
+  "options": [
+   {
+    "label": "公開感謝並採納建議",
+    "ap": 1,
+    "style": "open",
+    "outcomes": [
+     {
+      "p": 0.75,
+      "effects": {
+       "trust": 5,
+       "players": 1.5
+      },
+      "result": "懶人包被大量轉載,新玩家也跟著回來。"
+     },
+     {
+      "p": 0.25,
+      "effects": {
+       "trust": 2
+      },
+      "result": "採納的建議和計畫衝突,有點尷尬。"
+     }
+    ]
+   },
+   {
+    "label": "低調收下",
+    "ap": 0,
+    "style": "quiet",
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": 2
+      },
+      "result": "默默收下,沒有多說。"
+     }
+    ]
+   }
+  ],
+  "insight": "讓玩家參與,是公開最大的紅利。"
+ },
+ {
+  "id": "ps_private_1",
+  "kind": "插曲",
+  "from": "你的風格",
+  "title": "一位老玩家私訊你",
+  "brief": "他說有些話不想在公開場合講。",
+  "body": "他說有些話不想在公開場合講。",
+  "persona": "private",
+  "personaLv": 1,
+  "weight": 0,
+  "deadline": 3,
+  "ignore": {
+   "effects": {},
+   "result": "機會過去了。"
+  },
+  "options": [
+   {
+    "label": "好好聊半小時",
+    "ap": 1,
+    "style": "private",
+    "outcomes": [
+     {
+      "p": 0.8,
+      "effects": {
+       "trust": 3
+      },
+      "result": "他吐了一堆真心話,你多了解了玩家一點。",
+      "reveal": "community"
+     },
+     {
+      "p": 0.2,
+      "effects": {
+       "trust": 1
+      },
+      "result": "聊得很愉快,但沒什麼新資訊。"
+     }
+    ]
+   },
+   {
+    "label": "請他寫在回饋表",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": 0
+      },
+      "result": "他說謝謝,之後沒再出現。"
+     }
+    ]
+   }
+  ],
+  "insight": "一對一的溝通能挖出公開討論裡聽不到的聲音。"
+ },
+ {
+  "id": "ps_private_2",
+  "kind": "插曲",
+  "from": "你的風格",
+  "title": "核心玩家想私下談合作",
+  "brief": "他在社群很有影響力,想先跟你聊聊。",
+  "body": "他在社群很有影響力,想先跟你聊聊。",
+  "persona": "private",
+  "personaLv": 2,
+  "weight": 0,
+  "deadline": 3,
+  "ignore": {
+   "effects": {},
+   "result": "機會過去了。"
+  },
+  "options": [
+   {
+    "label": "約下來吃個飯",
+    "ap": 1,
+    "style": "private",
+    "outcomes": [
+     {
+      "p": 0.7,
+      "effects": {
+       "trust": 5,
+       "players": 1
+      },
+      "result": "他成了你的盟友,常幫官方說話。"
+     },
+     {
+      "p": 0.3,
+      "effects": {
+       "trust": -1,
+       "boss": -2
+      },
+      "result": "飯局被傳出去,有人說官方私下搞小圈圈。"
+     }
+    ]
+   },
+   {
+    "label": "改成公開對談",
+    "ap": 1,
+    "style": "open",
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": 3
+      },
+      "result": "公開對談很順利,大家都看得到。"
+     }
+    ]
+   }
+  ],
+  "insight": "私下的關係要能攤在陽光下,否則會被誤會。"
+ },
+ {
+  "id": "ps_quiet_1",
+  "kind": "插曲",
+  "from": "你的風格",
+  "title": "論壇出現一則小爭議",
+  "brief": "還沒擴散,但有幾個人在留言。",
+  "body": "還沒擴散,但有幾個人在留言。",
+  "persona": "quiet",
+  "personaLv": 1,
+  "weight": 0,
+  "deadline": 3,
+  "ignore": {
+   "effects": {},
+   "result": "機會過去了。"
+  },
+  "options": [
+   {
+    "label": "低調處理,不回應",
+    "ap": 0,
+    "style": "quiet",
+    "outcomes": [
+     {
+      "p": 0.75,
+      "effects": {
+       "trust": 2,
+       "boss": 2
+      },
+      "result": "沒人再提,風波自己平息了。"
+     },
+     {
+      "p": 0.25,
+      "effects": {
+       "trust": -3
+      },
+      "result": "沉默被當成默認,討論變多了。"
+     }
+    ]
+   },
+   {
+    "label": "出面簡短回覆",
+    "ap": 1,
+    "style": "open",
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": 2
+      },
+      "result": "一句話就讓大家散了。"
+     }
+    ]
+   }
+  ],
+  "insight": "小事不用大動作,但要看風向:會擴散的就要出面。"
+ },
+ {
+  "id": "ps_quiet_2",
+  "kind": "插曲",
+  "from": "你的風格",
+  "title": "老闆聽說有個小問題",
+  "brief": "林總隱約知道,還沒開口問你。",
+  "body": "林總隱約知道,還沒開口問你。",
+  "persona": "quiet",
+  "personaLv": 2,
+  "weight": 0,
+  "deadline": 3,
+  "ignore": {
+   "effects": {},
+   "result": "機會過去了。"
+  },
+  "options": [
+   {
+    "label": "先不報,自己收尾",
+    "ap": 0,
+    "style": "quiet",
+    "outcomes": [
+     {
+      "p": 0.7,
+      "effects": {
+       "boss": 3
+      },
+      "result": "你悄悄解決,林總一直沒發現。"
+     },
+     {
+      "p": 0.3,
+      "effects": {
+       "boss": -5
+      },
+      "result": "林總是從別人那裡聽到的,臉色很難看。"
+     }
+    ]
+   },
+   {
+    "label": "主動簡短報告",
+    "ap": 1,
+    "style": "open",
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": 3
+      },
+      "result": "林總說:「早點講就好。」"
+     }
+    ]
+   }
+  ],
+  "insight": "低調不等於隱瞞;對上級,壞消息越早講越好。"
+ },
+ {
+  "id": "ps_generous_1",
+  "kind": "插曲",
+  "from": "你的風格",
+  "title": "玩家抱怨獎勵少了一份",
+  "brief": "金額不大,但他很在意。",
+  "body": "金額不大,但他很在意。",
+  "persona": "generous",
+  "personaLv": 1,
+  "weight": 0,
+  "deadline": 3,
+  "ignore": {
+   "effects": {},
+   "result": "機會過去了。"
+  },
+  "options": [
+   {
+    "label": "主動多補一份",
+    "ap": 1,
+    "style": "generous",
+    "outcomes": [
+     {
+      "p": 0.8,
+      "effects": {
+       "trust": 4,
+       "boss": -1
+      },
+      "result": "玩家很感動,在論壇發了感謝文。"
+     },
+     {
+      "p": 0.2,
+      "effects": {
+       "trust": 1,
+       "boss": -3
+      },
+      "result": "消息傳開,大家都來要。"
+     }
+    ]
+   },
+   {
+    "label": "道歉並說明原因",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": 1
+      },
+      "result": "玩家說:「好吧。」"
+     }
+    ]
+   }
+  ],
+  "insight": "補償要有條件與範圍,不然會變成慣例。"
+ },
+ {
+  "id": "ps_generous_2",
+  "kind": "插曲",
+  "from": "你的風格",
+  "title": "大型玩家提出補償要求",
+  "brief": "他說活動體驗很差,希望有個說法。",
+  "body": "他說活動體驗很差,希望有個說法。",
+  "persona": "generous",
+  "personaLv": 2,
+  "weight": 0,
+  "deadline": 3,
+  "ignore": {
+   "effects": {},
+   "result": "機會過去了。"
+  },
+  "options": [
+   {
+    "label": "加碼補償,附上道歉信",
+    "ap": 1,
+    "style": "generous",
+    "outcomes": [
+     {
+      "p": 0.7,
+      "effects": {
+       "trust": 5,
+       "players": 1
+      },
+      "result": "他成了你最大的擁護者。"
+     },
+     {
+      "p": 0.3,
+      "effects": {
+       "trust": 1,
+       "boss": -4
+      },
+      "result": "他食髓知味,又提了新要求。"
+     }
+    ]
+   },
+   {
+    "label": "按規則補償",
+    "ap": 0,
+    "style": "rigor",
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": 2
+      },
+      "result": "他接受了,說下次希望更有誠意。"
+     }
+    ]
+   }
+  ],
+  "insight": "補償讓步要看對象:真心受傷的人,誠意比金額重要。"
+ },
+ {
+  "id": "ps_rigor_1",
+  "kind": "插曲",
+  "from": "你的風格",
+  "title": "報表上有個數字對不上",
+  "brief": "差距不大,但你覺得不對勁。",
+  "body": "差距不大,但你覺得不對勁。",
+  "persona": "rigor",
+  "personaLv": 1,
+  "weight": 0,
+  "deadline": 3,
+  "ignore": {
+   "effects": {},
+   "result": "機會過去了。"
+  },
+  "options": [
+   {
+    "label": "查到底",
+    "ap": 1,
+    "style": "rigor",
+    "outcomes": [
+     {
+      "p": 0.7,
+      "effects": {
+       "boss": 4
+      },
+      "result": "找到資料來源的錯誤,林總很欣賞。",
+      "reveal": "boss"
+     },
+     {
+      "p": 0.3,
+      "effects": {
+       "boss": 1
+      },
+      "result": "查了半天,只是四捨五入。"
+     }
+    ]
+   },
+   {
+    "label": "先標註,晚點再查",
+    "ap": 0,
+    "style": "fast",
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": 0
+      },
+      "result": "先交了報表,備註「待確認」。"
+     }
+    ]
+   }
+  ],
+  "insight": "數字對不上時,先確認口徑,再懷疑資料。"
+ },
+ {
+  "id": "ps_rigor_2",
+  "kind": "插曲",
+  "from": "你的風格",
+  "title": "競品發布了亮眼數據",
+  "brief": "老闆在群組丟了連結,問你怎麼看。",
+  "body": "老闆在群組丟了連結,問你怎麼看。",
+  "persona": "rigor",
+  "personaLv": 2,
+  "weight": 0,
+  "deadline": 3,
+  "ignore": {
+   "effects": {},
+   "result": "機會過去了。"
+  },
+  "options": [
+   {
+    "label": "拆解數據,查證可信度",
+    "ap": 1,
+    "style": "rigor",
+    "outcomes": [
+     {
+      "p": 0.75,
+      "effects": {
+       "boss": 5,
+       "trust": 1
+      },
+      "result": "你指出數據的比較基準不同,林總連連點頭。"
+     },
+     {
+      "p": 0.25,
+      "effects": {
+       "boss": -1
+      },
+      "result": "拆解後發現對方真的比較強。"
+     }
+    ]
+   },
+   {
+    "label": "先回「我再研究」",
+    "ap": 0,
+    "style": "quiet",
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": 0
+      },
+      "result": "林總說:「好,下午給我。」"
+     }
+    ]
+   }
+  ],
+  "insight": "競品數據先看定義、基期與樣本,再下結論。"
+ },
+ {
+  "id": "ps_fast_1",
+  "kind": "插曲",
+  "from": "你的風格",
+  "title": "臨時要一份簡報",
+  "brief": "林總十分鐘後開會要用。",
+  "body": "林總十分鐘後開會要用。",
+  "persona": "fast",
+  "personaLv": 1,
+  "weight": 0,
+  "deadline": 3,
+  "ignore": {
+   "effects": {},
+   "result": "機會過去了。"
+  },
+  "options": [
+   {
+    "label": "十分鐘快速出",
+    "ap": 1,
+    "style": "fast",
+    "outcomes": [
+     {
+      "p": 0.8,
+      "effects": {
+       "boss": 3
+      },
+      "result": "重點抓得準,簡報準時完成。"
+     },
+     {
+      "p": 0.2,
+      "effects": {
+       "boss": -2
+      },
+      "result": "趕得太急,有一頁寫錯了。"
+     }
+    ]
+   },
+   {
+    "label": "請他延後",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": -1
+      },
+      "result": "林總:「好吧,下午。」"
+     }
+    ]
+   }
+  ],
+  "insight": "趕時間時,先給結論與三個重點,細節之後補。"
+ },
+ {
+  "id": "ps_fast_2",
+  "kind": "插曲",
+  "from": "你的風格",
+  "title": "活動想提前一天上線",
+  "brief": "工程師說可以,但沒時間完整測試。",
+  "body": "工程師說可以,但沒時間完整測試。",
+  "persona": "fast",
+  "personaLv": 2,
+  "weight": 0,
+  "deadline": 3,
+  "ignore": {
+   "effects": {},
+   "result": "機會過去了。"
+  },
+  "options": [
+   {
+    "label": "先上,邊跑邊修",
+    "ap": 1,
+    "style": "fast",
+    "outcomes": [
+     {
+      "p": 0.65,
+      "effects": {
+       "players": 2,
+       "boss": 3
+      },
+      "result": "提早上線,玩家反應很熱烈。"
+     },
+     {
+      "p": 0.35,
+      "effects": {
+       "trust": -3,
+       "boss": -2
+      },
+      "result": "上線後出了小錯,趕緊補救。"
+     }
+    ]
+   },
+   {
+    "label": "維持原定時程",
+    "ap": 0,
+    "style": "rigor",
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": 1
+      },
+      "result": "穩穩地,照原計畫。"
+     }
+    ]
+   }
+  ],
+  "insight": "速度是優勢,也是風險:先確認最壞狀況你能不能承擔。"
+ },
+ {
+  "id": "ps_hustle_1",
+  "kind": "插曲",
+  "from": "你的風格",
+  "title": "半夜有人回報問題",
+  "brief": "訊息停在凌晨一點。",
+  "body": "訊息停在凌晨一點。",
+  "persona": "hustle",
+  "personaLv": 1,
+  "weight": 0,
+  "deadline": 3,
+  "ignore": {
+   "effects": {},
+   "result": "機會過去了。"
+  },
+  "options": [
+   {
+    "label": "親自上線處理",
+    "ap": 1,
+    "style": "hustle",
+    "outcomes": [
+     {
+      "p": 0.7,
+      "effects": {
+       "trust": 4,
+       "boss": 2
+      },
+      "result": "隔天玩家說:「營運凌晨還在線!」"
+     },
+     {
+      "p": 0.3,
+      "effects": {
+       "trust": 2,
+       "retention": -0.5
+      },
+      "result": "處理好了,但你整天都沒精神。"
+     }
+    ]
+   },
+   {
+    "label": "早上再處理",
+    "ap": 0,
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "trust": -1
+      },
+      "result": "早上才回,玩家有點冷淡。"
+     }
+    ]
+   }
+  ],
+  "insight": "親自扛能換信任,但要留意自己的體力,別變常態。"
+ },
+ {
+  "id": "ps_hustle_2",
+  "kind": "插曲",
+  "from": "你的風格",
+  "title": "同事請病假,工作沒人接",
+  "brief": "他手上的活動明天要用。",
+  "body": "他手上的活動明天要用。",
+  "persona": "hustle",
+  "personaLv": 2,
+  "weight": 0,
+  "deadline": 3,
+  "ignore": {
+   "effects": {},
+   "result": "機會過去了。"
+  },
+  "options": [
+   {
+    "label": "自己接下來做完",
+    "ap": 2,
+    "style": "hustle",
+    "outcomes": [
+     {
+      "p": 0.7,
+      "effects": {
+       "boss": 5,
+       "trust": 2
+      },
+      "result": "你全部扛下,林總記在心裡。"
+     },
+     {
+      "p": 0.3,
+      "effects": {
+       "boss": 1,
+       "trust": -2
+      },
+      "result": "你太累,出了一個小失誤。"
+     }
+    ]
+   },
+   {
+    "label": "請別的同事分擔",
+    "ap": 1,
+    "style": "private",
+    "outcomes": [
+     {
+      "p": 1,
+      "effects": {
+       "boss": 2
+      },
+      "result": "分工順利,大家都鬆一口氣。"
+     }
+    ]
+   }
+  ],
+  "insight": "一個人撐全場很帥,但能分工的事不要硬扛。"
  }
 ]

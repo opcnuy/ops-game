@@ -1,5 +1,6 @@
 // 活動搭配、餘波、新技能、新成就、新輿情卡的檢查
 import { ALL_UNLOCK, DEFAULT_UNLOCK, ROLES, SHOP, STRATEGIES } from '../src/cards';
+import { dominantTheme, makeReport, paceOf, submitReport, threatLevel } from '../src/engine';
 import { buyItem, loadProfile, saveProfile } from '../src/profile';
 import { pickCard, stratLv, gainXp, COMBOS, CONTENT, combosFor, chooseOption, doAction, endDay, eventOptions, EVENTS, newGame, planCampaign, spendToday } from '../src/engine';
 import { SCOUT_CARDS } from '../src/scout';
@@ -87,6 +88,63 @@ ok(SCOUT_CARDS.every((c) => c.name && c.result), '輿情卡缺欄位');
   ok(pv.ap === ap0 && pv.campaign?.polish === 1, '活動企劃第一次打磨應免費');
   const ap1 = pv.ap; doAction(pv, 'polish');
   ok(pv.ap === ap1 - 1, '第二次打磨應照常花 1 點');
+  // 難度攀升:危機等級隨天數升高
+  { const g = newGame('story', 'normal', 51, 1); const lv = (d: number) => { g.day = d; return threatLevel(g); };
+    ok(lv(1) === 1 && lv(3) === 1 && lv(4) === 2 && lv(10) === 4, '危機等級的天數對應不對'); }
+  // 首領:前一天預告,每 5 天登場,依流派挑選
+  {
+    const g = newGame('story', 'normal', 61, 5);
+    g.cardPick = undefined; g.pendingPicks = 0; g.strat = { revenue: 3 };
+    ok(dominantTheme(g) === 'revenue', '偏重營收的流派應被認出');
+    let announced = '', boss = '';
+    for (let i = 0; i < 6 && !g.over; i++) {
+      if (g.day === 4) { announced = endDay(g).lines.find((l) => l.includes('明天有首領')) ?? ''; } else endDay(g);
+      if (g.day === 5 && !boss) boss = g.inbox.find((x) => EVENTS[x.eventId].boss)?.eventId ?? '';
+    }
+    ok(announced.includes('輿論風暴'), '偏重營收應預告輿論風暴:' + announced);
+    ok(boss === 'boss_storm', '第 5 天登場的首領應和預告一致:' + boss);
+    const none = newGame('story', 'normal', 62, 1); none.cardPick = undefined; none.strat = {};
+    ok(dominantTheme(none) === undefined, '沒有策略就沒有流派');
+    // 目標進度:落後放水、領先加壓
+    const p = newGame('story', 'normal', 63, 1); p.day = 6;
+    p.players = 9000; p.trust = 30; p.boss = 20;
+    ok(paceOf(p).mode === 'ease', '落後目標應放水:' + paceOf(p).mode);
+    p.players = 20000; p.trust = 95; p.boss = 95; p.history = [{ day: 1, players: 1, spend: 99 }, { day: 2, players: 1, spend: 99 }];
+    ok(paceOf(p).mode === 'press', '領先目標應加壓:' + paceOf(p).mode);
+  }
+  // 風格事件:風格達到等級才會遇到專屬事件
+  {
+    const seen = (persona: Record<string, number>): { lv1: boolean; lv2: boolean } => {
+      let lv1 = false, lv2 = false;
+      for (let i = 0; i < 80; i++) {
+        const s = newGame('story', 'normal', 400 + i, 1, [], {}, persona);
+        for (let d = 0; d < 6 && !s.over; d++) {
+          for (const it of s.inbox) { const e = EVENTS[it.eventId]; if (e.persona) { if ((e.personaLv ?? 1) >= 2) lv2 = true; else lv1 = true; } }
+          s.cardPick = undefined; endDay(s);
+        }
+      }
+      return { lv1, lv2 };
+    };
+    const none = seen({}), l1 = seen({ open: 1 }), l2 = seen({ open: 2 });
+    ok(!none.lv1 && !none.lv2, '沒有風格不該遇到風格事件');
+    ok(l1.lv1 && !l1.lv2, 'Lv1 只該遇到 Lv1 的風格事件');
+    ok(l2.lv2, 'Lv2 應遇到 Lv2 的風格事件');
+  }
+  // 突發事件:用掉一半行動點數是下午、八成是晚上,才冒出來,而且當天到期
+  {
+    const g = newGame('story', 'normal', 71, 5);
+    g.cardPick = undefined; g.pendingPicks = 0; g.day = 3; g.inbox = []; g.pulse = undefined;
+    g.sudden = [{ at: 'pm' }, { at: 'eve' }]; g.ap = g.maxAp - 2;
+    ok(!g.inbox.some((i) => i.sudden), '還沒到時間不該有突發');
+    doAction(g, 'intel');
+    ok(g.inbox.filter((i) => i.sudden).length === 1 && !!g.alert?.includes('下午') && g.inbox.find((i) => i.sudden)!.deadline === g.day, '用掉一半點數應冒出下午的突發,且當天到期:' + g.alert);
+    g.ap = 2; g.pulse = undefined; g.pendingReports = 1;
+    submitReport(g, makeReport(g), 0);
+    ok(g.inbox.filter((i) => i.sudden).length === 2 && !!g.alert?.includes('晚上'), '用到八成應冒出晚上的突發');
+    let days = 0, withSudden = 0;
+    for (let i = 0; i < 80; i++) { const h = newGame('story', 'normal', 900 + i, 1); for (let d = 0; d < 8 && !h.over; d++) { h.cardPick = undefined; endDay(h); days++; if (h.sudden?.length) withSudden++; } }
+    ok(withSudden > days * 0.2 && withSudden < days * 0.9, `突發排程的頻率不合理:${withSudden}/${days}`);
+  }
   // 挑戰
   const base = newGame('story', 'normal', 31, 1);
   const tight = newGame('story', 'normal', 31, 1, [], {}, {}, undefined, ALL_UNLOCK, 'intern', 'tight');

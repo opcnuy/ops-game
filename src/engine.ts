@@ -7,12 +7,12 @@ import variantData from './content/variants.json';
 import optLabelData from './content/optlabels.json';
 import extraData from './content/extraOptions.json';
 import endingsData from './content/endings.json';
-import { ALL_UNLOCK, MAX_SLOTS, STRATEGIES, curseById, roleById, strategyById, xpNeed } from './cards';
+import { ALL_UNLOCK, MAX_SLOTS, STRATEGIES, THEME_LABEL, curseById, roleById, strategyById, xpNeed, type Theme } from './cards';
 import { BUFFS, SCOUT_CARDS, scoutCard, type BuffId, type ScoutCard } from './scout';
 import { BOSS_TRAITS, COMMUNITY_TRAITS, MOOD_CLUES, MOOD_FLAVOR, MOOD_LEVELS, type BossTrait, type CommunityTrait, type Mood } from './traits';
 
 const BUFF_IDS = BUFFS;
-import type { Style, Verdict,
+import type { EventKind, Style, Verdict,
   Moment, Phase,
   EventOption, InboxItem,
   Campaign, CampaignContent, DaySummary, Difficulty, Effects, GameEvent, Goal, GoalKey, Mode, Outcome, PlanSel, State,
@@ -281,6 +281,34 @@ export function newGame(mode: Mode, difficulty: Difficulty = 'normal', seed = Da
   return s;
 }
 
+/* ---------- 導演:依你的流派出題 ---------- */
+
+function themeLevels(s: State): Record<Theme, number> {
+  const out: Record<Theme, number> = { trust: 0, revenue: 0, boss: 0, data: 0, grind: 0 };
+  for (const c of STRATEGIES) out[c.theme] += stratLv(s, c.id);
+  return out;
+}
+
+/** 你偏重哪個流派(沒有任何策略就沒有) */
+export function dominantTheme(s: State): Theme | undefined {
+  const lv = themeLevels(s);
+  const top = (Object.keys(lv) as Theme[]).sort((a, b) => lv[b] - lv[a])[0];
+  return lv[top] > 0 ? top : undefined;
+}
+
+/** 針對你的流派,今天的事件裡哪幾類會變多(越偏重某個打法,越會被它的反面盯上) */
+const COUNTER_KINDS: Record<Theme, EventKind[]> = {
+  trust: ['老闆', '數據'], revenue: ['客訴', '輿情'], boss: ['原廠', '技術'], data: ['雜務', '輿情'], grind: ['客訴', '雜務'],
+};
+const BOSS_OF: Record<Theme, string> = { revenue: 'boss_storm', trust: 'boss_growth', boss: 'boss_audit', data: 'boss_outage', grind: 'boss_outage' };
+const BOSS_IDS = ['boss_storm', 'boss_growth', 'boss_audit', 'boss_outage'];
+
+/** 挑首領:專門考你最偏重的那個打法 */
+function pickBoss(s: State): string {
+  const th = dominantTheme(s);
+  return th ? BOSS_OF[th] : pickOf(s, BOSS_IDS);
+}
+
 /* ---------- 策略:經驗、升級、三選一 ---------- */
 
 export const stratLv = (s: State, id: string): number => s.strat?.[id] ?? 0;
@@ -378,7 +406,7 @@ function sanitizeState(raw: unknown): State | null {
   if (!goals.length) return null;
   const inbox = (r.inbox as InboxItem[]).slice(0, 60).filter((i) => i && typeof i.eventId === 'string' && Object.hasOwn(EVENTS, i.eventId))
     .map((i) => ({ uid: num(i.uid, 0, 1e9, 0), eventId: i.eventId, arrived: num(i.arrived, 0, 1e5, 0), deadline: num(i.deadline, 0, 1e5, 0), v: i.v === undefined ? undefined : num(i.v, 0, 1e9, 0),
-      hint: i.hint === undefined ? undefined : cleanText(i.hint), stage: num(i.stage, 0, 2, 0) }));
+      hint: i.hint === undefined ? undefined : cleanText(i.hint), stage: num(i.stage, 0, 2, 0), sudden: i.sudden === true ? true : undefined }));
   const followUps = (Array.isArray(r.followUps) ? (r.followUps as State['followUps']) : []).slice(0, 60)
     .filter((f) => f && typeof f.eventId === 'string' && Object.hasOwn(EVENTS, f.eventId))
     .map((f) => ({ eventId: f.eventId, day: num(f.day, 0, 1e5, 0), stage: num(f.stage, 0, 2, 0) }));
@@ -419,6 +447,10 @@ function sanitizeState(raw: unknown): State | null {
   s.strat = st;
   s.unlock = Array.isArray(r.unlock) ? (r.unlock as unknown[]).filter((x): x is string => typeof x === 'string' && ALL_UNLOCK.includes(x)).slice(0, 40) : [...ALL_UNLOCK];
   s.role = typeof r.role === 'string' && roleById(r.role) ? r.role : 'intern';
+  s.sudden = (Array.isArray(r.sudden) ? (r.sudden as { at?: unknown; fired?: unknown }[]) : []).slice(0, 4)
+    .filter((x) => x && (x.at === 'pm' || x.at === 'eve')).map((x) => ({ at: x.at as 'pm' | 'eve', fired: x.fired === true }));
+  s.alert = typeof r.alert === 'string' ? cleanText(r.alert, 100) : undefined;
+  s.bossNext = typeof r.bossNext === 'string' && Object.hasOwn(EVENTS, r.bossNext) ? r.bossNext : undefined;
   s.curse = typeof r.curse === 'string' && curseById(r.curse) ? r.curse : undefined;
   s.xp = num(r.xp, 0, 1e6, 0); s.lv = num(r.lv, 1, 99, 1); s.pendingPicks = num(r.pendingPicks, 0, 20, 0);
   const cp = Array.isArray(r.cardPick) ? (r.cardPick as unknown[]).filter((x): x is string => typeof x === 'string' && !!strategyById(x)).slice(0, 4) : [];
@@ -588,6 +620,7 @@ export function optionCost(s: State, item: InboxItem, opt: EventOption, noCollea
   const ev = EVENTS[item.eventId];
   if (hasSkill(s, 'data_unify') && isDataEvent(ev) && c > 1) c -= 1;
   if (buffActive(s, 'prepared') && isPulseEvent(ev)) c = Math.max(0, c - 1);
+  if (item.sudden && c > 0) c = Math.max(0, c - 1);
   if (item.stage && !hasSkill(s, 'crisis_pr')) c += 1;
   if (!noColleague && colleagueHelps(s, opt) && c > 0) c -= 1;
   return c;
@@ -729,6 +762,35 @@ function moodClue(ev: GameEvent, item?: InboxItem): string {
 
 export const RAPPORT_NEED = 3;
 
+/** 單局內的難度攀升:越到後面,事件越多、逾期與失敗的代價越重。簡單慢一點,困難快一點 */
+const THREAT_RATE: Record<Difficulty, number> = { easy: 0.6, normal: 1, hard: 1.2 };
+export const threatLevel = (s: State): number => Math.floor((s.day - 1) / 3) + 1;
+const threat = (s: State): number => Math.max(0, s.day - 1) * THREAT_RATE[s.difficulty] * PACE_MULT[paceOf(s).mode];
+
+/** 導演看你離目標多遠:落後就放水、領先就加壓,讓每局都在剛好有挑戰的地方 */
+export type PaceMode = 'ease' | 'normal' | 'press';
+const PACE_MULT: Record<PaceMode, number> = { ease: 0.6, normal: 1, press: 1.35 };
+export function paceOf(s: State): { mode: PaceMode; ratio: number; lag?: GoalKey } {
+  if (!s.goals.length) return { mode: 'normal', ratio: 1 };
+  const parts = s.goals.map((g) => ({ key: g.key, r: Math.min(1.3, goalValue(s, g.key) / g.target) }));
+  const ratio = parts.reduce((a, c) => a + c.r, 0) / parts.length;
+  const frac = s.mode === 'story' ? (s.day - 1) / STORY_DAYS : ((s.day - 1) % 10) / 10;
+  const exp = 0.8 + 0.2 * frac;
+  const lag = parts.reduce((a, c) => (c.r < a.r ? c : a)).key;
+  if (s.day < 3) return { mode: 'normal', ratio, lag };
+  return { mode: ratio < exp - 0.04 ? 'ease' : ratio > exp + 0.06 ? 'press' : 'normal', ratio, lag };
+}
+
+/** 落後的時候推一把:依落後最多的目標,給兩天順風 */
+function pacedHelp(s: State): string | undefined {
+  const p = paceOf(s);
+  if (p.mode !== 'ease' || !p.lag || rand(s) > 0.7) return undefined;
+  const id: BuffId = p.lag === 'trust' ? 'trustUp' : p.lag === 'boss' ? 'rapport' : 'hype';
+  if (buffActive(s, id)) return undefined;
+  addBuff(s, id, 2);
+  return `🍀 落後目標,風向轉好:${BUFFS[id].icon} ${BUFFS[id].name}(2 天)`;
+}
+
 export const buffActive = (s: State, id: BuffId): boolean => (s.buffs ?? []).some((b) => b.id === id && b.until >= s.day);
 export const activeBuffs = (s: State): { id: BuffId; left: number }[] =>
   (s.buffs ?? []).filter((b) => b.until >= s.day).map((b) => ({ id: b.id as BuffId, left: b.until - s.day + 1 }));
@@ -753,6 +815,11 @@ function buffEffects(s: State, e: Effects | undefined): Effects | undefined {
     if ((out.boss ?? 0) < 0) out.boss = Math.round((out.boss as number) * cut);
   }
   if (s.curse === 'strict' && (out.boss ?? 0) < 0) out.boss = Math.round((out.boss as number) * 1.5);
+  const heavy = Math.min(1.5, 1 + 0.018 * threat(s));
+  if (heavy > 1.02) {
+    if ((out.trust ?? 0) < 0) out.trust = Math.round((out.trust as number) * heavy);
+    if ((out.boss ?? 0) < 0) out.boss = Math.round((out.boss as number) * heavy);
+  }
   if (s.role === 'secretary' && (out.boss ?? 0) < 0) out.boss = Math.round((out.boss as number) * 0.8);
   if (buffActive(s, 'trustUp') && (out.trust ?? 0) > 0) out.trust = Math.ceil((out.trust as number) * 1.25);
   if (buffActive(s, 'rapport')) {
@@ -816,6 +883,7 @@ export function pickScout(s: State, id: string | null): string | null {
   s.scout = undefined;
   pushFeed(s, `📡 【${c.name}】${c.result}${extra}${effectNote(c.effects)}`);
   if (c.id === 'harsh' || c.id === 'rival') addMoment(s, 3, c.icon, `看輿情時遇到「${c.name}」。`);
+  checkSudden(s);
   return null;
 }
 
@@ -842,8 +910,49 @@ function leastSeen(s: State, list: GameEvent[]): GameEvent[] {
   return cur.filter((e) => past(e) === minPast);
 }
 
+/* ---------- 突發事件:一天中途才冒出來(下午、晚上) ---------- */
+
+/** 今天會不會有突發、什麼時候:每天早上先排好,時間到了(用掉一半、八成的行動點數)才出現 */
+function scheduleSudden(s: State): void {
+  s.sudden = [];
+  s.alert = undefined;
+  if (s.day < 2) return;
+  const chance = Math.min(0.85, ({ easy: 0.15, normal: 0.3, hard: 0.45 }[s.difficulty]) * (1 + 0.1 * (threatLevel(s) - 1)) * (paceOf(s).mode === 'ease' ? 0.7 : paceOf(s).mode === 'press' ? 1.25 : 1));
+  if (rand(s) < chance) s.sudden.push({ at: 'pm' });
+  if (rand(s) < chance * 0.6) s.sudden.push({ at: 'eve' });
+}
+
+/** 做完會花行動點數的事之後檢查:用到一定程度,排好的突發事件就冒出來 */
+function checkSudden(s: State): void {
+  if (!s.sudden?.length || s.over || s.maxAp <= 0) return;
+  const spent = (s.maxAp - s.ap) / s.maxAp;
+  for (const x of s.sudden) {
+    if (x.fired || spent < (x.at === 'pm' ? 0.5 : 0.8)) continue;
+    x.fired = true;
+    const th = dominantTheme(s);
+    const rank = DIFF_ORDER.indexOf(s.difficulty);
+    let pool = Object.values(EVENTS).filter((e) => (e.weight ?? 0) > 0 && ['客訴', '輿情', '技術', '原廠'].includes(e.kind)
+      && (e.minDay ?? 1) <= s.day && (e.minLevel ?? 1) <= s.level && DIFF_ORDER.indexOf(e.minDifficulty ?? 'easy') <= rank
+      && !s.inbox.some((i) => i.eventId === e.id));
+    if (!pool.length || s.inbox.length >= 9) continue;
+    pool = leastSeen(s, pool);
+    const w = pool.map((e) => (e.weight ?? 0) * (th && COUNTER_KINDS[th].includes(e.kind) ? 1.8 : 1));
+    let r = rand(s) * w.reduce((a, b) => a + b, 0);
+    let pick = pool[pool.length - 1];
+    for (let i = 0; i < pool.length; i++) { r -= w[i]; if (r <= 0) { pick = pool[i]; break; } }
+    addEvent(s, pick.id, '突發!');
+    const it = s.inbox[s.inbox.length - 1];
+    it.sudden = true;
+    it.deadline = s.day;
+    const when = x.at === 'pm' ? '☀️ 下午' : '🌙 晚上';
+    s.alert = `${when}突然來了一件事:${eventText(pick, it).title}`;
+    pushLog(s, s.day, `🚨 ${s.alert}`);
+  }
+}
+
 function spawnDay(s: State): void {
   s.dayStart = { boss: s.boss, trust: s.trust, players: s.players };
+  scheduleSudden(s);
   s.dayLine = dayOpeningLine(s);
   pushLog(s, s.day, `🌤️ ${s.dayLine}`);
   const ph = phaseOf(s.day);
@@ -859,6 +968,9 @@ function spawnDay(s: State): void {
   }
   // 週報
   if (s.day % 5 === 0) addEvent(s, 'e_weekly');
+  // 首領:每 5 天一個,前一天已預告
+  if (s.day % 5 === 4) s.bossNext = pickBoss(s);
+  if (s.day % 5 === 0) { addEvent(s, s.bossNext ?? pickBoss(s)); s.bossNext = undefined; }
   // 連鎖事件:日常累計到一個程度,就會爆出來(每天最多一件)
   const chains = Object.values(EVENTS).filter((e) => e.trigger
     && (s.habits[e.trigger.habit] ?? 0) >= e.trigger.min
@@ -875,7 +987,7 @@ function spawnDay(s: State): void {
   const arrivedToday = s.inbox.filter((i) => i.arrived === s.day && EVENTS[i.eventId].kind !== '插曲').length;
   const base = s.mode === 'story' ? Math.max(0, (ph.key === 'launch' ? 2 : 1) - arrivedToday) : Math.min(4, 1 + Math.floor(s.day / 8));
   const d = DIFFS[s.difficulty];
-  const want = base + (s.day >= d.extraFrom && rand(s) < d.extraChance ? d.extraEvents : 0) + (s.curse === 'rush' ? 1 : 0);
+  const want = Math.max(0, base - (s.sudden?.length ? 1 : 0)) + (s.day >= d.extraFrom && rand(s) < d.extraChance ? d.extraEvents : 0) + (s.curse === 'rush' ? 1 : 0) + Math.min(3, Math.floor(threat(s) / 5));
   const cap = s.difficulty === 'hard' ? 8 : 7;
   const rank = DIFF_ORDER.indexOf(s.difficulty);
   for (let n = 0; n < want && s.inbox.length < cap; n++) {
@@ -889,7 +1001,8 @@ function spawnDay(s: State): void {
     if (inPhase.length && rand(s) < 0.75) pool = inPhase;
     // 抽完一輪才會重複:只從「出現次數最少」的事件裡抽
     pool = leastSeen(s, pool);
-    const weights = pool.map((e) => e.weight ?? 0);
+    const th = dominantTheme(s);
+    const weights = pool.map((e) => (e.weight ?? 0) * (th && COUNTER_KINDS[th].includes(e.kind) ? 1.8 : 1));
     let r = rand(s) * weights.reduce((a, b) => a + b, 0);
     let pick = pool[pool.length - 1];
     for (let i = 0; i < pool.length; i++) { r -= weights[i]; if (r <= 0) { pick = pool[i]; break; } }
@@ -906,9 +1019,14 @@ function spawnDay(s: State): void {
     let pool = Object.values(EVENTS).filter((e) => e.colleague && (!e.colStyle || e.colStyle === s.colleague!.style) && !s.inbox.some((i) => i.eventId === e.id));
     if (pool.length) { pool = leastSeen(s, pool); addEvent(s, pickOf(s, pool).id); }
   }
+  // 風格事件:跨局累積的風格達到等級,就會遇到它專屬的機會(約三成的日子一件)
+  if (s.day >= 2 && s.inbox.length < 8 && rand(s) < 0.3) {
+    let pp = Object.values(EVENTS).filter((e) => e.persona && (s.persona?.[e.persona] ?? 0) >= (e.personaLv ?? 1) && !s.inbox.some((i) => i.eventId === e.id));
+    if (pp.length) { pp = leastSeen(s, pp); addEvent(s, pickOf(s, pp).id, '你的風格帶來的機會。'); }
+  }
   // 小插曲:不佔事件名額、沒有逾期懲罰,偶爾穿插一下
   if (s.day >= 2 && rand(s) < 0.4) {
-    let ip = Object.values(EVENTS).filter((e) => e.kind === '插曲' && !s.inbox.some((i) => i.eventId === e.id));
+    let ip = Object.values(EVENTS).filter((e) => e.kind === '插曲' && !e.persona && !s.inbox.some((i) => i.eventId === e.id));
     if (ip.length) {
       ip = leastSeen(s, ip);
       addEvent(s, pickOf(s, ip).id);
@@ -935,6 +1053,10 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
   if (hasSkill(s, 'soothe') && (ev.kind === '客訴' || ev.kind === '輿情')) boost += 0.1;
   if (pulseActive(s) && isPulseEvent(ev)) boost += 0.1;
   if (s.role === 'support' && isPulseEvent(ev)) boost += 0.15;
+  if (ev.boss) {
+    const lv = themeLevels(s);
+    boost += Math.min(0.3, 0.05 * (ev.answers ?? []).reduce((a, k) => a + (lv[k as Theme] ?? 0), 0));
+  }
   const mood = moodOf(item, ev);
   const fit = styleFit(s, ev, item, opt);
   boost += fit.total * 0.06;
@@ -988,12 +1110,13 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
     }
   }
   const net = netOf(eff);
-  const up = gainXp(s, 8 + Math.min(14, impactOf(eff)) + (net > 0 ? 4 : 0));
+  const up = gainXp(s, 8 + Math.min(14, impactOf(eff)) + (net > 0 ? 4 : 0) + (ev.boss ? (net > 0 ? 60 : 25) : 0) + (item.sudden ? 12 : 0));
   const tier: Verdict['tier'] = net >= 5 ? 'great' : net >= 1 ? 'good' : net <= -5 ? 'awful' : net <= -1 ? 'bad' : 'flat';
   s.inbox = s.inbox.filter((i) => i.uid !== uid);
-  const line = `【${eventText(ev, item).title}】${opt.label} → ${out.result}${extra}${effectNote(eff)}${chainNote}${note}${rapportNote}${up ? ` ⭐ 升級!Lv ${s.lv}` : ''}`;
+  const line = `【${eventText(ev, item).title}】${opt.label} → ${out.result}${extra}${effectNote(eff)}${chainNote}${note}${rapportNote}${ev.boss ? (net > 0 ? ' 💀 首領擊退!' : ' 💀 勉強撐過') : ''}${up ? ` ⭐ 升級!Lv ${s.lv}` : ''}`;
   pushFeed(s, line);
   s.verdict = { tier, line, eff: eff ?? {} };
+  checkSudden(s);
   return null;
 }
 
@@ -1106,6 +1229,7 @@ export function doAction(s: State, kind: ActionKind): string | null {
     pushFeed(s, '你認真填了一份日報。欄位跟昨天一樣,只有數字不同。');
   }
   if (!free) s.ap -= 1;
+  checkSudden(s);
   return null;
 }
 
@@ -1232,7 +1356,7 @@ export function endDay(s: State): DaySummary {
         lines.push(`🕰️ 「${ev.title}」逾期了,但你事先留了緩衝,對方沒有追究。(這局只有一次)`);
         return false;
       }
-      const mult = stratLv(s, 'evo_iron') ? 0 : DIFFS[s.difficulty].ignoreMult * (1 + 0.2 * stratLv(s, 'all_hands')) * Math.max(0.1, 1 - 0.12 * stratLv(s, 'lowkey'));
+      const mult = stratLv(s, 'evo_iron') ? 0 : DIFFS[s.difficulty].ignoreMult * (1 + 0.2 * stratLv(s, 'all_hands')) * Math.max(0.1, 1 - 0.12 * stratLv(s, 'lowkey')) * (1 + 0.03 * threat(s)) * (it.sudden ? 0.35 : 1);
       const pen: Effects = {};
       for (const [k, v] of Object.entries(ev.ignore.effects) as [keyof Effects, number][]) pen[k] = v < 0 ? Math.round(v * mult) : v;
       const hurts = Object.values(ev.ignore.effects).some((v) => (v ?? 0) < 0);
@@ -1302,6 +1426,12 @@ export function endDay(s: State): DaySummary {
 
   // 5. 新的一天
   if (gainXp(s, 6)) lines.push(`⭐ 升到 Lv ${s.lv}!`);
+  if ((s.day + 1) % 5 === 0) {
+    s.bossNext ??= pickBoss(s);
+    const th = dominantTheme(s);
+    lines.push(`💀 明天有首領:${EVENTS[s.bossNext].title.replace('首領:', '')}${th ? `(你偏重「${THEME_LABEL[th]}」)` : ''}`);
+  }
+  if ((s.day) % 3 === 0) lines.push(`☠️ 危機升到 Lv ${threatLevel({ ...s, day: s.day + 1 })}:事件更多,逾期與失敗的代價更重。`);
   if (s.mode === 'endless' && s.day + 1 > 20) gainAch(s, 'endless20');
   if (s.mode === 'endless' && s.day + 1 > 40) gainAch(s, 'endless40');
   s.day++;
@@ -1309,6 +1439,8 @@ export function endDay(s: State): DaySummary {
   s.scout = undefined; // 沒選的報告隔天就過期了
   s.buffs = (s.buffs ?? []).filter((b) => b.until >= s.day);
   if (s.campaign?.phase === 'planned' && s.campaign.launchDay <= s.day) launch(s, lines);
+  const help = pacedHelp(s);
+  if (help) lines.push(help);
   spawnDay(s);
 
   for (const l of lines) pushLog(s, s.day - 1, l);
@@ -1587,5 +1719,6 @@ export function submitReport(s: State, quiz: ReportQuiz, idx: number): { ok: boo
   const tag = opt.good === true ? '✅ 答對了。' : opt.good === false ? '❌ 這次沒答對。' : '';
   const text = `${tag}${opt.result}`;
   pushFeed(s, `日報(${quiz.title}):${text}${effectNote(opt.effects)}${note}`);
+  checkSudden(s);
   return { ok: true, text: `${text}${effectNote(opt.effects)}` };
 }

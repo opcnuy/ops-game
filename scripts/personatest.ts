@@ -1,5 +1,5 @@
 // 個人風格檢查:等級換算、跨局累積與上限、帶進一局、讀檔過濾、熟練度的實際效果
-import { PERSONA_RUN_CAP, mergePersona, personaLevel, personaLevels, personaTitle, sanitizePersona } from '../src/persona';
+import { PERSONA_FOCUS_BONUS, PERSONA_RUN_CAP, mergePersona, personaLevel, personaLevels, personaTitle, sanitizePersona } from '../src/persona';
 import { endDay, EVENTS, chooseOption, eventOptions, moodOf, newGame, load, save } from '../src/engine';
 import { decodeCard, encodeCard } from '../src/colleague';
 import { optionCost } from '../src/engine';
@@ -12,11 +12,11 @@ const store = new Map<string, string>();
 let failed = 0;
 const ok = (c: boolean, m: string): void => { if (!c) { failed++; console.error('❌ ' + m); } };
 
-ok(personaLevel(0) === 0 && personaLevel(7) === 0 && personaLevel(8) === 1 && personaLevel(24) === 2 && personaLevel(48) === 3, '等級門檻不對');
+ok(personaLevel(0) === 0 && personaLevel(5) === 0 && personaLevel(6) === 1 && personaLevel(18) === 2 && personaLevel(40) === 3, '等級門檻不對');
 const m = mergePersona({ rigor: 6 }, { rigor: 30, fast: 3 });
-ok(m.next.rigor === 6 + PERSONA_RUN_CAP, '單局上限沒生效');
-ok(m.lines.some((l) => l.includes('升到 Lv1')), '升級說明沒出現');
-ok(personaTitle({}) === undefined && personaTitle({ rigor: 8 })?.title === '愛查證的人', '稱號不對');
+ok(m.next.rigor === 6 + PERSONA_RUN_CAP + PERSONA_FOCUS_BONUS && m.next.fast === 3, '單局上限或主打加成沒生效:' + JSON.stringify(m.next));
+ok(m.lines.some((l) => l.includes('升到 Lv2')) && m.lines.some((l) => l.includes('/')), '升級說明或進度沒出現:' + m.lines.join(';'));
+ok(personaTitle({}) === undefined && personaTitle({ rigor: 6 })?.title === '愛查證的人', '稱號不對');
 ok(JSON.stringify(personaLevels({ rigor: 25, open: 3 })) === '{"rigor":2}', '帶進一局的等級不對');
 const bad = sanitizePersona({ rigor: 'x', open: -3, evil: 99, fast: 1e12 }, 100);
 ok(Object.keys(bad).join() === 'fast' && bad.fast === 100, '讀檔過濾不對:' + JSON.stringify(bad));

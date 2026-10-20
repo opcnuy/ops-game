@@ -1217,3 +1217,28 @@ body.scene-mode, body.on-skills { background: var(--bg); }
 
 .curses { grid-template-columns: repeat(3, 1fr); }
 @media (max-width: 520px) { .curses { grid-template-columns: repeat(2, 1fr); } }
+
+/* 危機等級:越高越紅 */
+.threat { flex: none; font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+.threat.t2 { color: var(--warn); } .threat.t3 { color: var(--warn); } .threat.t4, .threat.t5 { color: var(--crimson); }
+
+/* 首領事件 */
+.mail.boss { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 0 14px rgba(242, 201, 76, 0.28); }
+
+/* 手機瀏覽器:視窗高度要用「實際可見」的高度,不然長彈窗(結算、結局)的按鈕會被網址列遮住而按不到 */
+.modal-bg { height: 100vh; height: 100dvh; }
+.modal { max-height: calc(100vh - 28px); max-height: calc(100dvh - 28px); }
+.modal .actions { position: sticky; bottom: -18px; z-index: 2; }
+.sd.persona { --tc: var(--gold); }
+
+/* 策略詳情:彈窗裡的清單 */
+.strat-modal { width: min(460px, 100%); }
+.strat-modal .sdetail { display: grid; gap: 6px; }
+.strat-modal .sd b em { font-style: normal; font-size: 0.72rem; color: var(--accent-ink); background: var(--tc, var(--gold)); border-radius: 4px; padding: 0 6px; margin-left: 6px; }
+
+.title-row { grid-template-columns: repeat(3, 1fr); }
+.persona-modal { width: min(520px, 100%); }
+
+/* 突發事件 */
+.alert-note { background: rgba(224, 96, 90, 0.16); border: 1px solid var(--crimson); border-radius: 10px; padding: 8px 12px; font-size: 0.86rem; color: #ffd9d6; animation: fadeIn 0.3s ease both; }
+.mail.sudden { border-color: var(--crimson); box-shadow: 0 0 0 1px var(--crimson), 0 0 12px rgba(224, 96, 90, 0.3); }

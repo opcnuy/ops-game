@@ -29,8 +29,8 @@ function play(strategy: 'random' | 'careful' | 'lazy', diff: Difficulty, seed: n
           pickScout(s, pick?.id ?? null);
         }
       }
-      // 處理收件匣:careful 選最便宜的有效選項,random 隨機
-      for (const it of [...s.inbox]) {
+      // 處理收件匣:careful 選最便宜的有效選項,random 隨機(突發事件會中途冒出來,所以多掃幾輪)
+      for (let pass = 0; pass < 3; pass++) for (const it of [...s.inbox]) {
         const ev = EVENTS[it.eventId];
         const affordable = eventOptions(s, ev).map((o, i) => ({ o: { ...o, ap: optionCost(s, it, o) }, i })).filter(({ o }) => o.ap <= s.ap);
         if (!affordable.length) continue;
