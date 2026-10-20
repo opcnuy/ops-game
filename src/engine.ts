@@ -1,5 +1,6 @@
 import { storageKey } from './storage';
 import { sanitizeSkills } from './skills';
+import { PERSONA_BOOST, sanitizePersona } from './persona';
 import eventsData from './content/events.json';
 import campaignData from './content/campaigns.json';
 import variantData from './content/variants.json';
@@ -10,7 +11,7 @@ import { BUFFS, SCOUT_CARDS, scoutCard, type BuffId, type ScoutCard } from './sc
 import { BOSS_TRAITS, COMMUNITY_TRAITS, MOOD_CLUES, MOOD_FLAVOR, MOOD_LEVELS, type BossTrait, type CommunityTrait, type Mood } from './traits';
 
 const BUFF_IDS = BUFFS;
-import type { Verdict,
+import type { Style, Verdict,
   Moment, Phase,
   EventOption, InboxItem,
   Campaign, CampaignContent, DaySummary, Difficulty, Effects, GameEvent, Goal, GoalKey, Mode, Outcome, PlanSel, State,
@@ -237,11 +238,11 @@ export function weekdayLabel(day: number): string {
 
 /* ---------- 新遊戲 / 存檔 ---------- */
 
-export function newGame(mode: Mode, difficulty: Difficulty = 'normal', seed = Date.now(), level = 1, skills: string[] = [], pastSeen: Record<string, number> = {}): State {
+export function newGame(mode: Mode, difficulty: Difficulty = 'normal', seed = Date.now(), level = 1, skills: string[] = [], pastSeen: Record<string, number> = {}, persona: Partial<Record<Style, number>> = {}): State {
   const cfg = DIFFS[difficulty];
   const apBonus = skills.includes('time_mgmt') ? 1 : 0;
   const s: State = {
-    v: 1, mode, difficulty, level, skills: [...skills], ach: [], goals: cfg.goals.map((g) => ({ ...g })), goalRound: 0, maxAp: cfg.maxAp + apBonus,
+    v: 1, mode, difficulty, level, skills: [...skills], persona: { ...persona }, ach: [], goals: cfg.goals.map((g) => ({ ...g })), goalRound: 0, maxAp: cfg.maxAp + apBonus,
     rng: seed | 0, day: 1, ap: cfg.maxAp + apBonus,
     players: 12000, retention: 36, trust: cfg.trust, boss: cfg.boss, spendRate: 38,
     inbox: [], flags: {}, seen: {}, pastSeen: { ...pastSeen }, followUps: [], pendingReports: 0, habits: {},
@@ -316,6 +317,7 @@ function sanitizeState(raw: unknown): State | null {
   s.moments = (Array.isArray(r.moments) ? (r.moments as Moment[]) : []).slice(0, 40)
     .map((m) => ({ day: num(m?.day, 0, 1e5, 0), icon: cleanText(m?.icon, 4), text: cleanText(m?.text, 160), w: num(m?.w, 0, 100, 0) }));
   s.styleTotals = rec(r.styleTotals);
+  s.persona = sanitizePersona(r.persona, 3); s.styleUse = sanitizePersona(r.styleUse, 999);
   if (s.over) {
     const st = s.over.style;
     s.over = { title: cleanText(s.over.title), body: cleanText(s.over.body, 1000),
@@ -323,7 +325,7 @@ function sanitizeState(raw: unknown): State | null {
   }
   if (s.award) {
     s.award = { xp: num(s.award.xp, 0, 1e6, 0), lines: strs(s.award.lines), fromXp: num(s.award.fromXp, 0, 1e6, 0),
-      toXp: num(s.award.toXp, 0, 1e6, 0), sp: num(s.award.sp, 0, 100, 0), spLines: strs(s.award.spLines) };
+      toXp: num(s.award.toXp, 0, 1e6, 0), sp: num(s.award.sp, 0, 100, 0), spLines: strs(s.award.spLines), personaLines: strs((s.award as { personaLines?: unknown }).personaLines) };
   }
   if (s.campaign) {
     const c = s.campaign as unknown as Record<string, unknown>;
@@ -788,11 +790,18 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
   const mood = moodOf(item, ev);
   const fit = styleFit(s, ev, item, opt);
   boost += fit.total * 0.06;
+  // 個人風格:用得越多越熟練,這種做法的不確定結果更容易成功
+  const pLv = opt.style ? s.persona?.[opt.style] ?? 0 : 0;
+  boost += pLv * PERSONA_BOOST;
+  if (opt.style) { const u = s.styleUse ?? (s.styleUse = {}); u[opt.style] = (u[opt.style] ?? 0) + 1; }
   if (boost && outs.length > 1) outs = boostOutcomes(outs, boost);
   let r = rand(s);
   let out: Outcome = outs[outs.length - 1];
   for (const o of outs) { r -= o.p; if (r <= 0) { out = o; break; } }
-  const eff = buffEffects(s, addFit(hasMood(ev) ? tuneEffects(s, ev, out.effects, mood) : out.effects, moodStat(ev), fit.total));
+  let base = hasMood(ev) ? tuneEffects(s, ev, out.effects, mood) : out.effects;
+  // 熟練到 Lv2 以上,做得成的時候老闆或信任多得 1 點
+  if (pLv >= 2 && netOf(out.effects) > 0) base = addFit(base, moodStat(ev), 1);
+  const eff = buffEffects(s, addFit(base, moodStat(ev), fit.total));
   applyEffects(s, eff);
   if (out.setFlag) s.flags[out.setFlag] = true;
   if (out.reports) s.pendingReports = Math.max(0, s.pendingReports + out.reports);

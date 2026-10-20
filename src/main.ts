@@ -1,4 +1,5 @@
 import './style.css';
+import { PERSONA_INFO, PERSONA_STEPS, STYLES, mergePersona, personaLevel, personaLevels, personaTitle } from './persona';
 import { BUFFS, scoutCard } from './scout';
 import { BOSS_TRAITS, COMMUNITY_TRAITS } from './traits';
 import { CUP_EMPTY, CUP_FULL, CUP_PALETTE, SIREN, SIREN_PALETTE, computeLayout, renderOffice, spriteURL } from './scene/office';
@@ -211,11 +212,16 @@ function xpPercent(xp: number): number {
   return nxt ? Math.round(((xp - cur.xp) / (nxt.xp - cur.xp)) * 100) : 100;
 }
 
+function personaTag(): string {
+  const pt = personaTitle(profile.persona ?? {});
+  return pt ? `🎭 ${pt.title} · ` : '';
+}
+
 function renderProfile(): string {
   const cur = levelFor(profile.xp);
   return `<div class="profile"><button class="pt" data-act="open-rank" title="看職級詳情"><b>${cur.title}</b><span>Lv ${cur.lv} ›</span></button>
     <div class="xpbar"><span style="--to:${xpPercent(profile.xp)}%"></span></div>
-    <small>${nextHint()} · 已完成 ${profile.runs} 局</small>
+    <small>${personaTag()}${nextHint()} · 已完成 ${profile.runs} 局</small>
     <button class="skills-btn" data-act="skills">${sceneOn() ? '📓 技能筆記本' : '🧠 技能'}${availableSp(profile) > 0 ? ` <em>${availableSp(profile)} 點可用</em>` : ` <small>已學 ${profile.skills.length} 個</small>`}</button></div>`;
 }
 
@@ -293,6 +299,22 @@ const nextHint = (): string => {
   return nxt ? `再 ${nxt.xp - profile.xp} 經驗升為「${nxt.title}」` : '已達最高職級';
 };
 
+/** 個人風格:各種做法的熟練度 */
+function renderPersona(): string {
+  const p = profile.persona ?? {};
+  const pt = personaTitle(p);
+  const rows = STYLES.map((st) => {
+    const pts = p[st] ?? 0;
+    const lv = personaLevel(pts);
+    const next = PERSONA_STEPS[lv];
+    const pct = next === undefined ? 100 : Math.round((pts / next) * 100);
+    return `<div class="persona-row"><div class="rt"><b>${PERSONA_INFO[st].name}${lv ? ` · Lv${lv}「${PERSONA_INFO[st].titles[lv - 1]}」` : ''}</b><span>${pts}${next === undefined ? ' · 已精通' : ` / ${next}`}</span></div>
+      <div class="xpbar mini"><span style="--to:${pct}%"></span></div><small class="muted">${PERSONA_INFO[st].blurb}</small></div>`;
+  }).join('');
+  return `<div class="persona"><h3>🎭 我的風格${pt ? `:${pt.title}` : ''}</h3>
+    <p class="muted">每局用到的做法會累積成熟練度。熟練的做法,有風險的結果更容易成功;到 Lv2 以後,成功時老闆或信任多得 1 點。遇到不吃這套的對象還是會吃虧,所以不用只練一種。</p>${rows}</div>`;
+}
+
 function renderRank(): string {
   const cur = levelFor(profile.xp);
   const rows = LEVELS.map((l) => {
@@ -305,6 +327,7 @@ function renderRank(): string {
     <div class="xpbar"><span style="--to:${xpPercent(profile.xp)}%"></span></div>
     <p class="muted">經驗 ${profile.xp}· ${nextHint()} · 已完成 ${profile.runs} 局</p>
     ${rows}
+    ${renderPersona()}
     <p class="muted">每局結束依表現獲得經驗;難度越高,經驗倍率越大。升級可得技能點。</p>
     <div class="actions"><button class="primary" data-act="close-rank">關閉</button></div>
   </div></div>`;
@@ -343,7 +366,7 @@ function renderStartScene(): string {
   return `<div class="scene-ui start-scene">
     <div class="wall-ui">
       <div class="wall-left"><button class="cal badge" data-act="open-rank" title="${nextHint()}(點開看職級詳情)">
-        <span>${cur.title}</span><b>Lv ${cur.lv}</b><div class="xpbar mini"><span style="--to:${xpPercent(profile.xp)}%"></span></div></button></div>
+        <span>${cur.title}</span><b>Lv ${cur.lv}</b>${personaTitle(profile.persona ?? {}) ? `<small>🎭 ${personaTitle(profile.persona ?? {})!.title}</small>` : ''}<div class="xpbar mini"><span style="--to:${xpPercent(profile.xp)}%"></span></div></button></div>
       <div class="wall-mid"></div>
       <div class="wall-right"><div class="wall-btns">${versionTag()}<button class="ghost" data-act="open-settings">⚙️ 設定</button></div></div>
     </div>
@@ -462,9 +485,11 @@ function renderInbox(s: State): string {
     known?.boss ? `<span class="buff trait" title="${esc(BOSS_TRAITS[bossTrait(s)].desc)}">🧭 老闆:${BOSS_TRAITS[bossTrait(s)].name}</span>` : '',
     known?.community ? `<span class="buff trait" title="${esc(COMMUNITY_TRAITS[communityTrait(s)].desc)}">🧭 玩家:${COMMUNITY_TRAITS[communityTrait(s)].name}</span>` : '',
   ].join('');
+  const myTitle = personaTitle(s.persona ?? {});
+  const personaChip = myTitle ? `<span class="buff trait" title="跨局累積的個人風格">🎭 ${myTitle.title}</span>` : '';
   const streak = s.rapport ?? 0;
   const rapportChip = streak > 0 ? `<span class="buff trait" title="連續選中對方胃口的做法三次,會進入「默契」狀態">🤝 默契 ${'●'.repeat(streak)}${'○'.repeat(Math.max(0, RAPPORT_NEED - streak))}</span>` : '';
-  const buffBar = buffs.length || traitChips || rapportChip ? `<div class="buff-bar">${traitChips}${rapportChip}${buffs.map((b) => `<span class="buff" title="${esc(BUFFS[b.id].desc)}">${BUFFS[b.id].icon} ${BUFFS[b.id].name}<small>${b.left} 天</small></span>`).join('')}</div>` : '';
+  const buffBar = buffs.length || traitChips || rapportChip || personaChip ? `<div class="buff-bar">${personaChip}${traitChips}${rapportChip}${buffs.map((b) => `<span class="buff" title="${esc(BUFFS[b.id].desc)}">${BUFFS[b.id].icon} ${BUFFS[b.id].name}<small>${b.left} 天</small></span>`).join('')}</div>` : '';
   const dayLine = buffBar + (s.dayLine ? `<div class="day-line">🌤️ ${esc(s.dayLine)}</div>` : '') + phaseLine;
   if (!sorted.length) return `${dayLine}${banner}<div class="card empty">收件匣是空的。<br>這種時刻通常撐不過一個小時。</div>`;
   const openable = sorted.filter((i) => !sceneRoomFor(EVENTS[i.eventId]));
@@ -828,6 +853,7 @@ function renderAward(s: State): string {
     <div class="xpbar"><span style="--to:${xpPercent(a.toXp)}%"></span></div>
     <small>${to.title} Lv ${to.lv}${nxt ? ` · 距離「${nxt.title}」還差 ${nxt.xp - a.toXp}` : ' · 最高職級'}</small>
     ${a.sp > 0 ? `<div class="spgain">🧠 技能點 +${a.sp}<ul>${a.spLines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul></div>` : ''}
+    ${a.personaLines?.length ? `<div class="spgain">🎭 風格成長<ul>${a.personaLines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul></div>` : ''}
     ${to.lv > from.lv ? `<div class="levelup">🎉 升職了!${from.title} → ${to.title}<ul>${unlocks.map((u) => `<li>${esc(u)}</li>`).join('')}</ul></div>` : ''}</div>`;
 }
 
@@ -1258,7 +1284,7 @@ function flash(msg: string | null, ms = 1500): void {
 /* ---------- 事件 ---------- */
 
 function startNew(mode: Mode): void {
-  S = newGame(mode, difficulty, Date.now(), levelFor(profile.xp).lv, profile.skills, profile.seen);
+  S = newGame(mode, difficulty, Date.now(), levelFor(profile.xp).lv, profile.skills, profile.seen, personaLevels(profile.persona ?? {}));
   resetPlace();
   resetMotion();
   openUid = null;
@@ -1485,9 +1511,10 @@ function settleRun(s: State): void {
   const newAch = s.ach.filter((id) => !profile.ach.includes(id));
   for (const id of newAch) spLines.push(`成就「${ACHIEVEMENTS.find((a) => a.id === id)?.name ?? id}」:+1`);
   const sp = lvUp * SP_PER_LEVEL + newAch.length;
-  profile = { ...profile, xp: toXp, runs: profile.runs + 1, sp: profile.sp + sp, ach: [...profile.ach, ...newAch], seen: mergeSeen(profile, s.seen) };
+  const pm = mergePersona(profile.persona ?? {}, s.styleUse ?? {});
+  profile = { ...profile, persona: pm.next, xp: toXp, runs: profile.runs + 1, sp: profile.sp + sp, ach: [...profile.ach, ...newAch], seen: mergeSeen(profile, s.seen) };
   saveProfile(profile);
-  s.award = { xp: r.total, lines: r.lines, fromXp, toXp, sp, spLines };
+  s.award = { xp: r.total, lines: r.lines, fromXp, toXp, sp, spLines, personaLines: pm.lines };
 }
 
 function finishDay(s: State): void {

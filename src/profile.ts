@@ -1,5 +1,6 @@
 import { sanitizeSkills, skillById } from './skills';
 import { storageKey } from './storage';
+import { sanitizePersona, type PersonaPoints } from './persona';
 
 /** 跨局的職級與技能(存在玩家自己的瀏覽器) */
 export interface Profile {
@@ -14,6 +15,8 @@ export interface Profile {
   ach: string[];
   /** 各事件跨局累計看過幾次(用來讓新局優先出現沒看過的事件) */
   seen?: Record<string, number>;
+  /** 個人風格:各種做法累積的點數 */
+  persona?: PersonaPoints;
 }
 
 export interface LevelDef {
@@ -46,7 +49,7 @@ export function loadProfile(): Profile {
       return {
         v: 1, xp, runs: n(p.runs, 0),
         sp: n(p.sp, (levelFor(xp).lv - 1) * SP_PER_LEVEL),
-        skills: sanitizeSkills(list(p.skills)), ach: list(p.ach), seen: sanitizeSeen(p.seen),
+        skills: sanitizeSkills(list(p.skills)), ach: list(p.ach), seen: sanitizeSeen(p.seen), persona: sanitizePersona(p.persona),
       };
     }
   } catch { /* 讀不到就當新玩家 */ }

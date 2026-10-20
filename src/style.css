@@ -975,3 +975,11 @@ button.cal.badge:hover { filter: brightness(1.05); transform: translateY(-1px); 
 @keyframes verdictPop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 body.shake-screen { animation: shake 0.45s; }
 @media (prefers-reduced-motion: reduce) { .verdict { animation: none; } body.shake-screen { animation: none; } }
+
+/* 個人風格 */
+.persona { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.persona h3 { margin: 0 0 4px; font-size: 1rem; }
+.persona-row { margin: 8px 0; }
+.persona-row .rt { display: flex; justify-content: space-between; gap: 8px; font-size: 0.85rem; }
+.persona-row small { display: block; margin-top: 2px; }
+.cal.badge small { display: block; font-size: 0.7rem; opacity: 0.85; }
