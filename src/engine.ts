@@ -430,7 +430,7 @@ const variantIndex = (rnd: number, n: number): number => Math.floor(rnd * (n + 1
 export interface EventText { from: string; title: string; brief?: string; body: string }
 const VARIANTS = variantData as unknown as Record<string, Partial<EventText>[]>;
 const OPT_LABELS = optLabelData as Record<string, string[][]>;
-const EXTRA = extraData as unknown as { chance: number; pools: Partial<Record<GameEvent['kind'], EventOption[]>> };
+const EXTRA = extraData as unknown as { chance: number; gambleChance: number; gambles: Partial<Record<GameEvent['kind'], EventOption[]>>; pools: Partial<Record<GameEvent['kind'], EventOption[]>> };
 
 /** 事件顯示的文字:同一種事件會有幾種不同的說法 */
 export function eventText(ev: GameEvent, item?: InboxItem): EventText {
@@ -461,7 +461,11 @@ export function eventOptions(s: State, ev: GameEvent, item?: InboxItem): EventOp
   const rnd = pool?.length && varies(item) ? seeded(item.v, SALT.bonus) : null;
   const bonus = rnd && rnd() < EXTRA.chance ? [pool![Math.floor(rnd() * pool!.length)]] : [];
   const own = ev.options.filter((o) => (o.minLevel ?? 1) <= s.level);
-  return [...own, ...bonus, ...skillOpts];
+  // 搏一把:偶爾多一個高風險高報酬的選項(每件事固定,不會每次渲染都變)
+  const gp = EXTRA.gambles[ev.kind];
+  const gr = gp?.length && varies(item) ? seeded(item.v, SALT.bonus + 31) : null;
+  const gamble = gr && gr() < EXTRA.gambleChance ? [gp![Math.floor(gr() * gp!.length)]] : [];
+  return [...own, ...bonus, ...gamble, ...skillOpts];
 }
 
 /** 選項實際花費:技能減免,以及逾期後再次催辦的事 +1 */

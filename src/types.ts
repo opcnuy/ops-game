@@ -38,6 +38,8 @@ export interface EventOption {
   outcomes: Outcome[];
   /** 「快速抓個大概」類選項,受「快速報表」技能加成 */
   tag?: 'quick';
+  /** 「搏一把」:高風險高報酬,贏了大賺、輸了大賠 */
+  gamble?: boolean;
   /** 由技能解鎖的額外選項 */
   fromSkill?: string;
   /** 職級達到才會出現的選項(例如高階可以授權給專員);放在選項最後面,避免影響前面選項的編號 */

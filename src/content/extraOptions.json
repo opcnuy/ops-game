@@ -256,5 +256,156 @@
     ]
    }
   ]
- }
+ },
+ "gambles": {
+  "老闆": [
+   {
+    "label": "【搏一把】當面提出自己的大膽想法",
+    "ap": 1,
+    "style": "fast",
+    "gamble": true,
+    "outcomes": [
+     {
+      "p": 0.45,
+      "effects": {
+       "boss": 7
+      },
+      "result": "林總聽完拍了桌子:「就是要這種魄力!」"
+     },
+     {
+      "p": 0.55,
+      "effects": {
+       "boss": -5
+      },
+      "result": "林總沉默了很久:「這個…你再想想。」"
+     }
+    ]
+   }
+  ],
+  "客訴": [
+   {
+    "label": "【搏一把】公開道歉並加碼補償,賭玩家買單",
+    "ap": 1,
+    "style": "generous",
+    "gamble": true,
+    "outcomes": [
+     {
+      "p": 0.45,
+      "effects": {
+       "trust": 7
+      },
+      "result": "玩家被你的誠意打動,討論串整個翻轉。"
+     },
+     {
+      "p": 0.55,
+      "effects": {
+       "trust": -5,
+       "boss": -2
+      },
+      "result": "玩家覺得「原來鬧一下有糖吃」,風向反而更糟。"
+     }
+    ]
+   }
+  ],
+  "輿情": [
+   {
+    "label": "【搏一把】親自下場回文,正面迎戰風向",
+    "ap": 1,
+    "style": "hustle",
+    "gamble": true,
+    "outcomes": [
+     {
+      "p": 0.45,
+      "effects": {
+       "trust": 6,
+       "players": 2
+      },
+      "result": "你的回文被大量轉貼,風向一夕逆轉。"
+     },
+     {
+      "p": 0.55,
+      "effects": {
+       "trust": -6
+      },
+      "result": "你的回文被截圖嘲諷,事情越滾越大。"
+     }
+    ]
+   }
+  ],
+  "技術": [
+   {
+    "label": "【搏一把】不等完整排查,直接上線修正",
+    "ap": 1,
+    "style": "fast",
+    "gamble": true,
+    "outcomes": [
+     {
+      "p": 0.45,
+      "effects": {
+       "boss": 4,
+       "trust": 4
+      },
+      "result": "一次修好,大家都以為你早有把握。"
+     },
+     {
+      "p": 0.55,
+      "effects": {
+       "trust": -6,
+       "boss": -3
+      },
+      "result": "修正沒修到根本,新的問題冒出來,還得道歉。"
+     }
+    ]
+   }
+  ],
+  "原廠": [
+   {
+    "label": "【搏一把】拿活動成績當籌碼,強硬談條件",
+    "ap": 1,
+    "style": "hustle",
+    "gamble": true,
+    "outcomes": [
+     {
+      "p": 0.4,
+      "effects": {
+       "boss": 6
+      },
+      "result": "對方被你的氣勢壓過,條件談下來了,林總很滿意。"
+     },
+     {
+      "p": 0.6,
+      "effects": {
+       "boss": -4
+      },
+      "result": "對方不吃這套,場面僵住,林總聽說後臉色不太好。"
+     }
+    ]
+   }
+  ],
+  "數據": [
+   {
+    "label": "【搏一把】憑經驗直接下結論,不等跑完數據",
+    "ap": 1,
+    "style": "fast",
+    "gamble": true,
+    "outcomes": [
+     {
+      "p": 0.45,
+      "effects": {
+       "boss": 6
+      },
+      "result": "結論被你猜中,林總讚你有商業直覺。"
+     },
+     {
+      "p": 0.55,
+      "effects": {
+       "boss": -6
+      },
+      "result": "結論和後來的數據對不上,林總很不高興。"
+     }
+    ]
+   }
+  ]
+ },
+ "gambleChance": 0.5
 }
