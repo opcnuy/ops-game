@@ -125,6 +125,9 @@ export interface InboxItem {
   v?: number;
 }
 
+/** 剛做完的選擇「好不好」:給畫面做演出 */
+export interface Verdict { tier: 'great' | 'good' | 'flat' | 'bad' | 'awful'; line: string; eff: Effects }
+
 export interface State {
   v: 1;
   mode: Mode;
@@ -160,6 +163,9 @@ export interface State {
   /** 今天開場時的數值,用來判斷「今天過得好不好」 */
   dayStart?: { boss: number; trust: number; players: number };
   habits: Record<string, number>;
+  /** 連續選中對方胃口的次數 */
+  rapport?: number;
+  verdict?: Verdict;
   campaign?: Campaign;
   taste: { reward: string; hated: string };
   intel: { reward: boolean; hated: boolean };

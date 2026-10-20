@@ -8,7 +8,7 @@ import type { Room } from './scene/rooms';
 import { createFadeCanvas, dissolve } from './scene/fade';
 import { storageKey } from './storage';
 import {
-  CAMPAIGN_TARGET, CONTENT, DIFFS, activeBuffs, bossTrait, communityTrait, pickScout, pulseActive, pulseHint, EVENTS, computeRunXp, PHASES, phaseOf, GOAL_INFO, STORY_DAYS, chooseOption, clearSave, doAction, endDay,
+  CAMPAIGN_TARGET, RAPPORT_NEED, CONTENT, DIFFS, activeBuffs, bossTrait, communityTrait, pickScout, pulseActive, pulseHint, EVENTS, computeRunXp, PHASES, phaseOf, GOAL_INFO, STORY_DAYS, chooseOption, clearSave, doAction, endDay,
   HABITS, find, goalMet, goalValue, hasSkill, makeReport, submitReport, itemOptions, eventOptions, styleFit, eventText, load, newGame, optionCost, planCampaign, planCost, save, spendToday, weekdayLabel,
 } from './engine';
 import type { ActionKind, ReportQuiz } from './engine';
@@ -52,6 +52,7 @@ const prevBars: Record<string, number> = {};
 
 const prevGoal: Record<string, boolean> = {};
 let prevFeed0: string | undefined;
+let prevVerdict: string | undefined;
 
 /* 特效圖層:粒子、彩帶、飄字都畫在這裡,不影響版面與點擊 */
 const fx = document.createElement('div');
@@ -428,6 +429,18 @@ function renderFeedLine(s: State, line: string): string {
   return `<li>${esc(main)}${note && showHints(s.difficulty) ? `<div class="hint">🦋 ${esc(note)}</div>` : ''}</li>`;
 }
 
+const VERDICT_LABEL: Record<string, string> = { great: '🎉 大成功', good: '👍 順利', bad: '😬 不太妙', awful: '💥 搞砸了' };
+const EFF_NAME: Record<string, string> = { players: '玩家', retention: '留存', trust: '信任', boss: '老闆' };
+
+/** 剛做完選擇的醒目評價:大字 + 受影響的數值,不用讀完整段文字就知道好壞 */
+function renderVerdict(s: State): string {
+  const v = s.verdict;
+  if (!v || s.feed[0] !== v.line || v.tier === 'flat') return '';
+  const chips = Object.entries(v.eff).filter(([, n]) => n)
+    .map(([k, n]) => `<span class="${(n as number) > 0 ? 'up' : 'down'}">${EFF_NAME[k] ?? k} ${(n as number) > 0 ? '+' : ''}${n}${k === 'players' ? '%' : ''}</span>`).join('');
+  return `<div class="verdict v-${v.tier}" data-verdict="${v.tier}"><b>${VERDICT_LABEL[v.tier]}</b>${chips}</div>`;
+}
+
 function renderOptionButtons(s: State, it: InboxItem, ev: GameEvent): string {
   return itemOptions(s, ev, it).map(({ opt: o, index: i }, pos) => {
     const risky = o.outcomes.length > 1;
@@ -440,7 +453,7 @@ function renderOptionButtons(s: State, it: InboxItem, ev: GameEvent): string {
 
 function renderInbox(s: State): string {
   const sorted = [...s.inbox].sort((a, b) => (b.stage ?? 0) - (a.stage ?? 0) || a.deadline - b.deadline);
-  const banner = s.feed[0] ? `<div class="result-note">${renderFeedLine(s, s.feed[0]).replace(/^<li>|<\/li>$/g, '')}${lastInsight ? `<div class="insight">💡 ${esc(lastInsight)}</div>` : ''}</div>` : '';
+  const banner = s.feed[0] ? `<div class="result-note">${renderVerdict(s)}${renderFeedLine(s, s.feed[0]).replace(/^<li>|<\/li>$/g, '')}${lastInsight ? `<div class="insight">💡 ${esc(lastInsight)}</div>` : ''}</div>` : '';
   const ph = phaseOf(s.day);
   const phaseLine = ph.first ? `<div class="day-line">📌 ${PHASES[ph.key].name}:${esc(PHASES[ph.key].blurb)}</div>` : '';
   const buffs = activeBuffs(s);
@@ -449,7 +462,9 @@ function renderInbox(s: State): string {
     known?.boss ? `<span class="buff trait" title="${esc(BOSS_TRAITS[bossTrait(s)].desc)}">🧭 老闆:${BOSS_TRAITS[bossTrait(s)].name}</span>` : '',
     known?.community ? `<span class="buff trait" title="${esc(COMMUNITY_TRAITS[communityTrait(s)].desc)}">🧭 玩家:${COMMUNITY_TRAITS[communityTrait(s)].name}</span>` : '',
   ].join('');
-  const buffBar = buffs.length || traitChips ? `<div class="buff-bar">${traitChips}${buffs.map((b) => `<span class="buff" title="${esc(BUFFS[b.id].desc)}">${BUFFS[b.id].icon} ${BUFFS[b.id].name}<small>${b.left} 天</small></span>`).join('')}</div>` : '';
+  const streak = s.rapport ?? 0;
+  const rapportChip = streak > 0 ? `<span class="buff trait" title="連續選中對方胃口的做法三次,會進入「默契」狀態">🤝 默契 ${'●'.repeat(streak)}${'○'.repeat(Math.max(0, RAPPORT_NEED - streak))}</span>` : '';
+  const buffBar = buffs.length || traitChips || rapportChip ? `<div class="buff-bar">${traitChips}${rapportChip}${buffs.map((b) => `<span class="buff" title="${esc(BUFFS[b.id].desc)}">${BUFFS[b.id].icon} ${BUFFS[b.id].name}<small>${b.left} 天</small></span>`).join('')}</div>` : '';
   const dayLine = buffBar + (s.dayLine ? `<div class="day-line">🌤️ ${esc(s.dayLine)}</div>` : '') + phaseLine;
   if (!sorted.length) return `${dayLine}${banner}<div class="card empty">收件匣是空的。<br>這種時刻通常撐不過一個小時。</div>`;
   const openable = sorted.filter((i) => !sceneRoomFor(EVENTS[i.eventId]));
@@ -625,7 +640,7 @@ function renderRoomUI(s: State): string {
     speaker = '結果';
     text = resultOf(s.feed[0]);
     const note = s.feed[0].split('||🦋')[1];
-    body = `${note && showHints(s.difficulty) ? `<div class="hint">🦋 ${esc(note)}</div>` : ''}${lastInsight ? `<div class="insight">💡 ${esc(lastInsight)}</div>` : ''}<button class="primary" data-act="dialog-next">${nextLabel}</button>${nextEv ? '<button class="dlg-leave" data-act="dialog-leave">← 先回座位</button>' : ''}`;
+    body = `${renderVerdict(s)}${note && showHints(s.difficulty) ? `<div class="hint">🦋 ${esc(note)}</div>` : ''}${lastInsight ? `<div class="insight">💡 ${esc(lastInsight)}</div>` : ''}<button class="primary" data-act="dialog-next">${nextLabel}</button>${nextEv ? '<button class="dlg-leave" data-act="dialog-leave">← 先回座位</button>' : ''}`;
   } else {
     text = dialogText ?? '';
     body = '<button class="primary" data-act="dialog-next">▶ 回座位</button>';
@@ -1205,6 +1220,15 @@ function animate(): void {
     prevGoal[k] = ok;
     if (was === false && ok) { el.classList.add('goal-hit'); burst(...centerOf(el), ['✅', '✨', '🎉'], 16); }
   });
+  const vEl = app.querySelector<HTMLElement>('[data-verdict]');
+  if (vEl && S && S.verdict && S.verdict.line !== prevVerdict) {
+    const tier = vEl.dataset.verdict;
+    if (tier === 'great') burst(...centerOf(vEl), ['🎉', '✨', '⭐'], 24);
+    else if (tier === 'good') burst(...centerOf(vEl), ['✨', '👍'], 8);
+    else if (tier === 'awful') document.body.classList.add('shake-screen');
+    if (tier === 'awful') setTimeout(() => document.body.classList.remove('shake-screen'), 500);
+  }
+  prevVerdict = S?.verdict?.line;
   const firstLine = app.querySelector('.feed li');
   if (firstLine && S && S.feed[0] !== prevFeed0) firstLine.classList.add('new-line');
   prevFeed0 = S?.feed[0];

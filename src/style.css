@@ -961,3 +961,17 @@ button.cal.badge:hover { filter: brightness(1.05); transform: translateY(-1px); 
 .scout-card .sc-row { font-size: 0.85rem; line-height: 1.4; opacity: 0.9; }
 .scout-card .sc-row i { font-style: normal; font-size: 0.72rem; margin-right: 6px; padding: 0 5px; border-radius: 4px; background: rgba(255, 255, 255, 0.12); }
 .scout-card .cost { white-space: nowrap; font-size: 0.8rem; }
+
+/* 選擇後的醒目評價 */
+.verdict { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 6px; padding: 6px 10px; border-radius: 8px; animation: verdictPop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+.verdict b { font-size: 1.15rem; }
+.verdict span { font-size: 0.82rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); }
+.verdict span.up { color: var(--good); }
+.verdict span.down { color: var(--bad); }
+.v-great { background: rgba(80, 200, 120, 0.22); box-shadow: 0 0 0 2px rgba(80, 200, 120, 0.55); }
+.v-good { background: rgba(80, 200, 120, 0.12); }
+.v-bad { background: rgba(230, 120, 60, 0.15); }
+.v-awful { background: rgba(230, 70, 70, 0.22); box-shadow: 0 0 0 2px rgba(230, 70, 70, 0.55); }
+@keyframes verdictPop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+body.shake-screen { animation: shake 0.45s; }
+@media (prefers-reduced-motion: reduce) { .verdict { animation: none; } body.shake-screen { animation: none; } }

@@ -1,13 +1,14 @@
 import type { Effects } from './types';
 
 /** 看輿情之後的持續狀態(有天數,會顯示在收件匣上方) */
-export type BuffId = 'trustUp' | 'prepared' | 'bossAmp' | 'hype' | 'tired';
+export type BuffId = 'trustUp' | 'prepared' | 'bossAmp' | 'hype' | 'tired' | 'rapport';
 
 export const BUFFS: Record<BuffId, { icon: string; name: string; desc: string }> = {
   trustUp: { icon: '🤝', name: '玩家挺你', desc: '信任的得分多 25%' },
   prepared: { icon: '🧯', name: '有備而來', desc: '客訴、輿情事件的選項少花 1 點' },
   bossAmp: { icon: '🔔', name: '老闆在看', desc: '老闆好感的得失都放大 30%' },
   hype: { icon: '🔥', name: '話題熱度', desc: '每天玩家人數 +0.3%' },
+  rapport: { icon: '🤝', name: '默契', desc: '好的結果(老闆、信任的增加)多 50%' },
   tired: { icon: '😮‍💨', name: '心很累', desc: '明天少 1 點行動點數' },
 };
 

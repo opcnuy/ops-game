@@ -10,7 +10,7 @@ import { BUFFS, SCOUT_CARDS, scoutCard, type BuffId, type ScoutCard } from './sc
 import { BOSS_TRAITS, COMMUNITY_TRAITS, MOOD_CLUES, MOOD_FLAVOR, MOOD_LEVELS, type BossTrait, type CommunityTrait, type Mood } from './traits';
 
 const BUFF_IDS = BUFFS;
-import type {
+import type { Verdict,
   Moment, Phase,
   EventOption, InboxItem,
   Campaign, CampaignContent, DaySummary, Difficulty, Effects, GameEvent, Goal, GoalKey, Mode, Outcome, PlanSel, State,
@@ -601,6 +601,8 @@ function moodClue(ev: GameEvent, item?: InboxItem): string {
 
 /* ---------- 看輿情的發現卡與持續狀態 ---------- */
 
+export const RAPPORT_NEED = 3;
+
 export const buffActive = (s: State, id: BuffId): boolean => (s.buffs ?? []).some((b) => b.id === id && b.until >= s.day);
 export const activeBuffs = (s: State): { id: BuffId; left: number }[] =>
   (s.buffs ?? []).filter((b) => b.until >= s.day).map((b) => ({ id: b.id as BuffId, left: b.until - s.day + 1 }));
@@ -614,6 +616,10 @@ function buffEffects(s: State, e: Effects | undefined): Effects | undefined {
   if (!e) return e;
   const out: Effects = { ...e };
   if (buffActive(s, 'trustUp') && (out.trust ?? 0) > 0) out.trust = Math.ceil((out.trust as number) * 1.25);
+  if (buffActive(s, 'rapport')) {
+    if ((out.trust ?? 0) > 0) out.trust = Math.ceil((out.trust as number) * 1.5);
+    if ((out.boss ?? 0) > 0) out.boss = Math.ceil((out.boss as number) * 1.5);
+  }
   if (buffActive(s, 'bossAmp') && out.boss) out.boss = Math.sign(out.boss) * Math.ceil(Math.abs(out.boss) * 1.3);
   return out;
 }
@@ -804,8 +810,28 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
   if (impactOf(eff) >= 5) {
     addMoment(s, impactOf(eff), netOf(eff) >= 0 ? '✨' : '⚠️', `${quoted(eventText(ev, item).title)}${opt.label}——${out.result}`);
   }
+  // 默契:連續選中對方胃口的做法會累積,三次就進入「默契」狀態;選到不合的做法就中斷
+  let rapportNote = '';
+  if (hasMood(ev) && opt.style) {
+    if (fit.total > 0) {
+      s.rapport = (s.rapport ?? 0) + 1;
+      if (s.rapport >= RAPPORT_NEED) {
+        s.rapport = 0;
+        addBuff(s, 'rapport', 3);
+        rapportNote = ' 🤝 默契到了!接下來 3 天,好的結果加成 50%。';
+        addMoment(s, 8, '🤝', `連續摸中對方的胃口,和對方有了默契。`);
+      }
+    } else if (fit.total < 0 && (s.rapport ?? 0) > 0) {
+      s.rapport = 0;
+      rapportNote = ' 💔 默契中斷了。';
+    }
+  }
+  const net = netOf(eff);
+  const tier: Verdict['tier'] = net >= 5 ? 'great' : net >= 1 ? 'good' : net <= -5 ? 'awful' : net <= -1 ? 'bad' : 'flat';
   s.inbox = s.inbox.filter((i) => i.uid !== uid);
-  pushFeed(s, `【${eventText(ev, item).title}】${opt.label} → ${out.result}${extra}${effectNote(eff)}${chainNote}${note}`);
+  const line = `【${eventText(ev, item).title}】${opt.label} → ${out.result}${extra}${effectNote(eff)}${chainNote}${note}${rapportNote}`;
+  pushFeed(s, line);
+  s.verdict = { tier, line, eff: eff ?? {} };
   return null;
 }
 
