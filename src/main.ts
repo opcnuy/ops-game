@@ -313,7 +313,7 @@ function renderPersona(): string {
       <div class="xpbar mini"><span style="--to:${pct}%"></span></div><small class="muted">${PERSONA_INFO[st].blurb}</small></div>`;
   }).join('');
   return `<div class="persona"><h3>🎭 我的風格${pt ? `:${pt.title}` : ''}</h3>
-    <p class="muted">每局用到的做法會累積成熟練度。熟練的做法,有風險的結果更容易成功;到 Lv2 以後,成功時老闆或信任多得 1 點。遇到不吃這套的對象還是會吃虧,所以不用只練一種。</p>${rows}</div>`;
+    ${encodeCard(p) ? '<button data-act="col-copy" class="share-btn">📋 複製我的同事卡代碼</button>' : ''}<p class="muted">每局用到的做法會累積成熟練度。熟練的做法,有風險的結果更容易成功;到 Lv2 以後,成功時老闆或信任多得 1 點。遇到不吃這套的對象還是會吃虧,所以不用只練一種。</p>${rows}</div>`;
 }
 
 let colMsg = '';
@@ -877,6 +877,17 @@ function renderIntro(): string {
   </div></div>`;
 }
 
+/** 同事卡的分享區:第一次拿到卡時醒目提示,之後結算畫面也留一個複製捷徑 */
+function renderCardShare(first: boolean): string {
+  const code = encodeCard(profile.persona ?? {});
+  if (!code) return '';
+  const pt = personaTitle(profile.persona ?? {});
+  return `<div class="cardshare ${first ? 'first' : ''}"><h4>${first ? '🎴 你拿到了同事卡!' : '🎴 我的同事卡'}</h4>
+    ${first ? `<p class="muted">你的風格已經夠鮮明,可以當別人的同事了。把代碼傳給朋友,他貼進「👥 同事」,你就會出現在他的辦公室裡。</p>` : ''}
+    <div class="col-title">${pt ? esc(pt.title) : ''}</div><code>${code}</code>
+    <button data-act="col-copy">📋 複製代碼分享</button></div>`;
+}
+
 function renderAward(s: State): string {
   const a = s.award;
   if (!a) return '';
@@ -890,6 +901,7 @@ function renderAward(s: State): string {
     <small>${to.title} Lv ${to.lv}${nxt ? ` · 距離「${nxt.title}」還差 ${nxt.xp - a.toXp}` : ' · 最高職級'}</small>
     ${a.sp > 0 ? `<div class="spgain">🧠 技能點 +${a.sp}<ul>${a.spLines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul></div>` : ''}
     ${a.personaLines?.length ? `<div class="spgain">🎭 風格成長<ul>${a.personaLines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul></div>` : ''}
+    ${renderCardShare(a.firstCard === true)}
     ${to.lv > from.lv ? `<div class="levelup">🎉 升職了!${from.title} → ${to.title}<ul>${unlocks.map((u) => `<li>${esc(u)}</li>`).join('')}</ul></div>` : ''}</div>`;
 }
 
@@ -1574,10 +1586,11 @@ function settleRun(s: State): void {
   const newAch = s.ach.filter((id) => !profile.ach.includes(id));
   for (const id of newAch) spLines.push(`成就「${ACHIEVEMENTS.find((a) => a.id === id)?.name ?? id}」:+1`);
   const sp = lvUp * SP_PER_LEVEL + newAch.length;
-  const pm = mergePersona(profile.persona ?? {}, s.styleUse ?? {});
+  const before = profile.persona ?? {};
+  const pm = mergePersona(before, s.styleUse ?? {});
   profile = { ...profile, persona: pm.next, xp: toXp, runs: profile.runs + 1, sp: profile.sp + sp, ach: [...profile.ach, ...newAch], seen: mergeSeen(profile, s.seen) };
   saveProfile(profile);
-  s.award = { xp: r.total, lines: r.lines, fromXp, toXp, sp, spLines, personaLines: pm.lines };
+  s.award = { xp: r.total, lines: r.lines, fromXp, toXp, sp, spLines, personaLines: pm.lines, firstCard: !personaTitle(before) && !!personaTitle(pm.next) };
 }
 
 function finishDay(s: State): void {

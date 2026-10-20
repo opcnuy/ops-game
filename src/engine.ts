@@ -342,7 +342,7 @@ function sanitizeState(raw: unknown): State | null {
   }
   if (s.award) {
     s.award = { xp: num(s.award.xp, 0, 1e6, 0), lines: strs(s.award.lines), fromXp: num(s.award.fromXp, 0, 1e6, 0),
-      toXp: num(s.award.toXp, 0, 1e6, 0), sp: num(s.award.sp, 0, 100, 0), spLines: strs(s.award.spLines), personaLines: strs((s.award as { personaLines?: unknown }).personaLines) };
+      toXp: num(s.award.toXp, 0, 1e6, 0), sp: num(s.award.sp, 0, 100, 0), spLines: strs(s.award.spLines), personaLines: strs((s.award as { personaLines?: unknown }).personaLines), firstCard: (s.award as { firstCard?: unknown }).firstCard === true };
   }
   if (s.campaign) {
     const c = s.campaign as unknown as Record<string, unknown>;

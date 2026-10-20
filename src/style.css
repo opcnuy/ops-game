@@ -995,3 +995,11 @@ body.shake-screen { animation: shake 0.45s; }
 .col-pick small { opacity: 0.75; }
 
 .col-say { font-style: italic; }
+
+/* 結算畫面的同事卡 */
+.cardshare { margin-top: 10px; padding: 8px 10px; border: 1px dashed var(--line); border-radius: 8px; }
+.cardshare.first { border: 2px solid var(--accent); background: var(--chip); animation: verdictPop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+.cardshare h4 { margin: 0 0 4px; }
+.cardshare code { display: block; margin: 6px 0; padding: 6px 8px; border-radius: 6px; background: rgba(0, 0, 0, 0.15); user-select: all; word-break: break-all; }
+.cardshare .col-title { font-weight: 700; }
+.share-btn { margin: 4px 0 8px; }

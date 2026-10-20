@@ -205,7 +205,7 @@ export interface State {
   /** 這局的難忘時刻(最多 40 筆,依重要程度保留) */
   moments?: Moment[];
   /** 這局結算的經驗(結束時寫入一次) */
-  award?: { personaLines?: string[]; xp: number; lines: string[]; fromXp: number; toXp: number; sp: number; spLines: string[] };
+  award?: { personaLines?: string[]; firstCard?: boolean; xp: number; lines: string[]; fromXp: number; toXp: number; sp: number; spLines: string[] };
 }
 
 /** 這局值得回顧的時刻:結局畫面會挑最重的幾筆列出來 */
