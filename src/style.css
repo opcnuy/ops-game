@@ -983,3 +983,13 @@ body.shake-screen { animation: shake 0.45s; }
 .persona-row .rt { display: flex; justify-content: space-between; gap: 8px; font-size: 0.85rem; }
 .persona-row small { display: block; margin-top: 2px; }
 .cal.badge small { display: block; font-size: 0.7rem; opacity: 0.85; }
+
+/* 同事卡 */
+.col-modal code { display: block; margin: 6px 0; padding: 8px 10px; border-radius: 8px; background: var(--chip); font-size: 1rem; letter-spacing: 0.04em; user-select: all; word-break: break-all; }
+.col-mine, .col-add, .col-list { margin: 10px 0; }
+.col-input { display: flex; gap: 6px; margin-top: 6px; }
+.col-input input { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: inherit; font: inherit; }
+.col-row { display: flex; align-items: stretch; gap: 6px; margin-top: 6px; }
+.col-pick { flex: 1; text-align: left; display: flex; flex-direction: column; gap: 2px; }
+.col-row.sel .col-pick { box-shadow: 0 0 0 2px var(--accent); }
+.col-pick small { opacity: 0.75; }

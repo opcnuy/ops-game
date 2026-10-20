@@ -1,4 +1,5 @@
 import './style.css';
+import { colleagueBlurb, decodeCard, encodeCard } from './colleague';
 import { PERSONA_INFO, PERSONA_STEPS, STYLES, mergePersona, personaLevel, personaLevels, personaTitle } from './persona';
 import { BUFFS, scoutCard } from './scout';
 import { BOSS_TRAITS, COMMUNITY_TRAITS } from './traits';
@@ -13,18 +14,18 @@ import {
   HABITS, find, goalMet, goalValue, hasSkill, makeReport, submitReport, itemOptions, eventOptions, styleFit, eventText, load, newGame, optionCost, planCampaign, planCost, save, spendToday, weekdayLabel,
 } from './engine';
 import type { ActionKind, ReportQuiz } from './engine';
-import { LEVELS, SP_PER_LEVEL, availableSp, levelFor, loadProfile, mergeSeen, nextLevel, saveProfile } from './profile';
+import { LEVELS, MAX_COLLEAGUES, SP_PER_LEVEL, availableSp, levelFor, loadProfile, mergeSeen, nextLevel, saveProfile } from './profile';
 import { ACHIEVEMENTS, LINES, SKILLS, prereqMet, prereqText, sanitizeSkills, skillById } from './skills';
 import type { Skill } from './skills';
 import type { SkillLine } from './skills';
-import type { DaySummary, Difficulty, EventKind, EventOption, GameEvent, Goal, InboxItem, Mode, PlanSel, State } from './types';
+import type { DaySummary, Difficulty, EventKind, EventOption, GameEvent, Goal, InboxItem, Mode, PlanSel, State, Style } from './types';
 
 const app = document.getElementById('app') as HTMLDivElement;
 
 let S: State | null = load();
 let profile = loadProfile();
 let screen: 'start' | 'game' | 'skills' = 'start';
-type ModalKind = 'none' | 'planner' | 'summary' | 'intro' | 'settings' | 'gamemenu' | 'report' | 'rank' | 'scout';
+type ModalKind = 'none' | 'planner' | 'summary' | 'intro' | 'settings' | 'gamemenu' | 'report' | 'rank' | 'scout' | 'colleague';
 let modal: ModalKind = 'none';
 let summary: DaySummary | null = null;
 let toast = '';
@@ -315,6 +316,38 @@ function renderPersona(): string {
     <p class="muted">每局用到的做法會累積成熟練度。熟練的做法,有風險的結果更容易成功;到 Lv2 以後,成功時老闆或信任多得 1 點。遇到不吃這套的對象還是會吃虧,所以不用只練一種。</p>${rows}</div>`;
 }
 
+let colMsg = '';
+
+/** 這局要帶的同事(沒選或代碼壞了就沒有) */
+function selectedColleague(): { style: Style; level: number; title: string } | undefined {
+  const code = (profile.colleagues ?? [])[profile.colleagueSel ?? -1];
+  return code ? decodeCard(code) ?? undefined : undefined;
+}
+
+function renderColleague(): string {
+  const mine = encodeCard(profile.persona ?? {});
+  const list = profile.colleagues ?? [];
+  const sel = profile.colleagueSel ?? -1;
+  const rows = list.map((code, i) => {
+    const c = decodeCard(code);
+    return c ? `<div class="col-row ${i === sel ? 'sel' : ''}"><button class="col-pick" data-act="col-sel" data-i="${i}"><b>${i === sel ? '✅ ' : ''}${esc(c.title)}</b><small>${esc(colleagueBlurb(c))}</small></button><button class="x" data-act="col-del" data-i="${i}" aria-label="移除">✕</button></div>` : '';
+  }).join('');
+  return `<div class="modal-bg"><div class="modal col-modal">
+    <div class="modal-head"><h2>👥 同事</h2><button class="x" data-act="close-colleague" aria-label="關閉">✕</button></div>
+    <p class="muted">同事卡只記錄稱號與風格值,不含名字。把代碼給朋友,他就能讓你的風格當他這局的同事。</p>
+    <div class="col-mine"><b>我的同事卡</b>${mine
+      ? `<code>${mine}</code><button data-act="col-copy">複製代碼</button>`
+      : '<p class="muted">還沒有風格到 Lv1,多玩幾局就會有了。</p>'}</div>
+    <div class="col-add"><b>加入朋友的同事卡</b>
+      <div class="col-input"><input id="col-input" placeholder="貼上代碼,例如 OPS-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false"><button data-act="col-add">加入</button></div>
+      ${colMsg ? `<p class="muted">${esc(colMsg)}</p>` : ''}</div>
+    <div class="col-list"><b>這局要帶的同事</b>${rows || '<p class="muted">還沒有收到同事卡。</p>'}
+      ${list.length ? `<button class="${sel < 0 ? 'sel' : ''}" data-act="col-sel" data-i="-1">${sel < 0 ? '✅ ' : ''}不帶同事</button>` : ''}</div>
+    <p class="muted">同事擅長的做法每天幫你分擔一次(少花 1 點),但偶爾也會自作主張,闖出一點麻煩。同事越熟練,幫忙與闖禍的機會都越多。最多保留 ${MAX_COLLEAGUES} 張。</p>
+    <div class="actions"><button class="primary" data-act="close-colleague">完成</button></div>
+  </div></div>`;
+}
+
 function renderRank(): string {
   const cur = levelFor(profile.xp);
   const rows = LEVELS.map((l) => {
@@ -334,9 +367,9 @@ function renderRank(): string {
 }
 
 /** 主頁可開的彈窗(設定、職級詳情) */
-const START_MODALS: ModalKind[] = ['settings', 'rank'];
+const START_MODALS: ModalKind[] = ['settings', 'rank', 'colleague'];
 function renderStartModal(): string {
-  return modal === 'settings' ? renderSettings() : modal === 'rank' ? renderRank() : '';
+  return modal === 'settings' ? renderSettings() : modal === 'rank' ? renderRank() : modal === 'colleague' ? renderColleague() : '';
 }
 
 function renderSettings(): string {
@@ -368,7 +401,7 @@ function renderStartScene(): string {
       <div class="wall-left"><button class="cal badge" data-act="open-rank" title="${nextHint()}(點開看職級詳情)">
         <span>${cur.title}</span><b>Lv ${cur.lv}</b>${personaTitle(profile.persona ?? {}) ? `<small>🎭 ${personaTitle(profile.persona ?? {})!.title}</small>` : ''}<div class="xpbar mini"><span style="--to:${xpPercent(profile.xp)}%"></span></div></button></div>
       <div class="wall-mid"></div>
-      <div class="wall-right"><div class="wall-btns">${versionTag()}<button class="ghost" data-act="open-settings">⚙️ 設定</button></div></div>
+      <div class="wall-right"><div class="wall-btns">${versionTag()}<button class="ghost" data-act="open-colleague">👥 同事</button><button class="ghost" data-act="open-settings">⚙️ 設定</button></div></div>
     </div>
     <div class="screen-ui menu">
       <div class="menu-title">營運日常<small>當一天遊戲營運,看你撐不撐得過試用期</small></div>
@@ -411,6 +444,7 @@ function renderStart(): string {
       <div class="diffs">${(['easy', 'normal', 'hard'] as Difficulty[]).map((d) =>
         `<button class="diff ${d === difficulty ? 'sel' : ''}" data-act="diff" data-d="${d}"><span class="big">${stars[d]}</span><b>${DIFFS[d].label}</b><span>${brief(d)}</span></button>`).join('')}</div></div>
     <button class="primary start-btn" data-act="start-game">${has ? '開始新遊戲' : '開始遊戲'} ▶<small>${modeSel === 'story' ? '劇情' : '無限'}模式 · ${DIFFS[difficulty].label}</small></button>
+    <button class="settings-btn" data-act="open-colleague">👥 同事</button>
     <button class="settings-btn" data-act="open-settings">⚙️ 設定</button>
     <p class="muted foot">所有遊戲、角色與數字皆為虛構</p>
   </div>${renderStartModal()}`;
@@ -487,9 +521,10 @@ function renderInbox(s: State): string {
   ].join('');
   const myTitle = personaTitle(s.persona ?? {});
   const personaChip = myTitle ? `<span class="buff trait" title="跨局累積的個人風格">🎭 ${myTitle.title}</span>` : '';
+  const colChip = s.colleague ? `<span class="buff trait" title="${esc(colleagueBlurb(s.colleague))}">👥 同事:${esc(s.colleague.title)}</span>` : '';
   const streak = s.rapport ?? 0;
   const rapportChip = streak > 0 ? `<span class="buff trait" title="連續選中對方胃口的做法三次,會進入「默契」狀態">🤝 默契 ${'●'.repeat(streak)}${'○'.repeat(Math.max(0, RAPPORT_NEED - streak))}</span>` : '';
-  const buffBar = buffs.length || traitChips || rapportChip || personaChip ? `<div class="buff-bar">${personaChip}${traitChips}${rapportChip}${buffs.map((b) => `<span class="buff" title="${esc(BUFFS[b.id].desc)}">${BUFFS[b.id].icon} ${BUFFS[b.id].name}<small>${b.left} 天</small></span>`).join('')}</div>` : '';
+  const buffBar = buffs.length || traitChips || rapportChip || personaChip || colChip ? `<div class="buff-bar">${personaChip}${colChip}${traitChips}${rapportChip}${buffs.map((b) => `<span class="buff" title="${esc(BUFFS[b.id].desc)}">${BUFFS[b.id].icon} ${BUFFS[b.id].name}<small>${b.left} 天</small></span>`).join('')}</div>` : '';
   const dayLine = buffBar + (s.dayLine ? `<div class="day-line">🌤️ ${esc(s.dayLine)}</div>` : '') + phaseLine;
   if (!sorted.length) return `${dayLine}${banner}<div class="card empty">收件匣是空的。<br>這種時刻通常撐不過一個小時。</div>`;
   const openable = sorted.filter((i) => !sceneRoomFor(EVENTS[i.eventId]));
@@ -1284,7 +1319,7 @@ function flash(msg: string | null, ms = 1500): void {
 /* ---------- 事件 ---------- */
 
 function startNew(mode: Mode): void {
-  S = newGame(mode, difficulty, Date.now(), levelFor(profile.xp).lv, profile.skills, profile.seen, personaLevels(profile.persona ?? {}));
+  S = newGame(mode, difficulty, Date.now(), levelFor(profile.xp).lv, profile.skills, profile.seen, personaLevels(profile.persona ?? {}), selectedColleague());
   resetPlace();
   resetMotion();
   openUid = null;
@@ -1376,6 +1411,32 @@ app.addEventListener('click', (e) => {
     case 'open-menu': modal = 'gamemenu'; render(); return;
     case 'open-rank': modal = 'rank'; render(); return;
     case 'open-settings': modal = 'settings'; render(); return;
+    case 'open-colleague': colMsg = ''; modal = 'colleague'; render(); return;
+    case 'close-colleague': modal = 'none'; render(); return;
+    case 'col-copy': {
+      const code = encodeCard(profile.persona ?? {});
+      if (code) void navigator.clipboard?.writeText(code).then(() => flash('已複製代碼'), () => flash('複製失敗,請手動選取代碼'));
+      return;
+    }
+    case 'col-add': {
+      const raw = (document.getElementById('col-input') as HTMLInputElement | null)?.value ?? '';
+      const c = decodeCard(raw);
+      const list = profile.colleagues ?? [];
+      const norm = raw.toUpperCase().trim();
+      if (!c) colMsg = '這段代碼看起來不對,請確認有沒有複製完整。';
+      else if (list.length >= MAX_COLLEAGUES) colMsg = `最多保留 ${MAX_COLLEAGUES} 張,請先移除一張。`;
+      else if (list.some((x) => decodeCard(x)?.title === c.title && x.replace(/[^0-9A-Z]/g, '') === norm.replace(/[^0-9A-Z]/g, ''))) colMsg = '這張已經收過了。';
+      else { profile = { ...profile, colleagues: [...list, norm], colleagueSel: list.length }; saveProfile(profile); colMsg = `收到了:${c.title}。這局會帶他一起。`; }
+      render(); return;
+    }
+    case 'col-sel': profile = { ...profile, colleagueSel: Number(el.dataset.i) }; saveProfile(profile); render(); return;
+    case 'col-del': {
+      const i = Number(el.dataset.i);
+      const list = (profile.colleagues ?? []).filter((_, k) => k !== i);
+      const sel = profile.colleagueSel ?? -1;
+      profile = { ...profile, colleagues: list, colleagueSel: sel === i ? -1 : sel > i ? sel - 1 : sel };
+      saveProfile(profile); render(); return;
+    }
     case 'close-menu': case 'close-rank': case 'close-settings': modal = 'none'; render(); return;
     case 'bf': setButterfly(el.dataset.v as Butterfly); render(); return;
     case 'skills': screen = 'skills'; window.scrollTo(0, 0); render(); return;

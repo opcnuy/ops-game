@@ -1,6 +1,6 @@
 import { storageKey } from './storage';
 import { sanitizeSkills } from './skills';
-import { PERSONA_BOOST, sanitizePersona } from './persona';
+import { PERSONA_BOOST, STYLES, sanitizePersona } from './persona';
 import eventsData from './content/events.json';
 import campaignData from './content/campaigns.json';
 import variantData from './content/variants.json';
@@ -238,11 +238,11 @@ export function weekdayLabel(day: number): string {
 
 /* ---------- 新遊戲 / 存檔 ---------- */
 
-export function newGame(mode: Mode, difficulty: Difficulty = 'normal', seed = Date.now(), level = 1, skills: string[] = [], pastSeen: Record<string, number> = {}, persona: Partial<Record<Style, number>> = {}): State {
+export function newGame(mode: Mode, difficulty: Difficulty = 'normal', seed = Date.now(), level = 1, skills: string[] = [], pastSeen: Record<string, number> = {}, persona: Partial<Record<Style, number>> = {}, colleague?: { style: Style; level: number; title: string }): State {
   const cfg = DIFFS[difficulty];
   const apBonus = skills.includes('time_mgmt') ? 1 : 0;
   const s: State = {
-    v: 1, mode, difficulty, level, skills: [...skills], persona: { ...persona }, ach: [], goals: cfg.goals.map((g) => ({ ...g })), goalRound: 0, maxAp: cfg.maxAp + apBonus,
+    v: 1, mode, difficulty, level, skills: [...skills], persona: { ...persona }, colleague: colleague ? { ...colleague } : undefined, ach: [], goals: cfg.goals.map((g) => ({ ...g })), goalRound: 0, maxAp: cfg.maxAp + apBonus,
     rng: seed | 0, day: 1, ap: cfg.maxAp + apBonus,
     players: 12000, retention: 36, trust: cfg.trust, boss: cfg.boss, spendRate: 38,
     inbox: [], flags: {}, seen: {}, pastSeen: { ...pastSeen }, followUps: [], pendingReports: 0, habits: {},
@@ -258,6 +258,7 @@ export function newGame(mode: Mode, difficulty: Difficulty = 'normal', seed = Da
     known: { boss: false, community: false },
   };
   s.history.push({ day: 0, players: s.players, spend: spendToday(s) });
+  if (s.colleague) pushLog(s, 1, `👥 這局和你搭檔的同事:${s.colleague.title}。`);
   spawnDay(s);
   return s;
 }
@@ -317,6 +318,10 @@ function sanitizeState(raw: unknown): State | null {
   s.moments = (Array.isArray(r.moments) ? (r.moments as Moment[]) : []).slice(0, 40)
     .map((m) => ({ day: num(m?.day, 0, 1e5, 0), icon: cleanText(m?.icon, 4), text: cleanText(m?.text, 160), w: num(m?.w, 0, 100, 0) }));
   s.styleTotals = rec(r.styleTotals);
+  const col = r.colleague as { style?: unknown; level?: unknown; title?: unknown } | undefined;
+  s.colleague = col && typeof col.style === 'string' && (STYLES as string[]).includes(col.style)
+    ? { style: col.style as Style, level: num(col.level, 1, 3, 1), title: cleanText(col.title, 30) } : undefined;
+  s.colHelp = s.colHelp && typeof s.colHelp === 'object' ? { day: num(s.colHelp.day, 0, 1e5, 0), n: num(s.colHelp.n, 0, 9, 0) } : undefined;
   s.persona = sanitizePersona(r.persona, 3); s.styleUse = sanitizePersona(r.styleUse, 999);
   if (s.over) {
     const st = s.over.style;
@@ -471,14 +476,23 @@ export function eventOptions(s: State, ev: GameEvent, item?: InboxItem): EventOp
 }
 
 /** 選項實際花費:技能減免,以及逾期後再次催辦的事 +1 */
-export function optionCost(s: State, item: InboxItem, opt: EventOption): number {
+export function optionCost(s: State, item: InboxItem, opt: EventOption, noColleague = false): number {
   let c = opt.ap;
   if (c <= 0) return 0;
   const ev = EVENTS[item.eventId];
   if (hasSkill(s, 'data_unify') && isDataEvent(ev) && c > 1) c -= 1;
   if (buffActive(s, 'prepared') && isPulseEvent(ev)) c = Math.max(0, c - 1);
   if (item.stage && !hasSkill(s, 'crisis_pr')) c += 1;
+  if (!noColleague && colleagueHelps(s, opt) && c > 0) c -= 1;
   return c;
+}
+
+/** 同事擅長的做法,每天可以幫你分擔一次:這個選項少花 1 點 */
+export function colleagueHelps(s: State, opt: EventOption): boolean {
+  const c = s.colleague;
+  if (!c || !opt.style || opt.style !== c.style) return false;
+  const used = s.colHelp?.day === s.day ? s.colHelp.n : 0;
+  return used < 1;
 }
 
 const goodness = (o: Outcome): number =>
@@ -761,6 +775,10 @@ function spawnDay(s: State): void {
     for (let i = 0; i < pool.length; i++) { r -= weights[i]; if (r <= 0) { pick = pool[i]; break; } }
     addEvent(s, pick.id);
   }
+  // 同事偶爾自作主張,闖出一點麻煩(他擅長的做法,也是他容易用過頭的做法)
+  if (s.colleague && s.day >= 3 && rand(s) < 0.2 + 0.08 * s.colleague.level) {
+    addEvent(s, `col_${s.colleague.style}`, '同事自作主張,事情有了後續。');
+  }
   // 小插曲:不佔事件名額、沒有逾期懲罰,偶爾穿插一下
   if (s.day >= 2 && rand(s) < 0.4) {
     let ip = Object.values(EVENTS).filter((e) => e.kind === '插曲' && !s.inbox.some((i) => i.eventId === e.id));
@@ -782,6 +800,8 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
   const cost = optionCost(s, item, opt);
   if (s.ap < cost) return '行動點數不足';
   s.ap -= cost;
+  const helped = cost !== optionCost(s, item, opt, true);
+  if (helped) s.colHelp = { day: s.day, n: (s.colHelp?.day === s.day ? s.colHelp.n : 0) + 1 };
   let outs = opt.outcomes;
   let boost = 0;
   if (hasSkill(s, 'quick_report') && opt.tag === 'quick') boost += 0.2;
@@ -824,19 +844,19 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
     addMoment(s, impactOf(eff), netOf(eff) >= 0 ? '✨' : '⚠️', `${quoted(eventText(ev, item).title)}${opt.label}——${out.result}`);
   }
   // 默契:連續選中對方胃口的做法會累積,三次就進入「默契」狀態;選到不合的做法就中斷
-  let rapportNote = '';
+  let rapportNote = helped ? ' 👥 同事幫了一把,少花 1 點。' : '';
   if (hasMood(ev) && opt.style) {
     if (fit.total > 0) {
       s.rapport = (s.rapport ?? 0) + 1;
       if (s.rapport >= RAPPORT_NEED) {
         s.rapport = 0;
         addBuff(s, 'rapport', 3);
-        rapportNote = ' 🤝 默契到了!接下來 3 天,好的結果加成 50%。';
+        rapportNote += ' 🤝 默契到了!接下來 3 天,好的結果加成 50%。';
         addMoment(s, 8, '🤝', `連續摸中對方的胃口,和對方有了默契。`);
       }
     } else if (fit.total < 0 && (s.rapport ?? 0) > 0) {
       s.rapport = 0;
-      rapportNote = ' 💔 默契中斷了。';
+      rapportNote += ' 💔 默契中斷了。';
     }
   }
   const net = netOf(eff);

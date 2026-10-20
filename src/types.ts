@@ -167,6 +167,10 @@ export interface State {
   habits: Record<string, number>;
   /** 開局時帶入的風格熟練等級(整局固定) */
   persona?: Partial<Record<Style, number>>;
+  /** 這局搭檔的同事(來自同事卡,整局固定) */
+  colleague?: { style: Style; level: number; title: string };
+  /** 同事今天已經幫過幾次 */
+  colHelp?: { day: number; n: number };
   /** 這局各種做法用了幾次 */
   styleUse?: Partial<Record<Style, number>>;
   /** 連續選中對方胃口的次數 */

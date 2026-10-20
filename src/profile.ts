@@ -1,5 +1,6 @@
 import { sanitizeSkills, skillById } from './skills';
 import { storageKey } from './storage';
+import { decodeCard } from './colleague';
 import { sanitizePersona, type PersonaPoints } from './persona';
 
 /** 跨局的職級與技能(存在玩家自己的瀏覽器) */
@@ -17,6 +18,9 @@ export interface Profile {
   seen?: Record<string, number>;
   /** 個人風格:各種做法累積的點數 */
   persona?: PersonaPoints;
+  /** 收到的同事卡代碼(最多 5 張)與這局要帶的那一張(-1 = 不帶) */
+  colleagues?: string[];
+  colleagueSel?: number;
 }
 
 export interface LevelDef {
@@ -49,7 +53,7 @@ export function loadProfile(): Profile {
       return {
         v: 1, xp, runs: n(p.runs, 0),
         sp: n(p.sp, (levelFor(xp).lv - 1) * SP_PER_LEVEL),
-        skills: sanitizeSkills(list(p.skills)), ach: list(p.ach), seen: sanitizeSeen(p.seen), persona: sanitizePersona(p.persona),
+        skills: sanitizeSkills(list(p.skills)), ach: list(p.ach), seen: sanitizeSeen(p.seen), persona: sanitizePersona(p.persona), ...sanitizeColleagues(p.colleagues, p.colleagueSel),
       };
     }
   } catch { /* 讀不到就當新玩家 */ }
@@ -57,6 +61,15 @@ export function loadProfile(): Profile {
 }
 
 export const SP_PER_LEVEL = 2;
+export const MAX_COLLEAGUES = 5;
+
+/** 讀檔時逐項檢查:只留能解開的代碼,選擇的編號也要在範圍內 */
+function sanitizeColleagues(list: unknown, sel: unknown): { colleagues: string[]; colleagueSel: number } {
+  const colleagues = Array.isArray(list)
+    ? list.filter((x): x is string => typeof x === 'string' && x.length <= 40 && decodeCard(x) !== null).slice(0, MAX_COLLEAGUES) : [];
+  const n = typeof sel === 'number' && Number.isInteger(sel) ? sel : -1;
+  return { colleagues, colleagueSel: n >= 0 && n < colleagues.length ? n : -1 };
+}
 
 /** 讀檔時逐項檢查:鍵名要短、次數要合理,數量也設上限 */
 function sanitizeSeen(v: unknown): Record<string, number> {
