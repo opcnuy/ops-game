@@ -27,3 +27,5 @@ npx tsx scripts/personatest.ts   # 個人風格檢查
 ```
 
 事件與活動內容在 `src/content/*.json`,規則在 `src/engine.ts`。
+
+更新紀錄在 [開發日誌.md](開發日誌.md)。
