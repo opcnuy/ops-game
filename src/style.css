@@ -1003,3 +1003,4 @@ body.shake-screen { animation: shake 0.45s; }
 .cardshare code { display: block; margin: 6px 0; padding: 6px 8px; border-radius: 6px; background: rgba(0, 0, 0, 0.15); user-select: all; word-break: break-all; }
 .cardshare .col-title { font-weight: 700; }
 .share-btn { margin: 4px 0 8px; }
+.cardshare-btns { display: flex; flex-wrap: wrap; gap: 6px; }

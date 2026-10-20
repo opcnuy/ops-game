@@ -885,7 +885,7 @@ function renderCardShare(first: boolean): string {
   return `<div class="cardshare ${first ? 'first' : ''}"><h4>${first ? '🎴 你拿到了同事卡!' : '🎴 我的同事卡'}</h4>
     ${first ? `<p class="muted">你的風格已經夠鮮明,可以當別人的同事了。把代碼傳給朋友,他貼進「👥 同事」,你就會出現在他的辦公室裡。</p>` : ''}
     <div class="col-title">${pt ? esc(pt.title) : ''}</div><code>${code}</code>
-    <button data-act="col-copy">📋 複製代碼分享</button></div>`;
+    <div class="cardshare-btns"><button data-act="col-copy">📋 複製代碼分享</button><button data-act="col-manage">👥 管理同事卡</button></div></div>`;
 }
 
 function renderAward(s: State): string {
@@ -1425,6 +1425,7 @@ app.addEventListener('click', (e) => {
     case 'open-menu': modal = 'gamemenu'; render(); return;
     case 'open-rank': modal = 'rank'; render(); return;
     case 'open-settings': modal = 'settings'; render(); return;
+    case 'col-manage': modal = 'none'; resetPlace(); screen = 'start'; if (s?.over) { clearSave(); S = null; } colMsg = ''; modal = 'colleague'; render(); return;
     case 'open-colleague': colMsg = ''; modal = 'colleague'; render(); return;
     case 'close-colleague': modal = 'none'; render(); return;
     case 'col-copy': {
