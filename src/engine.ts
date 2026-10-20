@@ -838,9 +838,12 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
   let out: Outcome = outs[outs.length - 1];
   for (const o of outs) { r -= o.p; if (r <= 0) { out = o; break; } }
   let base = hasMood(ev) ? tuneEffects(s, ev, out.effects, mood) : out.effects;
+  // 加成只落在這個結果本來就會動到的數值上:跟老闆(或玩家)沒關係的事,不會憑空多出老闆(或信任)的分數
+  const main = moodStat(ev);
+  const touchesMain = !!out.effects?.[main];
   // 熟練到 Lv2 以上,做得成的時候老闆或信任多得 1 點
-  if (pLv >= 2 && netOf(out.effects) > 0) base = addFit(base, moodStat(ev), 1);
-  const eff = buffEffects(s, addFit(base, moodStat(ev), fit.total));
+  if (pLv >= 2 && netOf(out.effects) > 0 && touchesMain) base = addFit(base, main, 1);
+  const eff = buffEffects(s, touchesMain ? addFit(base, main, fit.total) : base);
   applyEffects(s, eff);
   if (out.setFlag) s.flags[out.setFlag] = true;
   if (out.reports) s.pendingReports = Math.max(0, s.pendingReports + out.reports);
