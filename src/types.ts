@@ -180,6 +180,21 @@ export interface State {
   styleUse?: Partial<Record<Style, number>>;
   /** 連續選中對方胃口的次數 */
   rapport?: number;
+  /** 這局的策略與等級、經驗、等著選的升級次數與候選 */
+  strat?: Record<string, number>;
+  /** 這局已解鎖的策略、進化與職位(開局時從檔案室帶入,整局固定),以及選的職位 */
+  unlock?: string[];
+  role?: string;
+  /** 這局選的挑戰(整局固定) */
+  curse?: string;
+  xp?: number;
+  lv?: number;
+  pendingPicks?: number;
+  cardPick?: string[];
+  /** 活動結束後的消費透支:到 until 為止,日營收少 pct(0~1) */
+  spendDip?: { until: number; pct: number };
+  /** 這局日報答對幾次 */
+  quizRight?: number;
   verdict?: Verdict;
   campaign?: Campaign;
   taste: { reward: string; hated: string };
@@ -205,7 +220,7 @@ export interface State {
   /** 這局的難忘時刻(最多 40 筆,依重要程度保留) */
   moments?: Moment[];
   /** 這局結算的經驗(結束時寫入一次) */
-  award?: { personaLines?: string[]; firstCard?: boolean; xp: number; lines: string[]; fromXp: number; toXp: number; sp: number; spLines: string[] };
+  award?: { credits?: number; curseMult?: number; personaLines?: string[]; firstCard?: boolean; xp: number; lines: string[]; fromXp: number; toXp: number; sp: number; spLines: string[] };
 }
 
 /** 這局值得回顧的時刻:結局畫面會挑最重的幾筆列出來 */

@@ -1,6 +1,7 @@
 import { sanitizeSkills, skillById } from './skills';
 import { storageKey } from './storage';
 import { decodeCard } from './colleague';
+import { ALL_UNLOCK, DEFAULT_UNLOCK, SHOP, curseById, roleById } from './cards';
 import { sanitizePersona, type PersonaPoints } from './persona';
 
 /** 跨局的職級與技能(存在玩家自己的瀏覽器) */
@@ -21,6 +22,12 @@ export interface Profile {
   /** 收到的同事卡代碼(最多 5 張)與這局要帶的那一張(-1 = 不帶) */
   colleagues?: string[];
   colleagueSel?: number;
+  /** 資歷(每局結算得到,在檔案室花掉)、已解鎖的項目、選的職位 */
+  credits?: number;
+  unlock?: string[];
+  role?: string;
+  /** 下一局要帶的挑戰(沒選就是空的) */
+  curse?: string;
 }
 
 export interface LevelDef {
@@ -53,11 +60,31 @@ export function loadProfile(): Profile {
       return {
         v: 1, xp, runs: n(p.runs, 0),
         sp: n(p.sp, (levelFor(xp).lv - 1) * SP_PER_LEVEL),
-        skills: sanitizeSkills(list(p.skills)), ach: list(p.ach), seen: sanitizeSeen(p.seen), persona: sanitizePersona(p.persona), ...sanitizeColleagues(p.colleagues, p.colleagueSel),
+        skills: sanitizeSkills(list(p.skills)), ach: list(p.ach), seen: sanitizeSeen(p.seen), persona: sanitizePersona(p.persona), ...sanitizeColleagues(p.colleagues, p.colleagueSel), ...sanitizeMeta(p.credits, p.unlock, p.role, p.curse),
       };
     }
   } catch { /* 讀不到就當新玩家 */ }
-  return { v: 1, xp: 0, runs: 0, sp: 0, skills: [], ach: [] };
+  return { v: 1, xp: 0, runs: 0, sp: 0, skills: [], ach: [], credits: 0, unlock: [...DEFAULT_UNLOCK], role: 'intern' };
+}
+
+/** 讀檔時逐項檢查:資歷要是合理的數字,解鎖清單只留認得的項目並補上預設,職位要是已解鎖的 */
+function sanitizeMeta(credits: unknown, unlock: unknown, role: unknown, curse?: unknown): { credits: number; unlock: string[]; role: string; curse?: string } {
+  const c = typeof credits === 'number' && Number.isFinite(credits) ? Math.min(1e7, Math.max(0, Math.floor(credits))) : 0;
+  const u = Array.isArray(unlock) ? (unlock as unknown[]).filter((x): x is string => typeof x === 'string' && ALL_UNLOCK.includes(x)) : [];
+  const all = [...new Set([...DEFAULT_UNLOCK, ...u])];
+  const r = typeof role === 'string' && roleById(role) && all.includes(role) ? role : 'intern';
+  return { credits: c, unlock: all, role: r, curse: typeof curse === 'string' && curseById(curse) ? curse : undefined };
+}
+
+/** 在檔案室買一項:資歷夠、還沒解鎖才成立。回傳新的檔案或錯誤訊息 */
+export function buyItem(p: Profile, id: string): { ok: true; profile: Profile } | { ok: false; msg: string } {
+  const item = SHOP.find((x) => x.id === id);
+  if (!item) return { ok: false, msg: '沒有這項' };
+  const unlock = p.unlock ?? [...DEFAULT_UNLOCK];
+  if (unlock.includes(id)) return { ok: false, msg: '已經解鎖' };
+  const credits = p.credits ?? 0;
+  if (credits < item.cost) return { ok: false, msg: `資歷不足(還差 ${item.cost - credits})` };
+  return { ok: true, profile: { ...p, credits: credits - item.cost, unlock: [...unlock, id] } };
 }
 
 export const SP_PER_LEVEL = 2;

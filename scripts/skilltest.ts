@@ -85,14 +85,11 @@ const rate = (trials: number, run: (seed: number, withSkill: boolean) => boolean
   return n / trials;
 };
 
-// time_mgmt:每天多 1 點(開局、隔天、存檔讀回後都要有)
+// time_mgmt:抽策略卡時多一張候選
 {
   const a = mk([]); const b = mk(['auto_report', 'risk_ctrl', 'time_mgmt']);
-  ok(b.maxAp === a.maxAp + 1 && b.ap === a.ap + 1, `時間管理沒有多 1 點:${a.maxAp}→${b.maxAp}`);
-  endDay(b);
-  ok(b.ap === b.maxAp && b.maxAp === a.maxAp + 1, '隔天沒有補滿到多 1 點');
-  const hard = newGame('story', 'hard', 5, 5, ['time_mgmt']);
-  ok(hard.maxAp === DIFFS.hard.maxAp + 1, '困難難度加上時間管理的點數不對');
+  ok(a.cardPick?.length === 3 && b.cardPick?.length === 4, `時間管理應多一張候選:${a.cardPick?.length}→${b.cardPick?.length}`);
+  ok(b.maxAp === a.maxAp, '時間管理不該再加行動點數');
 }
 
 // auto_report:認真填日報不花點數,答題也不花

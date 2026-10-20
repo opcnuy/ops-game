@@ -42,7 +42,7 @@ function rate(level: number): number {
 }
 const r0 = rate(0), r3 = rate(3);
 console.log(`快速做法成功率:沒練過 ${r0.toFixed(2)} → Lv3 ${r3.toFixed(2)}`);
-ok(r3 - r0 > 0.08 && r3 - r0 < 0.2, `Lv3 加成幅度不在預期內:${(r3 - r0).toFixed(2)}`);
+ok(Math.abs(r3 - r0) < 0.04, `風格熟練度不該再影響成功率:${(r3 - r0).toFixed(2)}`);
 
 /* ---------- 同事卡 ---------- */
 const pts = { rigor: 30, open: 9, fast: 3 };

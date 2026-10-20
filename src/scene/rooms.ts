@@ -186,7 +186,7 @@ function paintPantry(ctx: Ctx, L: SceneLayout, mate?: Style): void {
 
 const roomCache = new Map<string, HTMLCanvasElement>();
 
-export function renderRoom(canvas: HTMLCanvasElement, L: SceneLayout, room: Room, timeFrac: number, crowd = false, mate?: Style): void {
+export function renderRoom(canvas: HTMLCanvasElement, L: SceneLayout, room: Room, timeFrac: number, crowd = false, mate?: Style, frame = 0): void {
   if (canvas.width !== L.W || canvas.height !== L.H) {
     canvas.width = L.W;
     canvas.height = L.H;
@@ -194,7 +194,7 @@ export function renderRoom(canvas: HTMLCanvasElement, L: SceneLayout, room: Room
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   const stage = stageFor(timeFrac);
-  const key = `${L.W}x${L.H}:${room}:${stage}:${crowd ? 'c' : ''}:${mate ?? ''}`;
+  const key = `${L.split ? 's' : ''}${L.W}x${L.H}:${room}:${stage}:${crowd ? 'c' : ''}:${mate ?? ''}`;
   let bg = roomCache.get(key);
   if (!bg) {
     bg = document.createElement('canvas');
@@ -213,5 +213,47 @@ export function renderRoom(canvas: HTMLCanvasElement, L: SceneLayout, room: Room
     roomCache.set(key, bg);
   }
   ctx.drawImage(bg, 0, 0);
+  paintRoomLive(ctx, L, room, crowd, frame);
   void clamp;
+}
+
+/** 房間裡會動的小地方:窗外的雲、視訊的錄影燈與簡報圖表、咖啡機的蒸氣 */
+function paintRoomLive(ctx: Ctx, L: SceneLayout, room: Room, crowd: boolean, f: number): void {
+  const { W } = L;
+  const rh = L.dlg.y;
+  if (room === 'boss') {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(W - 50, 10, 40, 15);
+    ctx.clip();
+    for (let k = 0; k < 2; k++) {
+      const cx = W - 50 + (((f * 0.5 + k * 24) % 58) - 10);
+      rect(ctx, cx, 12 + k * 5, 9, 2, 'rgba(255,255,255,0.9)');
+      rect(ctx, cx + 2, 11 + k * 5, 5, 1, 'rgba(255,255,255,0.9)');
+    }
+    ctx.restore();
+    // 辦公桌上的小燈:偶爾閃一下,像在收信
+    if (f % 8 < 2) rect(ctx, 16, rh - 31, 2, 1, '#ffd978');
+  } else if (room === 'meeting') {
+    const tx = W - 54;
+    if (crowd) {
+      rect(ctx, tx + 3, 19, 40, 22, '#2d5b8a');
+      const base = [6, 12, 18, 10];
+      const cols = ['#e8785a', '#4cd4a0', '#ffe27a', '#9ab8e8'];
+      base.forEach((h, i) => {
+        const hh = Math.max(3, h + Math.round(Math.sin((f + i * 2) / 2) * 3));
+        rect(ctx, tx + 6 + i * 8, 40 - hh, 5, hh, cols[i]);
+      });
+      rect(ctx, tx + 5, 41, 34, 1, '#9ab8e8');
+    } else if (f % 6 < 3) {
+      rect(ctx, tx + 38, 16, 3, 3, '#e03c32');
+    }
+  } else {
+    // 茶水間:咖啡機冒蒸氣、燈號閃爍
+    for (let k = 0; k < 2; k++) {
+      const s1 = (f + k * 3) % 6;
+      rect(ctx, 17 + k * 4 + (s1 > 2 ? 1 : 0), rh - 50 - (s1 % 3), 1, 2, 'rgba(255,255,255,0.8)');
+    }
+    if (f % 4 < 2) rect(ctx, 24, rh - 31, 2, 2, '#ff6a5a');
+  }
 }

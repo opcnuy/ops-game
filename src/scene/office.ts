@@ -23,6 +23,8 @@ export interface SceneLayout {
   dlg: Rect;
   /** 桌上馬克杯的位置(畫面夠寬才有),用來疊冒煙動畫 */
   mug: { x: number; y: number } | null;
+  /** 分割版面(場景獨立一塊):沒有疊在螢幕上的介面,畫面完整呈現 */
+  split?: boolean;
 }
 
 export const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -33,7 +35,7 @@ export function computeLayout(vw: number, vh: number): SceneLayout {
   const H = Math.ceil(vh / S);
   // 橫向(寬大於高)時,牆面與桌面讓出空間給螢幕,畫面才不會擠
   const landscape = W > H;
-  const topH = Math.round(H * (landscape ? 0.2 : 0.26));
+  const topH = Math.round(H * (landscape ? 0.2 : 0.22));
   const deskY = H - Math.round(H * (landscape ? 0.13 : 0.15));
   const mW = Math.min(W - 6, landscape ? 190 : 150);
   const mon: Rect = { x: Math.floor((W - mW) / 2), y: topH, w: mW, h: deskY - topH + 3 };
@@ -49,6 +51,26 @@ export function computeLayout(vw: number, vh: number): SceneLayout {
   const dlg: Rect = { x: mon.x, y: dlgY, w: mon.w, h: H - dlgY - 6 };
   const mug = W - (mon.x + mon.w) >= 22 ? { x: mon.x + mon.w + 6, y: deskY - 7 } : null;
   return { S, W, H, topH, deskY, mon, scr, win, clock, leftW, rightW, dlg, mug };
+}
+
+/** 分割版面:場景自己占一塊(pw × ph 像素),整張都是場景,介面不疊在上面 */
+export function computeSplitLayout(pw: number, ph: number): SceneLayout {
+  const S = clamp(Math.floor(Math.min(pw / 118, ph / 84)), 2, 6);
+  const W = Math.floor(pw / S);
+  const H = Math.floor(ph / S);
+  const deskY = Math.round(H * (H > W * 1.1 ? 0.52 : 0.68));
+  const mw = Math.min(96, Math.round(W * 0.46));
+  const mh = clamp(Math.round(mw * 0.6), 30, deskY - 16);
+  const mx = clamp(Math.round(W * 0.58 - mw / 2), 4, W - mw - 4);
+  const mon: Rect = { x: mx, y: deskY - mh + 3, w: mw, h: mh };
+  const scr: Rect = { x: mon.x + 4, y: mon.y + 4, w: mon.w - 8, h: mon.h - 4 - 8 - 3 };
+  const tall = H > W * 1.1;
+  const winH = tall ? Math.min(44, Math.max(14, mon.y - 18)) : Math.max(14, mon.y - 18);
+  const win: Rect = { x: 7, y: tall ? Math.max(7, mon.y - 10 - winH) : 7, w: Math.min(112, Math.round(W * 0.38)), h: winH };
+  const r = 8;
+  const clock = { cx: W - 14, cy: tall ? win.y + 8 : 14, r };
+  const dlgY = Math.round(H * 0.8);
+  return { S, W, H, topH: mon.y, deskY, mon, scr, win, clock, leftW: 30, rightW: 30, dlg: { x: 0, y: dlgY, w: W, h: H - dlgY }, mug: null, split: true };
 }
 
 /* ---------- 色盤 ---------- */
@@ -190,13 +212,16 @@ function paintBackground(ctx: Ctx, L: SceneLayout, st: Stage, mate?: Style): voi
   for (const [dx, dy] of [[0, -(c.r - 1)], [0, c.r - 1], [-(c.r - 1), 0], [c.r - 1, 0]]) rect(ctx, c.cx + dx, c.cy + dy, 1, 1, '#2a2f3a');
 
   // 兩側的盆栽(畫面夠寬才有)
-  if (mon.x >= 14) {
+  if (L.split) {
+    drawPlant(ctx, 3, deskY, true);
+    if (W - (mon.x + mon.w) >= 20) drawPlant(ctx, W - 13, deskY, false);
+  } else if (mon.x >= 14) {
     drawPlant(ctx, mon.x - 12, deskY, true);
     drawPlant(ctx, mon.x + mon.w + 4, deskY, true);
   }
 
   // 隔壁座位的同事:從螢幕後面探出頭來(牆面右欄有空位才畫,避開時鐘)
-  if (mate) {
+  if (mate && !L.split) {
     const room = topH - 2 - (L.clock.cy + L.clock.r + 3);
     if (room >= 19) drawMate(ctx, mon.x + mon.w - Math.floor(L.rightW / 2) - 2, topH + 1, mate, 1);
   }
@@ -206,6 +231,31 @@ function paintBackground(ctx: Ctx, L: SceneLayout, st: Stage, mate?: Style): voi
   rect(ctx, 0, deskY, W, 3, st.desk[0]);
   rect(ctx, 0, deskY + 3, W, 1, st.desk[2]);
   for (let y = deskY + 9; y < H; y += 6) rect(ctx, 0, y, W, 1, st.desk[2]);
+
+  // 桌上的小物件(分割版面):鍵盤、滑鼠、文件堆、檯燈、手機
+  if (L.split) {
+    const ky = deskY + 5;
+    rect(ctx, mon.x + 6, ky, Math.max(16, Math.round(mon.w * 0.58)), 3, '#cfd3da');
+    rect(ctx, mon.x + 6, ky + 3, Math.max(16, Math.round(mon.w * 0.58)), 1, '#9aa1ad');
+    for (let kx = mon.x + 8; kx < mon.x + 6 + Math.round(mon.w * 0.58) - 2; kx += 3) rect(ctx, kx, ky + 1, 1, 1, '#8d95a3');
+    rect(ctx, mon.x + 10 + Math.round(mon.w * 0.58), ky, 3, 4, '#cfd3da');
+    const px = Math.max(14, mon.x - 34);
+    if (mon.x >= 30) {
+      rect(ctx, px, deskY - 3, 13, 4, '#f4f1ea');
+      rect(ctx, px + 1, deskY - 6, 12, 4, '#e7e2d6');
+      rect(ctx, px + 2, deskY - 8, 11, 3, '#f4f1ea');
+      rect(ctx, px + 4, deskY - 7, 5, 1, '#9aa3ad');
+      rect(ctx, px + 15, deskY - 2, 6, 3, '#2a2f3a');
+      rect(ctx, px + 16, deskY - 3, 4, 1, '#4a5368');
+    }
+    const lx = Math.max(10, mon.x - 14);
+    if (mon.x >= 24) {
+      rect(ctx, lx, deskY - 1, 6, 2, '#2a2f3a');
+      rect(ctx, lx + 2, deskY - 12, 1, 11, '#2a2f3a');
+      rect(ctx, lx + 2, deskY - 13, 6, 1, '#2a2f3a');
+      rect(ctx, lx + 6, deskY - 12, 4, 3, '#ffd978');
+    }
+  }
 
   // 螢幕外殼
   rect(ctx, mon.x, mon.y, mon.w, mon.h, '#2a2f3a');
@@ -217,11 +267,11 @@ function paintBackground(ctx: Ctx, L: SceneLayout, st: Stage, mate?: Style): voi
   rect(ctx, mon.x + mon.w - 8, scr.y + scr.h + 4, 2, 1, st.lit ? '#ffb347' : '#4cd4a0');
   rect(ctx, mon.x + Math.floor(mon.w / 2) - 3, scr.y + scr.h + 4, 6, 1, '#4a5368');
   // 底座
-  rect(ctx, mon.x + Math.floor(mon.w / 2) - 14, deskY + 3, 28, 2, '#1d2230');
+  rect(ctx, mon.x + Math.floor(mon.w / 2) - Math.min(14, Math.floor(mon.w / 3)), deskY + 3, Math.min(28, Math.floor(mon.w * 0.6)), 2, '#1d2230');
 
   // 螢幕兩側的桌面小物件(空間夠才畫)
   const rightRoom = W - (mon.x + mon.w);
-  if (rightRoom >= 22) {
+  if (rightRoom >= 22 && !L.split) {
     // 咖啡杯
     const mx = mon.x + mon.w + 6;
     rect(ctx, mx, deskY - 7, 7, 7, '#f4f1ea');
@@ -237,7 +287,9 @@ function paintBackground(ctx: Ctx, L: SceneLayout, st: Stage, mate?: Style): voi
 const bgCache = new Map<string, HTMLCanvasElement>();
 
 /** 畫整個場景。timeFrac:0 = 一天開始,1 = 一天結束 */
-export function renderOffice(canvas: HTMLCanvasElement, L: SceneLayout, timeFrac: number, mate?: Style): void {
+export interface OfficeExtra { ap: number; maxAp: number; series: number[]; frame?: number }
+
+export function renderOffice(canvas: HTMLCanvasElement, L: SceneLayout, timeFrac: number, mate?: Style, extra?: OfficeExtra): void {
   if (canvas.width !== L.W || canvas.height !== L.H) {
     canvas.width = L.W;
     canvas.height = L.H;
@@ -245,7 +297,7 @@ export function renderOffice(canvas: HTMLCanvasElement, L: SceneLayout, timeFrac
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   const stage = stageFor(timeFrac);
-  const key = `${L.W}x${L.H}:${stage}:${mate ?? ''}`;
+  const key = `${L.split ? 's' : ''}${L.W}x${L.H}:${stage}:${mate ?? ''}`;
   let bg = bgCache.get(key);
   if (!bg) {
     bg = document.createElement('canvas');
@@ -264,6 +316,69 @@ export function renderOffice(canvas: HTMLCanvasElement, L: SceneLayout, timeFrac
   const hAng = (((hours % 12) / 12) * 2 * Math.PI) - Math.PI / 2;
   line(ctx, c.cx, c.cy, c.cx + Math.round(Math.cos(mAng) * (c.r - 2)), c.cy + Math.round(Math.sin(mAng) * (c.r - 2)), '#2a2f3a');
   line(ctx, c.cx, c.cy, c.cx + Math.round(Math.cos(hAng) * (c.r - 4)), c.cy + Math.round(Math.sin(hAng) * (c.r - 4)), '#c0392b');
+  if (L.split && extra) paintLive(ctx, L, extra, mate);
+}
+
+/** 分割版面才有的即時內容:螢幕上的人數走勢、飄過窗外的雲、同事的小動作、桌前的咖啡杯(剩幾點行動點數)與蒸氣 */
+function paintLive(ctx: Ctx, L: SceneLayout, ex: OfficeExtra, mate?: Style): void {
+  const { scr, deskY, W, win, mon } = L;
+  const f = ex.frame ?? 0;
+  // 雲:在天空最上面一條緩慢飄過
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(win.x, win.y, win.w, Math.max(4, Math.ceil(win.h / 3)));
+  ctx.clip();
+  for (let k = 0; k < 2; k++) {
+    const cx = win.x + (((f * 0.6 + k * (win.w / 2 + 6)) % (win.w + 20)) - 10);
+    const cy = win.y + 2 + k * 4;
+    rect(ctx, cx, cy, 9, 2, 'rgba(255,255,255,0.9)');
+    rect(ctx, cx + 2, cy - 1, 5, 1, 'rgba(255,255,255,0.9)');
+  }
+  ctx.restore();
+  // 走勢圖
+  const pts = ex.series.slice(-12);
+  if (pts.length >= 2) {
+    const lo = Math.min(...pts), hi = Math.max(...pts);
+    const span = Math.max(1, hi - lo);
+    const gx = scr.x + 3, gw = scr.w - 6, gy = scr.y + 3, gh = scr.h - 6;
+    for (let i = 0; i < 3; i++) rect(ctx, gx, gy + Math.round((gh * i) / 2), gw, 1, '#1f3345');
+    let px = 0, py = 0;
+    pts.forEach((v, i) => {
+      const x = gx + Math.round((gw * i) / (pts.length - 1));
+      const y = gy + gh - Math.round(((v - lo) / span) * gh);
+      if (i) line(ctx, px, py, x, y, '#4cd4a0');
+      px = x; py = y;
+    });
+    if (f % 4 < 3) rect(ctx, px - 1, py - 1, 3, 3, '#ffe27a');
+  }
+  // 同事:在螢幕旁敲鍵盤(上下輕輕晃),腳藏在桌面後面
+  if (mate) {
+    const right = W - (mon.x + mon.w) >= 20;
+    const mx = right ? mon.x + mon.w + 10 : Math.max(8, mon.x - 11);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, W, deskY + 3);
+    ctx.clip();
+    drawMate(ctx, mx, deskY + 4 + (f % 4 < 2 ? 0 : 1), mate, 1);
+    ctx.restore();
+  }
+  // 咖啡杯
+  const n = Math.max(1, ex.maxAp);
+  const gap = 10;
+  const x0 = W - n * gap - 2;
+  const y = deskY + 11;
+  for (let i = 0; i < n; i++) {
+    const x = x0 + i * gap;
+    const full = i < ex.ap;
+    rect(ctx, x, y, 7, 7, full ? '#f4f1ea' : '#8d6a45');
+    rect(ctx, x + 1, y + 1, 5, 2, full ? '#5a3a22' : '#6f5035');
+    rect(ctx, x + 7, y + 2, 2, 3, full ? '#f4f1ea' : '#8d6a45');
+    if (full) {
+      const s1 = (f + i) % 6, s2 = (f + i + 3) % 6;
+      rect(ctx, x + 2 + (s1 > 2 ? 1 : 0), y - 2 - (s1 % 3), 1, 2, 'rgba(255,255,255,0.85)');
+      rect(ctx, x + 4 - (s2 > 2 ? 1 : 0), y - 3 - (s2 % 3), 1, 2, 'rgba(255,255,255,0.6)');
+    }
+  }
 }
 
 /* ---------- 小圖示(UI 用):文字描述的像素圖轉成圖片網址 ---------- */

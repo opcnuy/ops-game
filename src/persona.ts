@@ -9,8 +9,6 @@ export const STYLES: Style[] = ['open', 'private', 'quiet', 'generous', 'rigor',
 export const PERSONA_STEPS = [8, 24, 48];
 /** 每局每種風格最多算幾點,避免一局猛按同一種就練滿 */
 export const PERSONA_RUN_CAP = 12;
-/** 每級讓該做法有不確定性的結果,成功率多 4% */
-export const PERSONA_BOOST = 0.04;
 
 export const PERSONA_INFO: Record<Style, { name: string; titles: [string, string, string]; blurb: string }> = {
   open: { name: '公開透明', titles: ['愛說明的人', '透明派', '公開透明的代言人'], blurb: '凡事攤開來講,玩家看得到你在做什麼。' },

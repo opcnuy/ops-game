@@ -1,4 +1,4 @@
-import { newGame, chooseOption, pickScout, styleFit, planCampaign, doAction, endDay, goalMet, EVENTS, eventOptions, optionCost } from '../src/engine';
+import { pickCard, newGame, chooseOption, pickScout, styleFit, planCampaign, doAction, endDay, goalMet, EVENTS, eventOptions, optionCost } from '../src/engine';
 import { scoutCard } from '../src/scout';
 import type { Difficulty, State } from '../src/types';
 
@@ -7,9 +7,10 @@ declare const process: { env: Record<string, string | undefined> };
 // localStorage 在 Node 不存在,引擎的存檔函式只在瀏覽器呼叫,這裡不用處理
 
 function play(strategy: 'random' | 'careful' | 'lazy', diff: Difficulty, seed: number, level = 5, skills: string[] = []): State {
-  const s = newGame('story', diff, seed, level, skills);
+  const s = newGame('story', diff, seed, level, skills, {}, {}, undefined, undefined, process.env.ROLE ?? 'intern', process.env.CURSE || undefined);
   let guard = 0;
   while (!s.over && guard++ < 100) {
+    while (s.cardPick) pickCard(s, process.env.CARD && s.cardPick.includes(process.env.CARD) ? process.env.CARD : s.cardPick[Math.floor(Math.random() * s.cardPick.length)]);
     if (strategy !== 'lazy') {
       if (!s.campaign || s.campaign.phase === 'done') {
         if (s.day >= 2 && s.ap >= 3) {

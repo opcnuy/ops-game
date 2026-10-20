@@ -1,12 +1,13 @@
 import { storageKey } from './storage';
 import { sanitizeSkills } from './skills';
-import { PERSONA_BOOST, STYLES, sanitizePersona } from './persona';
+import { STYLES, sanitizePersona } from './persona';
 import eventsData from './content/events.json';
 import campaignData from './content/campaigns.json';
 import variantData from './content/variants.json';
 import optLabelData from './content/optlabels.json';
 import extraData from './content/extraOptions.json';
 import endingsData from './content/endings.json';
+import { ALL_UNLOCK, MAX_SLOTS, STRATEGIES, curseById, roleById, strategyById, xpNeed } from './cards';
 import { BUFFS, SCOUT_CARDS, scoutCard, type BuffId, type ScoutCard } from './scout';
 import { BOSS_TRAITS, COMMUNITY_TRAITS, MOOD_CLUES, MOOD_FLAVOR, MOOD_LEVELS, type BossTrait, type CommunityTrait, type Mood } from './traits';
 
@@ -229,7 +230,8 @@ export const find = <T extends { id: string }>(list: T[], id: string): T =>
 export function spendToday(s: State): number {
   const lift = s.campaign?.phase === 'live' ? s.campaign.lift : 0;
   const trustFactor = 0.8 + s.trust / 250;
-  return (s.players * s.spendRate * trustFactor * (1 + lift)) / 10000;
+  const dip = s.spendDip && s.spendDip.until >= s.day ? 1 - s.spendDip.pct : 1;
+  return (s.players * s.spendRate * trustFactor * (1 + lift) * dip) / 10000;
 }
 
 export function goalValue(s: State, key: GoalKey): number {
@@ -249,13 +251,13 @@ export function weekdayLabel(day: number): string {
 
 /* ---------- 新遊戲 / 存檔 ---------- */
 
-export function newGame(mode: Mode, difficulty: Difficulty = 'normal', seed = Date.now(), level = 1, skills: string[] = [], pastSeen: Record<string, number> = {}, persona: Partial<Record<Style, number>> = {}, colleague?: { style: Style; level: number; title: string }): State {
+export function newGame(mode: Mode, difficulty: Difficulty = 'normal', seed = Date.now(), level = 1, skills: string[] = [], pastSeen: Record<string, number> = {}, persona: Partial<Record<Style, number>> = {}, colleague?: { style: Style; level: number; title: string }, unlock: string[] = ALL_UNLOCK, role = 'intern', curse?: string): State {
   const cfg = DIFFS[difficulty];
-  const apBonus = skills.includes('time_mgmt') ? 1 : 0;
   const s: State = {
-    v: 1, mode, difficulty, level, skills: [...skills], persona: { ...persona }, colleague: colleague ? { ...colleague } : undefined, ach: [], goals: cfg.goals.map((g) => ({ ...g })), goalRound: 0, maxAp: cfg.maxAp + apBonus,
-    rng: seed | 0, day: 1, ap: cfg.maxAp + apBonus,
-    players: 12000, retention: 36, trust: cfg.trust, boss: cfg.boss, spendRate: 38,
+    v: 1, mode, difficulty, level, skills: [...skills], persona: { ...persona }, colleague: colleague ? { ...colleague } : undefined, ach: [], goals: cfg.goals.map((g) => ({ ...g })), goalRound: 0, maxAp: cfg.maxAp - (curse === 'tight' ? 1 : 0),
+    rng: seed | 0, day: 1, ap: cfg.maxAp - (curse === 'tight' ? 1 : 0),
+    players: 12000, retention: 36, trust: cfg.trust - (curse === 'angry' ? 10 : 0), boss: cfg.boss, spendRate: 38,
+    strat: {}, xp: 0, lv: 1, pendingPicks: 0, unlock: [...unlock], role, curse,
     inbox: [], flags: {}, seen: {}, pastSeen: { ...pastSeen }, followUps: [], pendingReports: 0, habits: {},
     taste: { reward: '', hated: '' }, intel: { reward: false, hated: false },
     history: [], feed: [], log: [], uid: 1,
@@ -271,7 +273,84 @@ export function newGame(mode: Mode, difficulty: Difficulty = 'normal', seed = Da
   s.history.push({ day: 0, players: s.players, spend: spendToday(s) });
   if (s.colleague) pushLog(s, 1, `👥 這局和你搭檔的同事:${s.colleague.title}。`);
   spawnDay(s);
+  const start = roleById(role)?.start;
+  if (start) { s.strat = { [start]: 1 }; onGain(s, start, 1); }
+  if (role === 'secretary') revealIntel(s, 'boss');
+  s.pendingPicks = 1;
+  drawPick(s);
   return s;
+}
+
+/* ---------- 策略:經驗、升級、三選一 ---------- */
+
+export const stratLv = (s: State, id: string): number => s.strat?.[id] ?? 0;
+
+/** 得到經驗;夠了就升級,升級會排隊等玩家選策略。回傳升了幾級 */
+export function gainXp(s: State, n: number): number {
+  s.xp = (s.xp ?? 0) + Math.round(n * (1 + (s.role === 'intern' ? 0.1 : 0) + 0.15 * stratLv(s, 'tutor') + (stratLv(s, 'evo_mentor') ? 0.5 : 0)));
+  let up = 0;
+  for (;;) {
+    const lv = s.lv ?? 1;
+    if ((s.xp ?? 0) < xpNeed(lv)) break;
+    s.xp = (s.xp ?? 0) - xpNeed(lv);
+    s.lv = lv + 1;
+    s.pendingPicks = (s.pendingPicks ?? 0) + 1;
+    up++;
+  }
+  if (up) drawPick(s);
+  return up;
+}
+
+/** 抽候選:進化優先,其次是已有可升級的,再來是新的(槽位未滿);有「時間管理」多一張 */
+function drawPick(s: State): void {
+  if (s.cardPick || s.over || (s.pendingPicks ?? 0) <= 0) return;
+  const owned = (id: string): number => stratLv(s, id);
+  const base = STRATEGIES.filter((c) => !c.evolve);
+  const slots = base.filter((c) => owned(c.id) > 0).length;
+  const open = (id: string): boolean => (s.unlock ?? ALL_UNLOCK).includes(id);
+  const evo = STRATEGIES.filter((c) => c.evolve && open(c.id) && owned(c.id) === 0 && c.evolve.from.every(([id, lv]) => owned(id) >= lv));
+  const pool: { id: string; w: number }[] = [];
+  for (const c of base) {
+    if (owned(c.id) > 0 && owned(c.id) < c.max) pool.push({ id: c.id, w: 3 });
+    else if (owned(c.id) === 0 && slots < MAX_SLOTS && open(c.id)) pool.push({ id: c.id, w: 2 });
+  }
+  const want = 3 + (hasSkill(s, 'time_mgmt') ? 1 : 0);
+  const picks: string[] = evo.slice(0, 1).map((c) => c.id);
+  while (picks.length < want && pool.length) {
+    let r = rand(s) * pool.reduce((a, c) => a + c.w, 0);
+    let i = 0;
+    for (; i < pool.length - 1; i++) { r -= pool[i].w; if (r <= 0) break; }
+    picks.push(pool.splice(i, 1)[0].id);
+  }
+  if (!picks.length) {
+    s.pendingPicks = (s.pendingPicks ?? 1) - 1;
+    applyEffects(s, { trust: 2 });
+    pushFeed(s, '⭐ 策略都練滿了,玩家信任 +2。');
+    return;
+  }
+  s.cardPick = picks;
+}
+
+/** 得到或升級某個策略時,立刻生效的部分(行動點數、摸清性格) */
+function onGain(s: State, id: string, lv: number): string {
+  if ((id === 'all_hands' && (lv === 1 || lv === 4)) || id === 'evo_iron') { s.maxAp++; s.ap++; }
+  if (id === 'insight' && lv === 1) return ' ' + revealIntel(s, 'boss');
+  if (id === 'insight' && lv === 2) return ' ' + revealIntel(s, 'community');
+  return '';
+}
+
+export function pickCard(s: State, id: string): string | null {
+  if (!s.cardPick?.includes(id)) return '沒有這張卡';
+  const c = strategyById(id);
+  if (!c) return '沒有這張卡';
+  const lv = Math.min(c.max, stratLv(s, id) + 1);
+  (s.strat ??= {})[id] = lv;
+  s.cardPick = undefined;
+  s.pendingPicks = Math.max(0, (s.pendingPicks ?? 1) - 1);
+  const note = onGain(s, id, lv);
+  pushFeed(s, `${c.icon} ${c.name} Lv${lv}:${c.good(lv)};${c.bad(lv)}${note}`);
+  drawPick(s);
+  return null;
 }
 
 export function save(s: State): void {
@@ -329,6 +408,21 @@ function sanitizeState(raw: unknown): State | null {
   s.moments = (Array.isArray(r.moments) ? (r.moments as Moment[]) : []).slice(0, 40)
     .map((m) => ({ day: num(m?.day, 0, 1e5, 0), icon: cleanText(m?.icon, 4), text: cleanText(m?.text, 160), w: num(m?.w, 0, 100, 0) }));
   s.styleTotals = rec(r.styleTotals);
+  const sd = r.spendDip as { until?: unknown; pct?: unknown } | undefined;
+  s.spendDip = sd && typeof sd === 'object' ? { until: num(sd.until, 0, 1e5, 0), pct: num(sd.pct, 0, 0.5, 0) } : undefined;
+  s.quizRight = num(r.quizRight, 0, 1e4, 0);
+  const st: Record<string, number> = {};
+  if (r.strat && typeof r.strat === 'object') for (const [k, x] of Object.entries(r.strat as object).slice(0, 20)) {
+    const c = strategyById(k);
+    if (c && typeof x === 'number' && Number.isFinite(x)) st[k] = Math.min(c.max, Math.max(1, Math.floor(x)));
+  }
+  s.strat = st;
+  s.unlock = Array.isArray(r.unlock) ? (r.unlock as unknown[]).filter((x): x is string => typeof x === 'string' && ALL_UNLOCK.includes(x)).slice(0, 40) : [...ALL_UNLOCK];
+  s.role = typeof r.role === 'string' && roleById(r.role) ? r.role : 'intern';
+  s.curse = typeof r.curse === 'string' && curseById(r.curse) ? r.curse : undefined;
+  s.xp = num(r.xp, 0, 1e6, 0); s.lv = num(r.lv, 1, 99, 1); s.pendingPicks = num(r.pendingPicks, 0, 20, 0);
+  const cp = Array.isArray(r.cardPick) ? (r.cardPick as unknown[]).filter((x): x is string => typeof x === 'string' && !!strategyById(x)).slice(0, 4) : [];
+  s.cardPick = cp.length ? cp : undefined;
   const col = r.colleague as { style?: unknown; level?: unknown; title?: unknown } | undefined;
   s.colleague = col && typeof col.style === 'string' && (STYLES as string[]).includes(col.style)
     ? { style: col.style as Style, level: num(col.level, 1, 3, 1), title: cleanText(col.title, 30) } : undefined;
@@ -341,7 +435,7 @@ function sanitizeState(raw: unknown): State | null {
       ...(st && typeof st === 'object' ? { style: { name: cleanText(st.name, 40), text: cleanText(st.text, 300) } } : {}) };
   }
   if (s.award) {
-    s.award = { xp: num(s.award.xp, 0, 1e6, 0), lines: strs(s.award.lines), fromXp: num(s.award.fromXp, 0, 1e6, 0),
+    s.award = { credits: num((s.award as { credits?: unknown }).credits, 0, 1e6, 0), xp: num(s.award.xp, 0, 1e6, 0), lines: strs(s.award.lines), fromXp: num(s.award.fromXp, 0, 1e6, 0),
       toXp: num(s.award.toXp, 0, 1e6, 0), sp: num(s.award.sp, 0, 100, 0), spLines: strs(s.award.spLines), personaLines: strs((s.award as { personaLines?: unknown }).personaLines), firstCard: (s.award as { firstCard?: unknown }).firstCard === true };
   }
   if (s.campaign) {
@@ -640,6 +734,7 @@ export const activeBuffs = (s: State): { id: BuffId; left: number }[] =>
   (s.buffs ?? []).filter((b) => b.until >= s.day).map((b) => ({ id: b.id as BuffId, left: b.until - s.day + 1 }));
 
 function addBuff(s: State, id: BuffId, days: number): void {
+  if (id !== 'tired' && hasSkill(s, 'fan_base')) days += 1;
   s.buffs = [...(s.buffs ?? []).filter((b) => b.id !== id), { id, until: s.day + days - 1 }];
 }
 
@@ -647,6 +742,18 @@ function addBuff(s: State, id: BuffId, days: number): void {
 function buffEffects(s: State, e: Effects | undefined): Effects | undefined {
   if (!e) return e;
   const out: Effects = { ...e };
+  const tf = stratLv(s, 'trust_first'), bp = stratLv(s, 'boss_pet'), sh = stratLv(s, 'shield');
+  const trustUp = 1 + 0.15 * tf + (stratLv(s, 'evo_fan') ? 0.5 : 0) - 0.08 * bp - 0.05 * sh;
+  const bossUp = 1 + 0.2 * bp - 0.05 * stratLv(s, 'tutor');
+  if ((out.trust ?? 0) > 0) out.trust = Math.ceil((out.trust as number) * Math.max(0.2, trustUp));
+  if ((out.boss ?? 0) > 0) out.boss = Math.ceil((out.boss as number) * bossUp);
+  const cut = Math.max(0.1, 1 - 0.1 * sh) * (stratLv(s, 'evo_mentor') ? 0.7 : 1);
+  if (cut < 1) {
+    if ((out.trust ?? 0) < 0) out.trust = Math.round((out.trust as number) * cut);
+    if ((out.boss ?? 0) < 0) out.boss = Math.round((out.boss as number) * cut);
+  }
+  if (s.curse === 'strict' && (out.boss ?? 0) < 0) out.boss = Math.round((out.boss as number) * 1.5);
+  if (s.role === 'secretary' && (out.boss ?? 0) < 0) out.boss = Math.round((out.boss as number) * 0.8);
   if (buffActive(s, 'trustUp') && (out.trust ?? 0) > 0) out.trust = Math.ceil((out.trust as number) * 1.25);
   if (buffActive(s, 'rapport')) {
     if ((out.trust ?? 0) > 0) out.trust = Math.ceil((out.trust as number) * 1.5);
@@ -686,7 +793,8 @@ export function pickScout(s: State, id: string | null): string | null {
   if (!c) return '沒有這張卡';
   if (s.ap < c.ap) return '行動點數不足';
   s.ap -= c.ap;
-  applyEffects(s, c.effects);
+  const cm = 1 + 0.25 * stratLv(s, 'community');
+  applyEffects(s, cm === 1 || !c.effects ? c.effects : Object.fromEntries(Object.entries(c.effects).map(([k, v]) => [k, Math.round((v as number) * cm * 10) / 10])) as Effects);
   if (c.buff) addBuff(s, c.buff.id, c.buff.days);
   if (c.clearHabit) s.habits[c.clearHabit] = 0;
   if (c.reports) s.pendingReports = Math.max(0, s.pendingReports - c.reports);
@@ -712,7 +820,7 @@ export function pickScout(s: State, id: string | null): string | null {
 }
 
 /** 看過輿情之後,當天與隔天都掌握得到風向 */
-export const pulseActive = (s: State): boolean => s.pulse !== undefined && s.day - s.pulse <= 1;
+export const pulseActive = (s: State): boolean => (s.pulse !== undefined && s.day - s.pulse <= 1) || stratLv(s, 'insight') >= 3;
 /** 看輿情直接加成的事件(客訴、輿情);其他事件掌握風向只會看到氣氛與提示 */
 const isPulseEvent = (ev: GameEvent): boolean => ev.kind === '客訴' || ev.kind === '輿情';
 
@@ -767,7 +875,7 @@ function spawnDay(s: State): void {
   const arrivedToday = s.inbox.filter((i) => i.arrived === s.day && EVENTS[i.eventId].kind !== '插曲').length;
   const base = s.mode === 'story' ? Math.max(0, (ph.key === 'launch' ? 2 : 1) - arrivedToday) : Math.min(4, 1 + Math.floor(s.day / 8));
   const d = DIFFS[s.difficulty];
-  const want = base + (s.day >= d.extraFrom && rand(s) < d.extraChance ? d.extraEvents : 0);
+  const want = base + (s.day >= d.extraFrom && rand(s) < d.extraChance ? d.extraEvents : 0) + (s.curse === 'rush' ? 1 : 0);
   const cap = s.difficulty === 'hard' ? 8 : 7;
   const rank = DIFF_ORDER.indexOf(s.difficulty);
   for (let n = 0; n < want && s.inbox.length < cap; n++) {
@@ -826,12 +934,10 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
   if (hasSkill(s, 'quick_report') && opt.tag === 'quick') boost += 0.2;
   if (hasSkill(s, 'soothe') && (ev.kind === '客訴' || ev.kind === '輿情')) boost += 0.1;
   if (pulseActive(s) && isPulseEvent(ev)) boost += 0.1;
+  if (s.role === 'support' && isPulseEvent(ev)) boost += 0.15;
   const mood = moodOf(item, ev);
   const fit = styleFit(s, ev, item, opt);
   boost += fit.total * 0.06;
-  // 個人風格:用得越多越熟練,這種做法的不確定結果更容易成功
-  const pLv = opt.style ? s.persona?.[opt.style] ?? 0 : 0;
-  boost += pLv * PERSONA_BOOST;
   if (opt.style) { const u = s.styleUse ?? (s.styleUse = {}); u[opt.style] = (u[opt.style] ?? 0) + 1; }
   if (boost && outs.length > 1) outs = boostOutcomes(outs, boost);
   let r = rand(s);
@@ -841,8 +947,6 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
   // 加成只落在這個結果本來就會動到的數值上:跟老闆(或玩家)沒關係的事,不會憑空多出老闆(或信任)的分數
   const main = moodStat(ev);
   const touchesMain = !!out.effects?.[main];
-  // 熟練到 Lv2 以上,做得成的時候老闆或信任多得 1 點
-  if (pLv >= 2 && netOf(out.effects) > 0 && touchesMain) base = addFit(base, main, 1);
   const eff = buffEffects(s, touchesMain ? addFit(base, main, fit.total) : base);
   applyEffects(s, eff);
   if (out.setFlag) s.flags[out.setFlag] = true;
@@ -873,6 +977,7 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
       s.rapport = (s.rapport ?? 0) + 1;
       if (s.rapport >= RAPPORT_NEED) {
         s.rapport = 0;
+        gainAch(s, 'rapport');
         addBuff(s, 'rapport', 3);
         rapportNote += ' 🤝 默契到了!接下來 3 天,好的結果加成 50%。';
         addMoment(s, 8, '🤝', `連續摸中對方的胃口,和對方有了默契。`);
@@ -883,9 +988,10 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
     }
   }
   const net = netOf(eff);
+  const up = gainXp(s, 8 + Math.min(14, impactOf(eff)) + (net > 0 ? 4 : 0));
   const tier: Verdict['tier'] = net >= 5 ? 'great' : net >= 1 ? 'good' : net <= -5 ? 'awful' : net <= -1 ? 'bad' : 'flat';
   s.inbox = s.inbox.filter((i) => i.uid !== uid);
-  const line = `【${eventText(ev, item).title}】${opt.label} → ${out.result}${extra}${effectNote(eff)}${chainNote}${note}${rapportNote}`;
+  const line = `【${eventText(ev, item).title}】${opt.label} → ${out.result}${extra}${effectNote(eff)}${chainNote}${note}${rapportNote}${up ? ` ⭐ 升級!Lv ${s.lv}` : ''}`;
   pushFeed(s, line);
   s.verdict = { tier, line, eff: eff ?? {} };
   return null;
@@ -917,8 +1023,27 @@ function revealIntel(s: State, kind: 'reward' | 'hated' | 'boss' | 'community'):
   return `發現:玩家對「${find(CONTENT.mechanics, s.taste.hated).name}」類活動有點怨言。`;
 }
 
-export function planCost(sel: PlanSel): number {
-  return 2 + find(CONTENT.promos, sel.promo).ap;
+/** 玩法、獎勵、商品、宣傳之間的搭配:選對了有額外加成,上線時才會算進成績 */
+export interface Combo { name: string; desc: string; pairs: [keyof PlanSel, string][]; fun?: number; appeal?: number; desire?: number; reach?: number }
+export const COMBOS: Combo[] = [
+  { name: '日常累積', desc: '天天簽到加上碎片,玩家習慣成自然。', pairs: [['mechanic', 'signin'], ['reward', 'shard']], desire: 8 },
+  { name: '副本掉落', desc: '副本裡打出強化素材,很合理。', pairs: [['mechanic', 'dungeon'], ['reward', 'material']], fun: 8 },
+  { name: '榮耀競賽', desc: '公會競賽配專屬稱號,愛比較的人最買單。', pairs: [['mechanic', 'guild'], ['reward', 'title']], fun: 8, appeal: 8 },
+  { name: '登峰造極', desc: '爬塔的核心玩家想要限定造型。', pairs: [['mechanic', 'tower'], ['reward', 'skin']], appeal: 10 },
+  { name: '天選之人', desc: '抽獎配上十連抽券,期待感拉滿。', pairs: [['mechanic', 'lottery'], ['reward', 'ticket']], fun: 6, appeal: 6 },
+  { name: '造型成套', desc: '拿到限定造型的人,更想買同款禮包。', pairs: [['reward', 'skin'], ['bundle', 'skinpack']], desire: 10 },
+  { name: '老朋友回來', desc: '簽到活動配月卡,回流的人很容易上手。', pairs: [['mechanic', 'signin'], ['bundle', 'monthly']], desire: 10 },
+  { name: '看戲的人多', desc: '實況主最愛播高難度內容。', pairs: [['promo', 'streamer'], ['mechanic', 'tower']], reach: 8 },
+  { name: '精準召回', desc: '回流信件配公會對抗賽,老玩家一拍即合。', pairs: [['promo', 'mail'], ['mechanic', 'guild']], reach: 8, fun: 4 },
+];
+
+/** 目前選的企劃,碰到了哪些搭配 */
+export function combosFor(sel: PlanSel): Combo[] {
+  return COMBOS.filter((c) => c.pairs.every(([k, id]) => sel[k] === id));
+}
+
+export function planCost(sel: PlanSel, s?: State): number {
+  return 2 + find(CONTENT.promos, sel.promo).ap + (s && stratLv(s, 'campaign_pro') >= 3 ? 1 : 0);
 }
 
 export function planCampaign(s: State, sel: PlanSel): string | null {
@@ -928,7 +1053,7 @@ export function planCampaign(s: State, sel: PlanSel): string | null {
     find(CONTENT.bundles, sel.bundle), find(CONTENT.promos, sel.promo),
   ].some((x) => (x.minLevel ?? 1) > s.level);
   if (locked) return '選項尚未解鎖';
-  const cost = planCost(sel);
+  const cost = planCost(sel, s);
   if (s.ap < cost) return '行動點數不足';
   s.ap -= cost;
   s.campaign = {
@@ -943,7 +1068,8 @@ export function planCampaign(s: State, sel: PlanSel): string | null {
 export type ActionKind = 'polish' | 'check' | 'intel' | 'report' | 'sloppy';
 
 export function doAction(s: State, kind: ActionKind): string | null {
-  const free = kind === 'report' && hasSkill(s, 'auto_report');
+  const free = (kind === 'report' && (hasSkill(s, 'auto_report') || stratLv(s, 'data_driven') > 0))
+    || (kind === 'polish' && s.role === 'planner' && s.campaign?.phase === 'planned' && s.campaign.polish === 0);
   if (kind !== 'sloppy' && !free && s.ap < 1) return '行動點數不足';
   const c = s.campaign;
   if (kind === 'polish') {
@@ -992,14 +1118,20 @@ function launch(s: State, lines: string[]): void {
   const bundle = find(CONTENT.bundles, c.bundle);
   const promo = find(CONTENT.promos, c.promo);
   // 預測模型:成績的隨機起伏減半
-  const noise = () => (rand(s) - 0.5) * 16 * (hasSkill(s, 'forecast') ? 0.5 : 1);
+  const noise = () => (rand(s) - 0.5) * 16 * (hasSkill(s, 'forecast') ? 0.5 : 1) * (s.role === 'analyst' ? 0.5 : 1);
 
   let fun = mech.fun + c.polish * 10 - Math.max(0, mech.need - c.polish) * 9;
   if (mech.id === s.taste.hated) fun -= 22;
   let appeal = reward.appeal + (reward.id === s.taste.reward ? 20 : 0);
   let desire = bundle.desire + (appeal - 50) * 0.3;
   if (bundle.risky && s.trust < 55) desire -= 25;
-  const reach = promo.reach + 10;
+  let reach = promo.reach + 10;
+  const combos = combosFor(c);
+  for (const cb of combos) { fun += cb.fun ?? 0; appeal += cb.appeal ?? 0; desire += cb.desire ?? 0; reach += cb.reach ?? 0; }
+  if (combos.length) {
+    s.flags.comboRun = true;
+    lines.push(`✨ 搭配加成:${combos.map((cb) => `「${cb.name}」`).join('')}。${combos[0].desc}`);
+  }
   fun = clamp(fun + noise(), 5, 100);
   appeal = clamp(appeal + noise(), 5, 100);
   desire = clamp(desire + noise(), 5, 100);
@@ -1007,8 +1139,9 @@ function launch(s: State, lines: string[]): void {
 
   const participation = (reachN / 100) * (0.35 + 0.65 * (fun / 100));
   let lift = 1.1 * participation * (desire / 100) * (0.4 + 0.6 * (appeal / 100));
+  lift *= Math.max(0.3, 1 - 0.06 * stratLv(s, 'trust_first')) * (1 + 0.15 * stratLv(s, 'revenue')) * Math.max(0.5, 1 - 0.04 * stratLv(s, 'lowkey')) * (stratLv(s, 'evo_fan') ? 1.3 : 1) * Math.max(0.5, 1 - 0.03 * stratLv(s, 'frugal')) * (stratLv(s, 'evo_cash') ? 1.4 : 1) * (s.curse === 'cheap' ? 0.8 : 1);
 
-  const bugChance = (0.12 + (c.checked ? 0 : 0.25) + (s.flags.rushedTech ? 0.2 : 0)) * (hasSkill(s, 'risk_ctrl') ? 0.5 : 1);
+  const bugChance = (0.12 + (c.checked ? 0 : 0.25) + (s.flags.rushedTech ? 0.2 : 0)) * (hasSkill(s, 'risk_ctrl') ? 0.5 : 1) * Math.max(0.1, 1 - 0.15 * stratLv(s, 'campaign_pro'));
   c.bugged = rand(s) < bugChance;
   if (c.bugged) {
     lift *= 0.7;
@@ -1021,7 +1154,8 @@ function launch(s: State, lines: string[]): void {
   c.lift = lift;
   c.phase = 'live';
   c.liveDaysLeft = LIVE_DAYS;
-  applyEffects(s, { players: Math.round(participation * 8), retention: (fun - 50) / 12 });
+  const ht = stratLv(s, 'hype_team');
+  applyEffects(s, { players: Math.round(participation * 8 * (1 + 0.25 * ht + (stratLv(s, 'evo_viral') ? 0.5 : 0))), retention: (fun - 50) / 12 - 0.3 * ht });
   lines.push(`🎉 「${mech.name}」活動上線了!預計持續 ${LIVE_DAYS} 天。`);
 }
 
@@ -1062,6 +1196,22 @@ function finishCampaign(s: State, lines: string[]): void {
   verdict += `\n💬 玩家留言:${pickOf(s, c.lift >= CAMPAIGN_TARGET ? QUOTES_HIT : c.lift >= 0.15 ? QUOTES_OK : QUOTES_MISS)}`;
   if (c.polish < mech.need) verdict += `\n另外:時間太趕,細節還有 ${mech.need - c.polish} 次打磨沒做完。`;
   if (c.bugged) verdict += '\n另外:上線時出了問題,拖累了成績。';
+  // 餘波:大賣之後熱度還在;玩家預先買光了,接下來幾天消費會變少;搞砸了,抱怨會延燒
+  const bundle = find(CONTENT.bundles, c.bundle);
+  if (c.lift >= CAMPAIGN_TARGET) {
+    addBuff(s, 'hype', 4);
+    verdict += '\n🔥 餘波:話題還在發酵,接下來 3 天玩家人數每天多一點。';
+    if (s.flags.comboRun) gainAch(s, 'combo');
+  } else if (c.lift < 0.15) {
+    const pool = ['e_gacha_complaint', 'e_refund', 'e_social_meme'].filter((id) => !s.inbox.some((i) => i.eventId === id));
+    if (pool.length) { s.followUps.push({ eventId: pickOf(s, pool), day: s.day + 1 }); verdict += '\n💢 餘波:玩家的失望在論壇發酵,明天會多一件事。'; }
+  }
+  if (bundle.id !== 'none' && c.lift >= 0.15 && !stratLv(s, 'evo_cash')) {
+    const dip = stratLv(s, 'evo_cash') ? 0 : Math.min(0.12, c.lift * 0.2 * (bundle.desire / 100) + 0.02) * Math.max(0, 1 - 0.2 * stratLv(s, 'frugal'));
+    s.spendDip = { until: s.day + 3, pct: Math.round(dip * 100) / 100 };
+    verdict += `\n📉 餘波:想買的人活動期間都買了,接下來 3 天日營收約少 ${Math.round(dip * 100)}%。`;
+  }
+  s.flags.comboRun = false;
   lines.push(verdict);
 }
 
@@ -1077,7 +1227,12 @@ export function endDay(s: State): DaySummary {
     if (it.deadline <= s.day) {
       const ev = EVENTS[it.eventId];
       if (ev.kind === '插曲') return false; // 插曲過期就悄悄消失,沒有懲罰也不記拖延
-      const mult = DIFFS[s.difficulty].ignoreMult;
+      if (hasSkill(s, 'buffer') && !s.flags.bufferUsed && !it.stage && Object.values(ev.ignore.effects).some((v) => (v ?? 0) < 0)) {
+        s.flags.bufferUsed = true;
+        lines.push(`🕰️ 「${ev.title}」逾期了,但你事先留了緩衝,對方沒有追究。(這局只有一次)`);
+        return false;
+      }
+      const mult = stratLv(s, 'evo_iron') ? 0 : DIFFS[s.difficulty].ignoreMult * (1 + 0.2 * stratLv(s, 'all_hands')) * Math.max(0.1, 1 - 0.12 * stratLv(s, 'lowkey'));
       const pen: Effects = {};
       for (const [k, v] of Object.entries(ev.ignore.effects) as [keyof Effects, number][]) pen[k] = v < 0 ? Math.round(v * mult) : v;
       const hurts = Object.values(ev.ignore.effects).some((v) => (v ?? 0) < 0);
@@ -1113,7 +1268,7 @@ export function endDay(s: State): DaySummary {
   // 3. 報表壓力
   s.pendingReports++;
   if (s.day % 5 === 0 && s.pendingReports >= 3) {
-    applyEffects(s, { boss: -8 });
+    applyEffects(s, { boss: -Math.round(8 * (1 + 0.2 * stratLv(s, 'community'))) });
     lines.push(`📋 週報檢查:還有 ${s.pendingReports} 份日報沒填,林總在會議上特別點名。(老闆-8)`);
   } else if (s.pendingReports >= 5) {
     applyEffects(s, { boss: -2 });
@@ -1126,7 +1281,8 @@ export function endDay(s: State): DaySummary {
   // 4. 自然變化
   if (buffActive(s, 'hype')) applyEffects(s, { players: 0.3 });
   s.retention += (38 - s.retention) * 0.05;
-  const growth = (s.retention - 35) * 0.0007 + (s.trust - 50) * 0.0002 + (rand(s) - 0.5) * 0.012;
+  if (stratLv(s, 'revenue') && s.day % 2 === 0) applyEffects(s, { trust: -Math.ceil(stratLv(s, 'revenue') / 2) });
+  const growth = (s.retention - 35) * 0.0007 + (s.trust - 50) * 0.0002 + (rand(s) - 0.5) * 0.012 - stratLv(s, 'data_driven') * 0.0005 - stratLv(s, 'insight') * 0.0004 + (stratLv(s, 'evo_viral') ? 0.003 : 0);
   s.players = Math.max(0, Math.round(s.players * (1 + growth)));
 
   // 4.5 目標檢視
@@ -1145,7 +1301,9 @@ export function endDay(s: State): DaySummary {
   }
 
   // 5. 新的一天
+  if (gainXp(s, 6)) lines.push(`⭐ 升到 Lv ${s.lv}!`);
   if (s.mode === 'endless' && s.day + 1 > 20) gainAch(s, 'endless20');
+  if (s.mode === 'endless' && s.day + 1 > 40) gainAch(s, 'endless40');
   s.day++;
   s.ap = Math.max(1, s.maxAp - (buffActive(s, 'tired') ? 1 : 0));
   s.scout = undefined; // 沒選的報告隔天就過期了
@@ -1181,6 +1339,8 @@ function checkEnding(s: State): void {
     gainAch(s, 'first_win');
     if (s.over.title.includes('優秀')) gainAch(s, 'perfect');
     if (s.difficulty === 'hard') gainAch(s, 'hard_win');
+    if (s.colleague) gainAch(s, 'mate_win');
+    if (s.pendingReports === 0) gainAch(s, 'clean_desk');
   }
 }
 
@@ -1191,6 +1351,7 @@ function reviewGoals(s: State, lines: string[]): void {
   s.goalRound++;
   if (ok) {
     s.reviewsPassed = (s.reviewsPassed ?? 0) + 1;
+    if (s.reviewsPassed >= 3) gainAch(s, 'review3');
     applyEffects(s, { boss: 8, trust: 2 });
     lines.push(`🏆 季度考核通過(${met}/${s.goals.length})!老闆+8 信任+2。下一季目標提高了。`);
     s.goals = s.goals.map((g) => ({
@@ -1246,7 +1407,7 @@ export interface ReportOption {
 export interface ReportQuiz {
   /** 鄰座同事的小動作 */
   aside?: string;
-  kind: 'metric' | 'trend' | 'priority' | 'campaign' | 'tone';
+  kind: 'metric' | 'trend' | 'priority' | 'campaign' | 'tone' | 'goal' | 'habit';
   title: string;
   prompt: string;
   /** 題目附的資料,讓玩家能從數字裡找答案 */
@@ -1290,11 +1451,28 @@ function metricItems(s: State): { items: { name: string; v: number; fact: string
   return { items, clear: mags[0] - mags[1] >= 0.5 };
 }
 
+/** 各目標離達成還有多遠(越小越落後),最落後的與第二落後差距夠大才算有明確答案 */
+function goalGap(s: State): { items: { goal: Goal; ratio: number; fact: string }[]; clear: boolean } {
+  const label: Record<GoalKey, string> = { players: '玩家人數', retention: '留存率', spend: '日營收', trust: '玩家信任', boss: '老闆好感' };
+  const items = s.goals.map((g) => {
+    const v = goalValue(s, g.key);
+    return { goal: g, ratio: v / g.target, fact: `${label[g.key]}:${g.key === 'players' ? Math.round(v).toLocaleString('zh-TW') : v.toFixed(1)} / 目標 ${g.key === 'players' ? Math.round(g.target).toLocaleString('zh-TW') : g.target}` };
+  }).sort((a, b) => a.ratio - b.ratio);
+  return { items, clear: items.length >= 3 && items[1].ratio - items[0].ratio >= 0.03 };
+}
+
+/** 目前累積中的壞習慣,多的在前 */
+function badHabits(s: State): [string, number][] {
+  return Object.entries(s.habits).filter(([k, n]) => n > 0 && HABITS[k] && !HABITS[k].good).sort((a, b) => b[1] - a[1]);
+}
+
 function buildReport(s: State): ReportQuiz {
   const kinds: ReportQuiz['kind'][] = ['trend', 'tone'];
   if (metricItems(s).clear) kinds.push('metric');
   if (s.inbox.length >= 3) kinds.push('priority');
   if (s.campaign && s.campaign.phase !== 'done') kinds.push('campaign');
+  if (goalGap(s).clear) kinds.push('goal');
+  if (badHabits(s).length >= 3) kinds.push('habit');
   const pool = kinds.filter((k) => k !== s.lastReport);
   const kind = pool[Math.floor(rand(s) * pool.length)];
   s.lastReport = kind;
@@ -1339,6 +1517,29 @@ function buildReport(s: State): ReportQuiz {
     };
   }
 
+  if (kind === 'goal') {
+    const { items } = goalGap(s);
+    const picks = items.slice(0, 3);
+    return {
+      kind, title: '目標進度', prompt: '日報要寫「目前最落後、最需要補上」的目標是哪一個?(看目前數字占目標的比例)',
+      facts: picks.map((i) => i.fact),
+      options: shuffle(s, picks).map((i) => i === picks[0]
+        ? { label: `最落後的是「${i.fact.split(':')[0]}」`, good: true, effects: GOOD, result: '抓到落後的那一項,老闆知道你清楚下一步該補哪裡。' }
+        : { label: `最落後的是「${i.fact.split(':')[0]}」`, good: false, result: `其實「${picks[0].fact.split(':')[0]}」離目標最遠。` }),
+    };
+  }
+
+  if (kind === 'habit') {
+    const hs = badHabits(s).slice(0, 3);
+    return {
+      kind, title: '工作檢討', prompt: '日報要反省最近的工作方式,你累積得最多的壞習慣是哪一個?',
+      facts: hs.map(([k, n]) => `${HABITS[k].label}:累積 ${n} 次`),
+      options: shuffle(s, hs).map(([k]) => k === hs[0][0]
+        ? { label: `最需要改的是「${HABITS[k].label}」`, good: true, effects: GOOD, result: '誠實面對累積最多的問題,老闆覺得你有在反省。' }
+        : { label: `最需要改的是「${HABITS[k].label}」`, good: false, result: `其實累積最多的是「${HABITS[hs[0][0]].label}」。` }),
+    };
+  }
+
   if (kind === 'campaign' && s.campaign) {
     const c = s.campaign;
     const m = find(CONTENT.mechanics, c.mechanic);
@@ -1369,13 +1570,20 @@ function buildReport(s: State): ReportQuiz {
 export function submitReport(s: State, quiz: ReportQuiz, idx: number): { ok: boolean; text: string } {
   const opt = quiz.options[idx];
   if (!opt) return { ok: false, text: '沒有這個選項' };
-  const free = hasSkill(s, 'auto_report');
+  const free = hasSkill(s, 'auto_report') || stratLv(s, 'data_driven') > 0;
   if (!free && s.ap < 1) return { ok: false, text: '行動點數不足' };
   if (s.pendingReports <= 0) return { ok: false, text: '沒有待填的日報' };
   if (!free) s.ap -= 1;
   s.pendingReports--;
   applyEffects(s, opt.effects);
+  gainXp(s, opt.good === true ? 8 : 5);
   const note = addHabits(s, opt.habit);
+  if (opt.good === true) {
+    s.quizRight = (s.quizRight ?? 0) + 1;
+    if (s.quizRight >= 5) gainAch(s, 'report_ace');
+    if (hasSkill(s, 'audit_eye')) applyEffects(s, { trust: 1 });
+    if (stratLv(s, 'data_driven')) applyEffects(s, { boss: stratLv(s, 'data_driven') });
+  }
   const tag = opt.good === true ? '✅ 答對了。' : opt.good === false ? '❌ 這次沒答對。' : '';
   const text = `${tag}${opt.result}`;
   pushFeed(s, `日報(${quiz.title}):${text}${effectNote(opt.effects)}${note}`);
