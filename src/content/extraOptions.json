@@ -260,7 +260,7 @@
  "gambles": {
   "老闆": [
    {
-    "label": "當面提出自己的大膽想法",
+    "label": "當面提出自己的想法",
     "ap": 1,
     "style": "fast",
     "gamble": true,
@@ -284,7 +284,7 @@
   ],
   "客訴": [
    {
-    "label": "公開道歉並加碼補償,賭玩家買單",
+    "label": "公開道歉並加碼補償",
     "ap": 1,
     "style": "generous",
     "gamble": true,
@@ -309,7 +309,7 @@
   ],
   "輿情": [
    {
-    "label": "親自下場回文,正面迎戰風向",
+    "label": "親自下場回文,說明立場",
     "ap": 1,
     "style": "hustle",
     "gamble": true,
@@ -334,7 +334,7 @@
   ],
   "技術": [
    {
-    "label": "不等完整排查,直接上線修正",
+    "label": "直接上線修正版本",
     "ap": 1,
     "style": "fast",
     "gamble": true,
@@ -360,7 +360,7 @@
   ],
   "原廠": [
    {
-    "label": "拿活動成績當籌碼,強硬談條件",
+    "label": "拿活動成績當條件談",
     "ap": 1,
     "style": "hustle",
     "gamble": true,
@@ -384,7 +384,7 @@
   ],
   "數據": [
    {
-    "label": "憑經驗直接下結論,不等跑完數據",
+    "label": "依經驗先下結論,再補數據",
     "ap": 1,
     "style": "fast",
     "gamble": true,
