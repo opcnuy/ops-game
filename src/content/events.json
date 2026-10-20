@@ -84,7 +84,7 @@
      {
       "p": 0.45,
       "effects": {
-       "boss": -11
+       "boss": -10
       },
       "result": "會議上有人問起分母,你才發現抓錯期間。",
       "habit": {
@@ -226,7 +226,7 @@
      {
       "p": 0.6,
       "effects": {
-       "boss": -13
+       "boss": -10
       },
       "result": "原廠翻出同期對照圖,語氣變得非常客氣。",
       "habit": {
@@ -386,7 +386,7 @@
      {
       "p": 0.5,
       "effects": {
-       "trust": -13,
+       "trust": -10,
        "retention": -3
       },
       "result": "有人做了統計圖,被轉到別的平台。",
@@ -1069,7 +1069,7 @@
      {
       "p": 1,
       "effects": {
-       "trust": -13
+       "trust": -10
       },
       "result": "這封回信被截圖轉發了 3000 次。",
       "habit": {
@@ -1315,7 +1315,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 0
+       "boss": 1
       },
       "result": "你的備註很詳細,沒人看。"
      }
@@ -1732,7 +1732,7 @@
      {
       "p": 0.6,
       "effects": {
-       "trust": -11
+       "trust": -10
       },
       "result": "沉默被解讀為默許。"
      }
@@ -2217,7 +2217,7 @@
       "p": 0.5,
       "result": "有一條要改。",
       "effects": {
-       "boss": -11
+       "boss": -10
       },
       "habit": {
        "sloppy_report": 1
@@ -2269,7 +2269,7 @@
    },
    {
     "label": "丟文件給他",
-    "ap": 1,
+    "ap": 0,
     "outcomes": [
      {
       "p": 1,
@@ -2284,7 +2284,10 @@
     "outcomes": [
      {
       "p": 1,
-      "result": "他看了三份,得出三種格式。"
+      "result": "他看了三份,得出三種格式。",
+      "effects": {
+       "boss": -1
+      }
      }
     ],
     "style": "quiet"
@@ -3700,7 +3703,10 @@
     "outcomes": [
      {
       "p": 1,
-      "result": "休息後清醒多了。"
+      "result": "休息後清醒多了。",
+      "habit": {
+       "overtime": -2
+      }
      }
     ],
     "style": "quiet"
