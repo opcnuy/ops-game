@@ -36,11 +36,11 @@ export interface EventOption {
   label: string;
   ap: number;
   outcomes: Outcome[];
-  /** 「快速抓個大概」類選項,受「快速報表」技能加成 */
+  /** 「快速抓個大概」類選項,受「快速報表」策略加成 */
   tag?: 'quick';
   /** 「搏一把」:高風險高報酬,贏了大賺、輸了大賠 */
   gamble?: boolean;
-  /** 由技能解鎖的額外選項 */
+  /** 由策略解鎖的額外選項 */
   fromSkill?: string;
   /** 職級達到才會出現的選項(例如高階可以授權給專員);放在選項最後面,避免影響前面選項的編號 */
   minLevel?: number;
@@ -80,9 +80,11 @@ export interface GameEvent {
   /** 只有帶了同事卡才會出現;colStyle 有填的話,還要同事擅長那種做法 */
   colleague?: boolean;
   colStyle?: Style;
-  /** 首領事件:固定每 5 天出現一個,依你的流派挑選;answers 是對它有幫助的流派 */
+  /** 首領事件:固定每 5 天出現一個,依你的路線挑選;answers 是對它有幫助的路線 */
   boss?: boolean;
   answers?: string[];
+  /** 這件事的內容跟活動有關:any = 要有進行中或辦過的活動;done = 要有辦完過的活動 */
+  needsCampaign?: 'any' | 'done';
   /** 風格事件:風格達到指定等級才會出現(跨局風格的專屬機會) */
   persona?: Style;
   personaLv?: number;
@@ -147,8 +149,6 @@ export interface State {
   difficulty: Difficulty;
   /** 開局時的職級(整局固定),決定可用的活動選項與事件 */
   level: number;
-  /** 開局時帶入的技能(整局固定) */
-  skills: string[];
   /** 這局達成的成就 */
   ach: string[];
   goals: Goal[];
@@ -200,6 +200,11 @@ export interface State {
   /** 今天預定的突發事件(下午、晚上)與最新的突發通知 */
   sudden?: { at: 'pm' | 'eve'; fired?: boolean }[];
   alert?: string;
+  /** 衝刺策略:今天已經少花過幾次 */
+  sprintUsed?: { day: number; n: number };
+  /** 首領:已經播過登場畫面的那一件(uid),與剛打完的結果(給結果畫面) */
+  bossIntro?: number;
+  bossResult?: { title: string; win: boolean; text: string; eff: string; xp: number };
   xp?: number;
   lv?: number;
   pendingPicks?: number;
@@ -233,7 +238,7 @@ export interface State {
   /** 這局的難忘時刻(最多 40 筆,依重要程度保留) */
   moments?: Moment[];
   /** 這局結算的經驗(結束時寫入一次) */
-  award?: { credits?: number; curseMult?: number; personaLines?: string[]; firstCard?: boolean; xp: number; lines: string[]; fromXp: number; toXp: number; sp: number; spLines: string[] };
+  award?: { credits?: number; curseMult?: number; personaLines?: string[]; firstCard?: boolean; xp: number; lines: string[]; fromXp: number; toXp: number; creditLines: string[] };
 }
 
 /** 這局值得回顧的時刻:結局畫面會挑最重的幾筆列出來 */

@@ -1,5 +1,4 @@
 import { storageKey } from './storage';
-import { sanitizeSkills } from './skills';
 import { STYLES, sanitizePersona } from './persona';
 import eventsData from './content/events.json';
 import campaignData from './content/campaigns.json';
@@ -251,10 +250,10 @@ export function weekdayLabel(day: number): string {
 
 /* ---------- 新遊戲 / 存檔 ---------- */
 
-export function newGame(mode: Mode, difficulty: Difficulty = 'normal', seed = Date.now(), level = 1, skills: string[] = [], pastSeen: Record<string, number> = {}, persona: Partial<Record<Style, number>> = {}, colleague?: { style: Style; level: number; title: string }, unlock: string[] = ALL_UNLOCK, role = 'intern', curse?: string): State {
+export function newGame(mode: Mode, difficulty: Difficulty = 'normal', seed = Date.now(), level = 1, pastSeen: Record<string, number> = {}, persona: Partial<Record<Style, number>> = {}, colleague?: { style: Style; level: number; title: string }, unlock: string[] = ALL_UNLOCK, role = 'intern', curse?: string): State {
   const cfg = DIFFS[difficulty];
   const s: State = {
-    v: 1, mode, difficulty, level, skills: [...skills], persona: { ...persona }, colleague: colleague ? { ...colleague } : undefined, ach: [], goals: cfg.goals.map((g) => ({ ...g })), goalRound: 0, maxAp: cfg.maxAp - (curse === 'tight' ? 1 : 0),
+    v: 1, mode, difficulty, level, persona: { ...persona }, colleague: colleague ? { ...colleague } : undefined, ach: [], goals: cfg.goals.map((g) => ({ ...g })), goalRound: 0, maxAp: cfg.maxAp - (curse === 'tight' ? 1 : 0),
     rng: seed | 0, day: 1, ap: cfg.maxAp - (curse === 'tight' ? 1 : 0),
     players: 12000, retention: 36, trust: cfg.trust - (curse === 'angry' ? 10 : 0), boss: cfg.boss, spendRate: 38,
     strat: {}, xp: 0, lv: 1, pendingPicks: 0, unlock: [...unlock], role, curse,
@@ -281,27 +280,38 @@ export function newGame(mode: Mode, difficulty: Difficulty = 'normal', seed = Da
   return s;
 }
 
-/* ---------- 導演:依你的流派出題 ---------- */
+/* ---------- 導演:依你的路線出題 ---------- */
 
 function themeLevels(s: State): Record<Theme, number> {
-  const out: Record<Theme, number> = { trust: 0, revenue: 0, boss: 0, data: 0, grind: 0 };
+  const out: Record<Theme, number> = { trust: 0, revenue: 0, boss: 0, data: 0, grind: 0, steady: 0, community: 0, speed: 0, risk: 0 };
   for (const c of STRATEGIES) out[c.theme] += stratLv(s, c.id);
   return out;
 }
 
-/** 你偏重哪個流派(沒有任何策略就沒有) */
+/** 你偏重哪個路線(沒有任何策略就沒有) */
 export function dominantTheme(s: State): Theme | undefined {
   const lv = themeLevels(s);
   const top = (Object.keys(lv) as Theme[]).sort((a, b) => lv[b] - lv[a])[0];
   return lv[top] > 0 ? top : undefined;
 }
 
-/** 針對你的流派,今天的事件裡哪幾類會變多(越偏重某個打法,越會被它的反面盯上) */
+/** 針對你的路線,今天的事件裡哪幾類會變多(越偏重某個打法,越會被它的反面盯上) */
 const COUNTER_KINDS: Record<Theme, EventKind[]> = {
   trust: ['老闆', '數據'], revenue: ['客訴', '輿情'], boss: ['原廠', '技術'], data: ['雜務', '輿情'], grind: ['客訴', '雜務'],
+  steady: ['原廠', '老闆'], community: ['輿情', '原廠'], speed: ['技術', '雜務'], risk: ['老闆', '客訴'],
 };
-const BOSS_OF: Record<Theme, string> = { revenue: 'boss_storm', trust: 'boss_growth', boss: 'boss_audit', data: 'boss_outage', grind: 'boss_outage' };
-const BOSS_IDS = ['boss_storm', 'boss_growth', 'boss_audit', 'boss_outage'];
+const BOSS_OF: Record<Theme, string> = {
+  revenue: 'boss_storm', trust: 'boss_growth', boss: 'boss_audit', data: 'boss_outage', grind: 'boss_outage', steady: 'boss_audit',
+  community: 'boss_rival', speed: 'boss_leak', risk: 'boss_leak',
+};
+const BOSS_IDS = ['boss_storm', 'boss_growth', 'boss_audit', 'boss_outage', 'boss_rival', 'boss_leak'];
+
+/** 首領資訊:它在考什麼、你的對策有多少、能加多少成功率(給首領畫面用) */
+export function bossInfo(s: State, ev: GameEvent): { bonus: number; parts: { theme: Theme; label: string; lv: number }[]; focus?: Theme } {
+  const lv = themeLevels(s);
+  const parts = (ev.answers ?? []).map((k) => ({ theme: k as Theme, label: THEME_LABEL[k as Theme], lv: lv[k as Theme] ?? 0 }));
+  return { bonus: Math.min(0.3, 0.05 * parts.reduce((a, p) => a + p.lv, 0)), parts, focus: dominantTheme(s) };
+}
 
 /** 挑首領:專門考你最偏重的那個打法 */
 function pickBoss(s: State): string {
@@ -315,7 +325,7 @@ export const stratLv = (s: State, id: string): number => s.strat?.[id] ?? 0;
 
 /** 得到經驗;夠了就升級,升級會排隊等玩家選策略。回傳升了幾級 */
 export function gainXp(s: State, n: number): number {
-  s.xp = (s.xp ?? 0) + Math.round(n * (1 + (s.role === 'intern' ? 0.1 : 0) + 0.15 * stratLv(s, 'tutor') + (stratLv(s, 'evo_mentor') ? 0.5 : 0)));
+  s.xp = (s.xp ?? 0) + Math.round(n * (1 + (s.role === 'intern' ? 0.1 : 0) + 0.15 * stratLv(s, 'tutor') + 0.08 * stratLv(s, 'notes') + (stratLv(s, 'evo_mentor') ? 0.5 : 0)));
   let up = 0;
   for (;;) {
     const lv = s.lv ?? 1;
@@ -338,11 +348,14 @@ function drawPick(s: State): void {
   const open = (id: string): boolean => (s.unlock ?? ALL_UNLOCK).includes(id);
   const evo = STRATEGIES.filter((c) => c.evolve && open(c.id) && owned(c.id) === 0 && c.evolve.from.every(([id, lv]) => owned(id) >= lv));
   const pool: { id: string; w: number }[] = [];
+  // 劇情後期活動來不及辦了:效果要靠活動的策略不再出現(已經有活動在跑或辦過的不受影響)
+  const lateStory = s.mode === 'story' && s.day >= 8 && s.campaign?.phase !== 'live' && s.campaign?.phase !== 'planned';
   for (const c of base) {
+    if (c.needsCampaign && lateStory) continue;
     if (owned(c.id) > 0 && owned(c.id) < c.max) pool.push({ id: c.id, w: 3 });
-    else if (owned(c.id) === 0 && slots < MAX_SLOTS && open(c.id)) pool.push({ id: c.id, w: 2 });
+    else if (owned(c.id) === 0 && slots < MAX_SLOTS && open(c.id)) pool.push({ id: c.id, w: c.pure ? 1.2 : 2 });
   }
-  const want = 3 + (hasSkill(s, 'time_mgmt') ? 1 : 0);
+  const want = 3 + ((s.unlock ?? ALL_UNLOCK).includes('perk_pick') ? 1 : 0);
   const picks: string[] = evo.slice(0, 1).map((c) => c.id);
   while (picks.length < want && pool.length) {
     let r = rand(s) * pool.reduce((a, c) => a + c.w, 0);
@@ -420,7 +433,7 @@ function sanitizeState(raw: unknown): State | null {
   const s = { ...(r as unknown as State) };
   s.goals = goals; s.inbox = inbox; s.followUps = followUps; s.flags = flags;
   s.seen = rec(r.seen); s.pastSeen = rec(r.pastSeen); s.habits = rec(r.habits);
-  s.level = num(r.level, 1, 5, 1); s.skills = sanitizeSkills(strs(r.skills)); s.ach = strs(r.ach);
+  s.level = num(r.level, 1, 5, 1); s.ach = strs(r.ach);
   s.goalRound = num(r.goalRound, 0, 1e4, 0); s.maxAp = num(r.maxAp, 1, 12, 6);
   s.rng = num(r.rng, -2147483648, 2147483647, 1); s.day = num(r.day, 1, 1e5, 1); s.ap = num(r.ap, 0, 12, 0);
   s.players = num(r.players, 0, 1e9, 0); s.retention = num(r.retention, 0, 100, 0); s.trust = num(r.trust, 0, 100, 0);
@@ -450,6 +463,12 @@ function sanitizeState(raw: unknown): State | null {
   s.sudden = (Array.isArray(r.sudden) ? (r.sudden as { at?: unknown; fired?: unknown }[]) : []).slice(0, 4)
     .filter((x) => x && (x.at === 'pm' || x.at === 'eve')).map((x) => ({ at: x.at as 'pm' | 'eve', fired: x.fired === true }));
   s.alert = typeof r.alert === 'string' ? cleanText(r.alert, 100) : undefined;
+  s.bossIntro = r.bossIntro === undefined ? undefined : num(r.bossIntro, 0, 1e9, 0);
+  const br = r.bossResult as { title?: unknown; win?: unknown; text?: unknown; eff?: unknown; xp?: unknown } | undefined;
+  s.bossResult = br && typeof br === 'object' && typeof br.title === 'string'
+    ? { title: cleanText(br.title, 40), win: br.win === true, text: cleanText(br.text, 200), eff: cleanText(br.eff, 80), xp: num(br.xp, 0, 999, 0) } : undefined;
+  const su = r.sprintUsed as { day?: unknown; n?: unknown } | undefined;
+  s.sprintUsed = su && typeof su === 'object' ? { day: num(su.day, 0, 1e5, 0), n: num(su.n, 0, 9, 0) } : undefined;
   s.bossNext = typeof r.bossNext === 'string' && Object.hasOwn(EVENTS, r.bossNext) ? r.bossNext : undefined;
   s.curse = typeof r.curse === 'string' && curseById(r.curse) ? r.curse : undefined;
   s.xp = num(r.xp, 0, 1e6, 0); s.lv = num(r.lv, 1, 99, 1); s.pendingPicks = num(r.pendingPicks, 0, 20, 0);
@@ -468,7 +487,7 @@ function sanitizeState(raw: unknown): State | null {
   }
   if (s.award) {
     s.award = { credits: num((s.award as { credits?: unknown }).credits, 0, 1e6, 0), xp: num(s.award.xp, 0, 1e6, 0), lines: strs(s.award.lines), fromXp: num(s.award.fromXp, 0, 1e6, 0),
-      toXp: num(s.award.toXp, 0, 1e6, 0), sp: num(s.award.sp, 0, 100, 0), spLines: strs(s.award.spLines), personaLines: strs((s.award as { personaLines?: unknown }).personaLines), firstCard: (s.award as { firstCard?: unknown }).firstCard === true };
+      toXp: num(s.award.toXp, 0, 1e6, 0), creditLines: strs((s.award as { creditLines?: unknown }).creditLines), personaLines: strs((s.award as { personaLines?: unknown }).personaLines), firstCard: (s.award as { firstCard?: unknown }).firstCard === true };
   }
   if (s.campaign) {
     const c = s.campaign as unknown as Record<string, unknown>;
@@ -523,29 +542,30 @@ function addEvent(s: State, eventId: string, hint?: string, stage = 0): void {
   if (!stage) s.seen[eventId] = (s.seen[eventId] ?? 0) + 1;
 }
 
-export const hasSkill = (s: State, id: string): boolean => s.skills.includes(id);
+/** 認真填日報不花點數:日報自動化或數據導向 */
+export const reportFree = (s: State): boolean => stratLv(s, 'auto_report') > 0 || stratLv(s, 'data_driven') > 0;
 
 const DATA_EVENT_IDS = ['e_adhoc_chart', 'e_data_dup'];
 const isDataEvent = (ev: GameEvent): boolean => ev.kind === '數據' || DATA_EVENT_IDS.includes(ev.id);
 
-/** 技能解鎖的額外選項:依事件類型自動加進去 */
-const SKILL_OPTIONS: { skill: string; match: (ev: GameEvent) => boolean; opt: EventOption }[] = [
+/** 策略解鎖的額外選項:依事件類型自動加進去 */
+const SKILL_OPTIONS: { strat: string; match: (ev: GameEvent) => boolean; opt: EventOption }[] = [
   {
-    skill: 'template', match: isDataEvent,
+    strat: 'template', match: isDataEvent,
     opt: { label: '用報表範本快速出表', ap: 1, style: 'fast', outcomes: [
       { p: 0.85, effects: { boss: 2 }, result: '範本一套,數字準時出爐。' },
       { p: 0.15, effects: { boss: -1 }, result: '範本欄位對不上,補了兩次。' },
     ] },
   },
   {
-    skill: 'advocate', match: (ev) => ev.kind === '客訴' || ev.kind === '輿情',
+    strat: 'advocate', match: (ev) => ev.kind === '客訴' || ev.kind === '輿情',
     opt: { label: '請核心玩家出面說明', ap: 1, style: 'open', outcomes: [
       { p: 0.7, effects: { trust: 4 }, result: '玩家的話,比官方公告更有說服力。' },
       { p: 0.3, effects: { trust: -1 }, result: '核心玩家也有自己的想法,場面有點尷尬。' },
     ] },
   },
   {
-    skill: 'network', match: (ev) => ev.kind === '技術' || ev.kind === '原廠',
+    strat: 'network', match: (ev) => ev.kind === '技術' || ev.kind === '原廠',
     opt: { label: '找熟人幫忙', ap: 1, style: 'private', outcomes: [
       { p: 0.65, effects: { boss: 1, trust: 2 }, result: '熟人一通電話,事情就動起來了。' },
       { p: 0.35, effects: { boss: -1 }, result: '對方這週也很忙。' },
@@ -599,9 +619,9 @@ export function itemOptions(s: State, ev: GameEvent, item: InboxItem): { opt: Ev
   return item.v === undefined ? all : shuffleWith(seeded(item.v, SALT.shuffle), all);
 }
 
-/** 這個事件目前可選的所有選項(原本的、偶爾多出來的、技能解鎖的) */
+/** 這個事件目前可選的所有選項(原本的、偶爾多出來的、策略解鎖的) */
 export function eventOptions(s: State, ev: GameEvent, item?: InboxItem): EventOption[] {
-  const skillOpts = SKILL_OPTIONS.filter((x) => hasSkill(s, x.skill) && x.match(ev)).map((x) => ({ ...x.opt, fromSkill: x.skill }));
+  const skillOpts = SKILL_OPTIONS.filter((x) => stratLv(s, x.strat) > 0 && x.match(ev)).map((x) => ({ ...x.opt, fromSkill: x.strat }));
   const pool = EXTRA.pools[ev.kind];
   const rnd = pool?.length && varies(item) ? seeded(item.v, SALT.bonus) : null;
   const bonus = rnd && rnd() < EXTRA.chance ? [pool![Math.floor(rnd() * pool!.length)]] : [];
@@ -613,16 +633,24 @@ export function eventOptions(s: State, ev: GameEvent, item?: InboxItem): EventOp
   return [...own, ...bonus, ...gamble, ...skillOpts];
 }
 
-/** 選項實際花費:技能減免,以及逾期後再次催辦的事 +1 */
-export function optionCost(s: State, item: InboxItem, opt: EventOption, noColleague = false): number {
+/** 選項實際花費:策略減免,以及逾期後再次催辦的事 +1 */
+/** 衝刺:今天還能少花 1 點的次數 */
+function sprintLeft(s: State): number {
+  const lv = stratLv(s, 'sprint');
+  if (!lv) return 0;
+  return (lv >= 3 ? 2 : 1) - (s.sprintUsed?.day === s.day ? s.sprintUsed.n : 0);
+}
+
+export function optionCost(s: State, item: InboxItem, opt: EventOption, noColleague = false, noSprint = false): number {
   let c = opt.ap;
   if (c <= 0) return 0;
   const ev = EVENTS[item.eventId];
-  if (hasSkill(s, 'data_unify') && isDataEvent(ev) && c > 1) c -= 1;
+  if (stratLv(s, 'unify') > 0 && isDataEvent(ev) && c > 1) c -= 1;
   if (buffActive(s, 'prepared') && isPulseEvent(ev)) c = Math.max(0, c - 1);
   if (item.sudden && c > 0) c = Math.max(0, c - 1);
-  if (item.stage && !hasSkill(s, 'crisis_pr')) c += 1;
+  if (item.stage && !stratLv(s, 'crisis_pr')) c += 1;
   if (!noColleague && colleagueHelps(s, opt) && c > 0) c -= 1;
+  if (!noSprint && c > 0 && sprintLeft(s) > 0) c -= 1;
   return c;
 }
 
@@ -663,6 +691,22 @@ const MOOD_TEXT: Record<GameEvent['kind'], Record<Mood, string>> = {
   雜務: { receptive: '對方很客氣,不太催。', neutral: '對方的態度普通。', hostile: '對方很趕,語氣有點急。' },
   插曲: { receptive: '', neutral: '', hostile: '' },
 };
+/** 風向要跟這件事的對象對得上:林總、工程師、原廠、玩家與公開討論有各自的說法,其他對象一律用「對象本身」來說 */
+function windText(ev: GameEvent, mood: Mood): string {
+  const from = ev.from;
+  if (from === '林總') return MOOD_TEXT.老闆[mood];
+  if (from === '工程師') return MOOD_TEXT.技術[mood];
+  if (from.startsWith('原廠')) return MOOD_TEXT.原廠[mood];
+  if (ev.kind === '客訴') return MOOD_TEXT.客訴[mood];
+  if (ev.kind === '輿情' && /論壇|社群|實況|商店/.test(from)) return MOOD_TEXT.輿情[mood];
+  if (ev.kind === '數據' && from === '後台數據') return MOOD_TEXT.數據[mood];
+  if (from === '你自己') return mood === 'receptive' ? '你今天狀態不錯。' : mood === 'hostile' ? '你今天有點煩躁。' : '你今天狀態普通。';
+  const who = from.replace(/\s*vs\s*/g, '與');
+  // 對象是資料來源、不是人的(問卷結果、應用商店、社群監控、回報):說內容,不說態度
+  if (/結果|商店|監控|回報/.test(from)) return mood === 'receptive' ? `${who}的內容偏正面,不難處理。` : mood === 'hostile' ? `${who}的內容很不客氣,不好處理。` : `${who}的內容普通。`;
+  return mood === 'receptive' ? `${who}的態度偏友善,聽得進去。` : mood === 'hostile' ? `${who}火氣不小,不太聽得進去。` : `${who}的態度普通,看你怎麼處理。`;
+}
+
 /** 氣氛主要牽動哪個數值:跟玩家有關的看信任,跟公司內部有關的看老闆 */
 /** 這件事主要牽動哪個數值:玩家面的(信任、人數、留存)還是公司內部的(老闆好感) */
 const mainStatCache = new Map<string, 'trust' | 'boss'>();
@@ -796,7 +840,7 @@ export const activeBuffs = (s: State): { id: BuffId; left: number }[] =>
   (s.buffs ?? []).filter((b) => b.until >= s.day).map((b) => ({ id: b.id as BuffId, left: b.until - s.day + 1 }));
 
 function addBuff(s: State, id: BuffId, days: number): void {
-  if (id !== 'tired' && hasSkill(s, 'fan_base')) days += 1;
+  if (id !== 'tired' && stratLv(s, 'fan_base')) days += 1;
   s.buffs = [...(s.buffs ?? []).filter((b) => b.id !== id), { id, until: s.day + days - 1 }];
 }
 
@@ -805,10 +849,11 @@ function buffEffects(s: State, e: Effects | undefined): Effects | undefined {
   if (!e) return e;
   const out: Effects = { ...e };
   const tf = stratLv(s, 'trust_first'), bp = stratLv(s, 'boss_pet'), sh = stratLv(s, 'shield');
-  const trustUp = 1 + 0.15 * tf + (stratLv(s, 'evo_fan') ? 0.5 : 0) - 0.08 * bp - 0.05 * sh;
+  const trustUp = 1 + 0.15 * tf + 0.04 * stratLv(s, 'allies') + (stratLv(s, 'evo_fan') ? 0.5 : 0) - 0.08 * bp - 0.05 * sh;
   const bossUp = 1 + 0.2 * bp - 0.05 * stratLv(s, 'tutor');
-  if ((out.trust ?? 0) > 0) out.trust = Math.ceil((out.trust as number) * Math.max(0.2, trustUp));
-  if ((out.boss ?? 0) > 0) out.boss = Math.ceil((out.boss as number) * bossUp);
+  const spr = Math.max(0.5, 1 - 0.04 * stratLv(s, 'sprint'));
+  if ((out.trust ?? 0) > 0) out.trust = Math.ceil((out.trust as number) * Math.max(0.2, trustUp) * spr);
+  if ((out.boss ?? 0) > 0) out.boss = Math.ceil((out.boss as number) * bossUp * spr);
   const cut = Math.max(0.1, 1 - 0.1 * sh) * (stratLv(s, 'evo_mentor') ? 0.7 : 1);
   if (cut < 1) {
     if ((out.trust ?? 0) < 0) out.trust = Math.round((out.trust as number) * cut);
@@ -895,7 +940,7 @@ const isPulseEvent = (ev: GameEvent): boolean => ev.kind === '客訴' || ev.kind
 /** 掌握風向時,事件在處理前就先看得出對方的氣氛(只看得出氣氛,不會告訴你怎麼做) */
 export function pulseHint(s: State, ev: GameEvent, item?: InboxItem): string | undefined {
   if (!pulseActive(s) || !hasMood(ev)) return undefined;
-  return MOOD_TEXT[ev.kind][moodOf(item, ev)];
+  return windText(ev, moodOf(item, ev));
 }
 
 const ESCALATE_HINT = '上次沒處理,對方又來催了。';
@@ -909,6 +954,16 @@ function leastSeen(s: State, list: GameEvent[]): GameEvent[] {
   const minPast = Math.min(...cur.map(past));
   return cur.filter((e) => past(e) === minPast);
 }
+
+/** 事件內容提到活動的,要玩家真的辦過(或正在辦)才會出現 */
+function campaignOk(s: State, e: GameEvent): boolean {
+  if (!e.needsCampaign) return true;
+  const ran = !!s.flags.campaignRan;
+  return e.needsCampaign === 'done' ? ran : ran || s.campaign?.phase === 'live';
+}
+
+/** 事件文字裡有固定時間(凌晨、禮拜、明天…)的,不適合當成「下午、晚上突然冒出來」的突發事件 */
+const FIXED_TIME = /凌晨|半夜|早上|明天|昨天|禮拜|週[一二三四五六日]|下午前|月底|週年/;
 
 /* ---------- 突發事件:一天中途才冒出來(下午、晚上) ---------- */
 
@@ -933,7 +988,7 @@ function checkSudden(s: State): void {
     const rank = DIFF_ORDER.indexOf(s.difficulty);
     let pool = Object.values(EVENTS).filter((e) => (e.weight ?? 0) > 0 && ['客訴', '輿情', '技術', '原廠'].includes(e.kind)
       && (e.minDay ?? 1) <= s.day && (e.minLevel ?? 1) <= s.level && DIFF_ORDER.indexOf(e.minDifficulty ?? 'easy') <= rank
-      && !s.inbox.some((i) => i.eventId === e.id));
+      && campaignOk(s, e) && !FIXED_TIME.test(e.title + (e.brief ?? '') + e.body) && !s.inbox.some((i) => i.eventId === e.id));
     if (!pool.length || s.inbox.length >= 9) continue;
     pool = leastSeen(s, pool);
     const w = pool.map((e) => (e.weight ?? 0) * (th && COUNTER_KINDS[th].includes(e.kind) ? 1.8 : 1));
@@ -993,7 +1048,7 @@ function spawnDay(s: State): void {
   for (let n = 0; n < want && s.inbox.length < cap; n++) {
     let pool = Object.values(EVENTS).filter(
       (e) => (e.weight ?? 0) > 0 && (e.minDay ?? 1) <= s.day && !s.inbox.some((i) => i.eventId === e.id)
-        && DIFF_ORDER.indexOf(e.minDifficulty ?? 'easy') <= rank && (e.minLevel ?? 1) <= s.level,
+        && DIFF_ORDER.indexOf(e.minDifficulty ?? 'easy') <= rank && (e.minLevel ?? 1) <= s.level && campaignOk(s, e),
     );
     if (!pool.length) break;
     // 多數時候偏向當下階段的事件,偶爾來點意料之外的
@@ -1046,13 +1101,16 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
   if (s.ap < cost) return '行動點數不足';
   s.ap -= cost;
   const helped = cost !== optionCost(s, item, opt, true);
+  if (optionCost(s, item, opt, false, true) !== cost) s.sprintUsed = { day: s.day, n: (s.sprintUsed?.day === s.day ? s.sprintUsed.n : 0) + 1 };
   if (helped) s.colHelp = { day: s.day, n: (s.colHelp?.day === s.day ? s.colHelp.n : 0) + 1 };
   let outs = opt.outcomes;
   let boost = 0;
-  if (hasSkill(s, 'quick_report') && opt.tag === 'quick') boost += 0.2;
-  if (hasSkill(s, 'soothe') && (ev.kind === '客訴' || ev.kind === '輿情')) boost += 0.1;
+  if (opt.tag === 'quick') boost += 0.08 * stratLv(s, 'quick_report');
   if (pulseActive(s) && isPulseEvent(ev)) boost += 0.1;
   if (s.role === 'support' && isPulseEvent(ev)) boost += 0.15;
+  if (isPulseEvent(ev)) boost += 0.04 * stratLv(s, 'quick_reply');
+  boost += 0.02 * stratLv(s, 'lucky');
+  if (opt.gamble) boost += 0.04 * stratLv(s, 'gambler') + (stratLv(s, 'evo_gambit') ? 0.15 : 0);
   if (ev.boss) {
     const lv = themeLevels(s);
     boost += Math.min(0.3, 0.05 * (ev.answers ?? []).reduce((a, k) => a + (lv[k as Theme] ?? 0), 0));
@@ -1066,6 +1124,12 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
   let out: Outcome = outs[outs.length - 1];
   for (const o of outs) { r -= o.p; if (r <= 0) { out = o; break; } }
   let base = hasMood(ev) ? tuneEffects(s, ev, out.effects, mood) : out.effects;
+  const gl = stratLv(s, 'gambler');
+  if (opt.gamble && gl && base) {
+    const sc: Effects = {};
+    for (const [k, v] of Object.entries(base) as [keyof Effects, number][]) sc[k] = Math.round(v * (v > 0 ? 1 + 0.1 * gl : stratLv(s, 'evo_gambit') ? 1 : 1 + 0.15 * gl) * 10) / 10;
+    base = sc;
+  }
   // 加成只落在這個結果本來就會動到的數值上:跟老闆(或玩家)沒關係的事,不會憑空多出老闆(或信任)的分數
   const main = moodStat(ev);
   const touchesMain = !!out.effects?.[main];
@@ -1116,6 +1180,7 @@ export function chooseOption(s: State, uid: number, optIndex: number): string | 
   const line = `【${eventText(ev, item).title}】${opt.label} → ${out.result}${extra}${effectNote(eff)}${chainNote}${note}${rapportNote}${ev.boss ? (net > 0 ? ' 💀 首領擊退!' : ' 💀 勉強撐過') : ''}${up ? ` ⭐ 升級!Lv ${s.lv}` : ''}`;
   pushFeed(s, line);
   s.verdict = { tier, line, eff: eff ?? {} };
+  if (ev.boss) s.bossResult = { title: ev.title.replace('首領:', ''), win: net > 0, text: out.result, eff: effectNote(eff).replace(/^\(|\)$/g, ''), xp: net > 0 ? 60 : 25 };
   checkSudden(s);
   return null;
 }
@@ -1191,7 +1256,7 @@ export function planCampaign(s: State, sel: PlanSel): string | null {
 export type ActionKind = 'polish' | 'check' | 'intel' | 'report' | 'sloppy';
 
 export function doAction(s: State, kind: ActionKind): string | null {
-  const free = (kind === 'report' && (hasSkill(s, 'auto_report') || stratLv(s, 'data_driven') > 0))
+  const free = (kind === 'report' && reportFree(s))
     || (kind === 'polish' && s.role === 'planner' && s.campaign?.phase === 'planned' && s.campaign.polish === 0);
   if (kind !== 'sloppy' && !free && s.ap < 1) return '行動點數不足';
   const c = s.campaign;
@@ -1208,7 +1273,7 @@ export function doAction(s: State, kind: ActionKind): string | null {
   } else if (kind === 'intel') {
     if (s.pulse === s.day) return '今天已經看過輿情了';
     const found: string[] = [];
-    if (hasSkill(s, 'social_sense')) {
+    if (stratLv(s, 'social_sense')) {
       if (!s.intel.reward) found.push(revealIntel(s, 'reward'));
       if (!s.intel.hated) found.push(revealIntel(s, 'hated'));
     } else if (!(s.intel.reward && s.intel.hated)) found.push(revealIntel(s, s.intel.reward ? 'hated' : 'reward'));
@@ -1242,7 +1307,7 @@ function launch(s: State, lines: string[]): void {
   const bundle = find(CONTENT.bundles, c.bundle);
   const promo = find(CONTENT.promos, c.promo);
   // 預測模型:成績的隨機起伏減半
-  const noise = () => (rand(s) - 0.5) * 16 * (hasSkill(s, 'forecast') ? 0.5 : 1) * (s.role === 'analyst' ? 0.5 : 1);
+  const noise = () => (rand(s) - 0.5) * 16 * (s.role === 'analyst' ? 0.5 : 1);
 
   let fun = mech.fun + c.polish * 10 - Math.max(0, mech.need - c.polish) * 9;
   if (mech.id === s.taste.hated) fun -= 22;
@@ -1265,7 +1330,7 @@ function launch(s: State, lines: string[]): void {
   let lift = 1.1 * participation * (desire / 100) * (0.4 + 0.6 * (appeal / 100));
   lift *= Math.max(0.3, 1 - 0.06 * stratLv(s, 'trust_first')) * (1 + 0.15 * stratLv(s, 'revenue')) * Math.max(0.5, 1 - 0.04 * stratLv(s, 'lowkey')) * (stratLv(s, 'evo_fan') ? 1.3 : 1) * Math.max(0.5, 1 - 0.03 * stratLv(s, 'frugal')) * (stratLv(s, 'evo_cash') ? 1.4 : 1) * (s.curse === 'cheap' ? 0.8 : 1);
 
-  const bugChance = (0.12 + (c.checked ? 0 : 0.25) + (s.flags.rushedTech ? 0.2 : 0)) * (hasSkill(s, 'risk_ctrl') ? 0.5 : 1) * Math.max(0.1, 1 - 0.15 * stratLv(s, 'campaign_pro'));
+  const bugChance = (0.12 + (c.checked ? 0 : 0.25) + (s.flags.rushedTech ? 0.2 : 0)) * Math.max(0.1, 1 - 0.15 * stratLv(s, 'campaign_pro')) * Math.max(0.1, 1 - 0.08 * stratLv(s, 'checklist'));
   c.bugged = rand(s) < bugChance;
   if (c.bugged) {
     lift *= 0.7;
@@ -1285,6 +1350,7 @@ function launch(s: State, lines: string[]): void {
 
 function finishCampaign(s: State, lines: string[]): void {
   const c = s.campaign as Campaign;
+  s.flags.campaignRan = true;
   const sc = c.scores!;
   c.phase = 'done';
   s.flags.rushedTech = false;
@@ -1351,7 +1417,7 @@ export function endDay(s: State): DaySummary {
     if (it.deadline <= s.day) {
       const ev = EVENTS[it.eventId];
       if (ev.kind === '插曲') return false; // 插曲過期就悄悄消失,沒有懲罰也不記拖延
-      if (hasSkill(s, 'buffer') && !s.flags.bufferUsed && !it.stage && Object.values(ev.ignore.effects).some((v) => (v ?? 0) < 0)) {
+      if (stratLv(s, 'buffer') && !s.flags.bufferUsed && !it.stage && Object.values(ev.ignore.effects).some((v) => (v ?? 0) < 0)) {
         s.flags.bufferUsed = true;
         lines.push(`🕰️ 「${ev.title}」逾期了,但你事先留了緩衝,對方沒有追究。(這局只有一次)`);
         return false;
@@ -1702,7 +1768,7 @@ function buildReport(s: State): ReportQuiz {
 export function submitReport(s: State, quiz: ReportQuiz, idx: number): { ok: boolean; text: string } {
   const opt = quiz.options[idx];
   if (!opt) return { ok: false, text: '沒有這個選項' };
-  const free = hasSkill(s, 'auto_report') || stratLv(s, 'data_driven') > 0;
+  const free = reportFree(s);
   if (!free && s.ap < 1) return { ok: false, text: '行動點數不足' };
   if (s.pendingReports <= 0) return { ok: false, text: '沒有待填的日報' };
   if (!free) s.ap -= 1;
@@ -1713,7 +1779,7 @@ export function submitReport(s: State, quiz: ReportQuiz, idx: number): { ok: boo
   if (opt.good === true) {
     s.quizRight = (s.quizRight ?? 0) + 1;
     if (s.quizRight >= 5) gainAch(s, 'report_ace');
-    if (hasSkill(s, 'audit_eye')) applyEffects(s, { trust: 1 });
+    if (stratLv(s, 'audit_eye')) applyEffects(s, { trust: 1 });
     if (stratLv(s, 'data_driven')) applyEffects(s, { boss: stratLv(s, 'data_driven') });
   }
   const tag = opt.good === true ? '✅ 答對了。' : opt.good === false ? '❌ 這次沒答對。' : '';

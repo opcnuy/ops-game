@@ -6,8 +6,10 @@ declare const process: { env: Record<string, string | undefined> };
 
 // localStorage 在 Node 不存在,引擎的存檔函式只在瀏覽器呼叫,這裡不用處理
 
-function play(strategy: 'random' | 'careful' | 'lazy', diff: Difficulty, seed: number, level = 5, skills: string[] = []): State {
-  const s = newGame('story', diff, seed, level, skills, {}, {}, undefined, undefined, process.env.ROLE ?? 'intern', process.env.CURSE || undefined);
+function play(strategy: 'random' | 'careful' | 'lazy', diff: Difficulty, seed: number, level = 5, start: Record<string, number> = {}): State {
+  const lvP = Number(process.env.PERSONA ?? 0); const pers = lvP ? { open: lvP, private: lvP, quiet: lvP, generous: lvP, rigor: lvP, fast: lvP, hustle: lvP } : {};
+  const s = newGame('story', diff, seed, level, {}, pers, undefined, undefined, process.env.ROLE ?? 'intern', process.env.CURSE || undefined);
+  if (Object.keys(start).length) { s.cardPick = undefined; s.pendingPicks = 1; s.strat = { ...start }; }
   let guard = 0;
   while (!s.over && guard++ < 100) {
     while (s.cardPick) pickCard(s, process.env.CARD && s.cardPick.includes(process.env.CARD) ? process.env.CARD : s.cardPick[Math.floor(Math.random() * s.cardPick.length)]);
@@ -48,8 +50,8 @@ function play(strategy: 'random' | 'careful' | 'lazy', diff: Difficulty, seed: n
   return s;
 }
 
-const BUILD = ['quick_report', 'soothe', 'crisis_pr', 'auto_report', 'risk_ctrl', 'time_mgmt', 'forecast'];
-for (const skills of [[], BUILD]) for (const diff of (process.env.EASY ? ['easy', 'normal', 'hard'] : ['normal', 'hard']) as ('easy' | 'normal' | 'hard')[]) {
+const BUILD: Record<string, number> = { quick_report: 3, crisis_pr: 1, auto_report: 1, checklist: 2 };
+for (const skills of [{}, BUILD] as Record<string, number>[]) for (const diff of (process.env.EASY ? ['easy', 'normal', 'hard'] : ['normal', 'hard']) as ('easy' | 'normal' | 'hard')[]) {
   const level = 5;
   for (const strat of ['careful'] as const) {
     const N = 60;
@@ -61,6 +63,6 @@ for (const skills of [[], BUILD]) for (const diff of (process.env.EASY ? ['easy'
       const met = s.goals.filter((g) => goalMet(s, g)).length;
       total = s.goals.length; metSum += met; if (met === total) allMet++;
     }
-    console.log(`[${skills.length ? '有技能' : '無技能'} ${diff}] ${strat.padEnd(7)} 全達成 ${String(Math.round((allMet / N) * 100)).padStart(3)}%  平均達成 ${(metSum / N).toFixed(1)}/${total}`, tally);
+    console.log(`[${Object.keys(skills).length ? '有基礎策略' : '無策略'} ${diff}] ${strat.padEnd(7)} 全達成 ${String(Math.round((allMet / N) * 100)).padStart(3)}%  平均達成 ${(metSum / N).toFixed(1)}/${total}`, tally);
   }
 }

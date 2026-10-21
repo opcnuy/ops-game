@@ -1,11 +1,11 @@
-// 技能系統檢查:資料自洽、學習規則、12 個技能各自的實際效果、存檔與職級的技能點帳目
+// 策略檢查(舊技能樹已併進策略):各策略的實際效果、存檔、資歷與解鎖的帳目,以及輿情、氣氛等系統
 import {
-  DIFFS, EVENTS, activeBuffs, bossTrait, buffActive, communityTrait, eventText, moodOf, pickScout, styleFit, pulseActive, pulseHint, chooseOption, doAction, endDay, eventOptions, hasSkill, load, makeReport, newGame, optionCost, planCampaign, save, submitReport,
+  DIFFS, EVENTS, activeBuffs, bossTrait, buffActive, communityTrait, eventText, moodOf, pickScout, styleFit, pulseActive, pulseHint, chooseOption, doAction, endDay, eventOptions, load, makeReport, newGame, optionCost, planCampaign, save, submitReport,
 } from '../src/engine';
 import { SCOUT_CARDS, scoutCard } from '../src/scout';
 import { BOSS_TRAITS, COMMUNITY_TRAITS, MOOD_CLUES } from '../src/traits';
-import { ACHIEVEMENTS, LINES, SKILLS, prereqMet, prereqText, sanitizeSkills, skillById } from '../src/skills';
-import { LEVELS, SP_PER_LEVEL, availableSp, levelFor, loadProfile, saveProfile, spentSp } from '../src/profile';
+import { DEFAULT_UNLOCK, STRATEGIES, SHOP } from '../src/cards';
+import { LEVELS, levelFor, loadProfile, saveProfile } from '../src/profile';
 import type { State } from '../src/types';
 
 // Node 沒有 localStorage:用最小替身,讓存檔與職級的讀寫也能一起測
@@ -35,61 +35,29 @@ const push = (s: State, eventId: string, stage = 0): number => {
 const optIndex = (s: State, eventId: string, label: string): number =>
   eventOptions(s, EVENTS[eventId]).findIndex((o) => o.label === label);
 
-/* ---------- 1. 技能資料 ---------- */
-const ids = new Set<string>();
-for (const k of SKILLS) {
-  ok(!ids.has(k.id), `技能 id 重複:${k.id}`); ids.add(k.id);
-  ok(k.cost >= 1 && k.cost <= 3, `${k.id} 花費不合理:${k.cost}`);
-  ok(k.cost === k.tier, `${k.id} 花費 ${k.cost} 與層級 ${k.tier} 不一致`);
-  ok(!!k.name && !!k.desc && !!k.icon, `${k.id} 缺文字或圖示`);
-  ok(k.line in LINES, `${k.id} 的路線不存在:${k.line}`);
-  const pre = [...(k.requires ?? []), ...(k.requiresAny ?? [])];
-  for (const p of pre) {
-    const pk = skillById(p);
-    ok(!!pk, `${k.id} 的前置不存在:${p}`);
-    if (pk) {
-      ok(pk.line === k.line, `${k.id} 的前置 ${p} 不在同一條路線`);
-      ok(pk.tier === k.tier - 1, `${k.id} 的前置 ${p} 不是上一層`);
-    }
-  }
-  ok(prereqText(k) === '' ? k.tier === 1 : k.tier > 1, `${k.id} 前置文字與層級不符`);
-}
-for (const line of Object.keys(LINES)) {
-  const mine = SKILLS.filter((k) => k.line === line);
-  ok([1, 2, 3].every((t) => mine.some((k) => k.tier === t)), `${line} 路線缺少某一層`);
-}
-const totalCost = SKILLS.reduce((n, k) => n + k.cost, 0);
-const totalSp = (LEVELS.length - 1) * SP_PER_LEVEL + ACHIEVEMENTS.length;
-console.log(`技能資料:${SKILLS.length} 個技能、全部學滿要 ${totalCost} 點;升到滿級加上全部成就共 ${totalSp} 點`);
-ok(totalSp < totalCost, '技能點足以學滿所有技能,就沒有取捨了');
-ok(SKILLS.filter((k) => k.tier === 1).every((k) => k.cost <= SP_PER_LEVEL), 'Lv2 的技能點買不起起點技能');
-
-/* ---------- 2. 學習規則 ---------- */
-ok(!prereqMet(skillById('forecast')!, []), '沒學前置也能學預測模型');
-ok(!prereqMet(skillById('forecast')!, ['quick_report']), '只學一層前置就能學第三層');
-ok(prereqMet(skillById('forecast')!, ['quick_report', 'template']), 'requiresAny 學了其中一個仍不能學');
-ok(prereqMet(skillById('forecast')!, ['quick_report', 'data_unify']), 'requiresAny 學了另一個不能學');
-ok(sanitizeSkills(['forecast']).length === 0, '沒前置的第三層技能沒被清掉');
-ok(sanitizeSkills(['quick_report', 'bogus', 'template']).join() === 'quick_report,template', '不存在的技能沒被過濾');
-// 取消起點技能,依賴它的整串一起取消
-ok(sanitizeSkills(['quick_report', 'template', 'forecast'].filter((x) => x !== 'quick_report')).length === 0, '取消起點技能沒有連帶取消');
-// requiresAny:取消其中一個,另一個還在,第三層應該保留
-ok(sanitizeSkills(['quick_report', 'data_unify', 'template', 'forecast'].filter((x) => x !== 'data_unify')).includes('forecast'), '取消其中一條支線卻連帶取消了第三層');
-ok(sanitizeSkills(['quick_report', 'data_unify', 'forecast'].filter((x) => x !== 'data_unify')).includes('forecast') === false, '兩條支線都沒了,第三層應該被取消');
-
-/* ---------- 3. 12 個技能的實際效果 ---------- */
-const mk = (skills: string[], seed = 1, level = 5): State => newGame('story', 'normal', seed, level, skills);
+/* ---------- 策略的實際效果 ---------- */
+// 舊技能 id → 現在的策略 id(測試沿用舊名稱,對應到策略等級 1,「快速報表」用 3 級)
+const STRAT_OF: Record<string, [string, number]> = {
+  auto_report: ['auto_report', 1], template: ['template', 1], advocate: ['advocate', 1], network: ['network', 1], data_unify: ['unify', 1],
+  crisis_pr: ['crisis_pr', 1], quick_report: ['quick_report', 3], social_sense: ['social_sense', 1], audit_eye: ['audit_eye', 1], fan_base: ['fan_base', 1], buffer: ['buffer', 1],
+};
+const mk = (skills: string[], seed = 1, level = 5): State => {
+  const s = newGame('story', 'normal', seed, level);
+  s.cardPick = undefined; s.pendingPicks = 0;
+  s.strat = Object.fromEntries(skills.filter((k) => STRAT_OF[k]).map((k) => STRAT_OF[k]));
+  return s;
+};
 const rate = (trials: number, run: (seed: number, withSkill: boolean) => boolean, withSkill: boolean): number => {
   let n = 0;
   for (let i = 0; i < trials; i++) if (run(1000 + i, withSkill)) n++;
   return n / trials;
 };
 
-// time_mgmt:抽策略卡時多一張候選
+// 人脈網(永久強化):升級候選多一張
 {
-  const a = mk([]); const b = mk(['auto_report', 'risk_ctrl', 'time_mgmt']);
-  ok(a.cardPick?.length === 3 && b.cardPick?.length === 4, `時間管理應多一張候選:${a.cardPick?.length}→${b.cardPick?.length}`);
-  ok(b.maxAp === a.maxAp, '時間管理不該再加行動點數');
+  const a = newGame('story', 'normal', 1, 5, {}, {}, undefined, DEFAULT_UNLOCK);
+  const b = newGame('story', 'normal', 1, 5, {}, {}, undefined, [...DEFAULT_UNLOCK, 'perk_pick']);
+  ok(a.cardPick?.length === 3 && b.cardPick?.length === 4, `人脈網應多一張候選:${a.cardPick?.length}→${b.cardPick?.length}`);
 }
 
 // auto_report:認真填日報不花點數,答題也不花
@@ -146,7 +114,7 @@ const rate = (trials: number, run: (seed: number, withSkill: boolean) => boolean
 
 // crisis_pr:再次催辦的事不用多花 1 點
 {
-  const a = mk([]); const b = mk(['soothe', 'crisis_pr']);
+  const a = mk([]); const b = mk(['crisis_pr']);
   const costStage = (s: State, stage: number): number => {
     const uid = push(s, 'e_gacha_complaint', stage); const it = s.inbox.find((x) => x.uid === uid)!;
     return optionCost(s, it, EVENTS['e_gacha_complaint'].options[0]);
@@ -178,7 +146,7 @@ const rate = (trials: number, run: (seed: number, withSkill: boolean) => boolean
   rate(10, noQ, true);
 }
 
-// soothe:客訴、輿情事件裡有風險的選項成功率 +0.1;其他種類不受影響
+// quick_reply(策略):客訴、輿情事件裡有風險的選項成功率 +4%/級;其他種類不受影響
 {
   const check = (evId: string, expectBoost: boolean): void => {
     const ev = EVENTS[evId];
@@ -188,12 +156,13 @@ const rate = (trials: number, run: (seed: number, withSkill: boolean) => boolean
     const good = (o: typeof outs[number]): number => Object.values(o.effects ?? {}).reduce((a, b) => a + (b as number), 0);
     const best = outs.reduce((a, b) => (good(a) >= good(b) ? a : b));
     const run = (seed: number, w: boolean): boolean => {
-      const s = mk(w ? ['soothe'] : [], seed); const uid = push(s, evId);
+      const s = mk([], seed); if (w) s.strat = { quick_reply: 5 };
+      const uid = push(s, evId);
       chooseOption(s, uid, oi);
       return s.feed[0].includes(best.result) || s.log[0].text.includes(best.result);
     };
     const d = rate(2500, run, true) - rate(2500, run, false);
-    near(d, expectBoost ? Math.min(0.1, 1) : 0, 0.045, `安撫話術對 ${evId}(${ev.kind})的提升`);
+    near(d, expectBoost ? 0.2 : 0, 0.05, `快速回覆(5 級)對 ${evId}(${ev.kind})的提升`);
   };
   check('e_gacha_complaint', true);
   check('e_social_meme', true);
@@ -202,86 +171,51 @@ const rate = (trials: number, run: (seed: number, withSkill: boolean) => boolean
 
 // social_sense:看輿情一次揭露兩項
 {
-  const a = mk([]); const b = mk(['soothe', 'advocate', 'social_sense']);
+  const a = mk([]); const b = mk(['advocate', 'social_sense']);
   doAction(a, 'intel'); doAction(b, 'intel');
   ok(Number(a.intel.reward) + Number(a.intel.hated) === 1, '沒有社群敏銳時一次應只揭露一項');
   ok(b.intel.reward && b.intel.hated, '社群敏銳沒有一次揭露兩項');
 }
 
-// risk_ctrl:活動上線出問題的機率減半(沒驗收的情況 0.37 → 0.185)
+// checklist(策略):活動上線出問題的機率 -8%/級(沒驗收的情況基準 0.37)
 {
   const run = (seed: number, w: boolean): boolean => {
-    const s = mk(w ? ['auto_report', 'risk_ctrl'] : [], seed);
+    const s = mk([], seed); if (w) s.strat = { checklist: 5 };
     planCampaign(s, { mechanic: 'signin', reward: 'material', bundle: 'none', promo: 'none', delay: 1 });
     endDay(s);
     return s.campaign?.phase === 'live' && !!s.campaign.bugged;
   };
   const base = rate(1200, run, false), cut = rate(1200, run, true);
-  near(base, 0.37, 0.05, '沒有風險控管的出包率');
-  near(cut, 0.185, 0.04, '風險控管後的出包率');
+  near(base, 0.37, 0.05, '沒有檢核表的出包率');
+  near(cut, 0.37 * 0.6, 0.05, '檢核表 5 級後的出包率');
 }
 
-// forecast:確認技能存在且前置正確
-ok(hasSkill(mk(['quick_report', 'template', 'forecast']), 'forecast'), '預測模型沒有被帶進對局');
-// forecast:活動上線時成績的隨機起伏減半(升幅的標準差明顯變小)
+/* ---------- 存檔與資歷的帳目 ---------- */
 {
-  const spread = (skills: string[]): number => {
-    const v: number[] = [];
-    for (let i = 0; i < 300; i++) {
-      const t = mk(skills, 70000 + i);
-      planCampaign(t, { mechanic: 'lottery', reward: 'shard', bundle: 'starter', promo: 'notice', delay: 1 });
-      t.campaign!.checked = true; t.campaign!.polish = 1;
-      endDay(t);
-      if (t.campaign?.phase === 'live' && !t.campaign.bugged) v.push(t.campaign.lift); // 出包的不算,不然七折會蓋過雜訊
-    }
-    const m = v.reduce((a, b) => a + b, 0) / v.length;
-    return Math.sqrt(v.reduce((a, b) => a + (b - m) ** 2, 0) / v.length) / m; // 相對起伏
-  };
-  const a = spread([]); const b = spread(['quick_report', 'template', 'forecast']);
-  ok(b < a * 0.8, `預測模型沒有讓活動成績更穩定:${a.toFixed(3)} → ${b.toFixed(3)}`);
-}
-
-/* ---------- 4. 存檔與職級的帳目 ---------- */
-{
-  const s = mk(['quick_report', 'data_unify', 'forecast']);
+  const s = mk(['quick_report', 'data_unify', 'auto_report']);
+  s.strat = { quick_report: 3, unify: 1, evo_fan: 1, bogus: 4 } as Record<string, number>;
   save(s);
   const back = load();
-  ok(!!back && back.skills.join() === s.skills.join(), '存檔讀回後技能不一致');
-  // 竄改存檔:塞入不存在或前置不成立的技能
-  const raw = JSON.parse(store.get([...store.keys()].find((k) => k.includes('save'))!)!);
-  raw.skills = ['forecast', 'bogus', 'time_mgmt'];
-  store.set([...store.keys()].find((k) => k.includes('save'))!, JSON.stringify(raw));
+  ok(!!back && back.strat?.quick_report === 3 && back.strat.unify === 1 && back.strat.evo_fan === 1 && !('bogus' in (back.strat ?? {})), '存檔讀回後策略不一致或沒濾掉不認得的:' + JSON.stringify(back?.strat));
+  const key = [...store.keys()].find((k) => k.includes('save'))!;
+  const raw = JSON.parse(store.get(key)!);
+  raw.strat = { quick_report: 99, unify: -3, junk: 2 };
+  store.set(key, JSON.stringify(raw));
   const tampered = load();
-  ok(!!tampered && tampered.skills.length === 0, `竄改存檔的技能沒被清掉:${tampered?.skills.join()}`);
+  ok(!!tampered && tampered.strat?.quick_report === 3 && tampered.strat.unify === 1 && !('junk' in (tampered.strat ?? {})), `竄改存檔的策略等級沒被限制:${JSON.stringify(tampered?.strat)}`);
 }
 {
   const key = 'ops-game-profile';
-  store.set(key, JSON.stringify({ v: 1, xp: 1000, runs: 9, sp: 8, skills: ['time_mgmt', 'quick_report', 'bogus'], ach: ['first_win'] }));
+  // 舊存檔有技能樹:技能點一點換 10 資歷,只換一次,技能與技能點欄位拿掉
+  store.set(key, JSON.stringify({ v: 1, xp: 1000, runs: 9, sp: 8, skills: ['time_mgmt', 'quick_report'], ach: ['first_win'] }));
   const p = loadProfile();
-  ok(p.skills.join() === 'quick_report', `職級資料的技能沒被清乾淨:${p.skills.join()}`);
-  ok(spentSp(p) === 1 && availableSp(p) === 7, `技能點帳目不對:花 ${spentSp(p)} 剩 ${availableSp(p)}`);
+  ok((p.credits ?? 0) === 80 && !('skills' in p) && !('sp' in p), `舊技能點沒有換成資歷:${p.credits}`);
+  ok(loadProfile().credits === 80, '舊技能點被重複換了');
   // 跨局事件次數:竄改的鍵與數值要被清掉或限制範圍
-  store.set(key, JSON.stringify({ v: 1, xp: 0, runs: 0, sp: 0, skills: [], ach: [], seen: { e_ok: 3, ['x'.repeat(80)]: 1, e_big: 99999, e_str: 'a', e_neg: -5 } }));
+  store.set(key, JSON.stringify({ v: 1, xp: 0, runs: 0, ach: [], seen: { e_ok: 3, ['x'.repeat(80)]: 1, e_big: 99999, e_str: 'a', e_neg: -5 } }));
   const sn = loadProfile().seen ?? {};
   ok(sn.e_ok === 3 && sn.e_big === 99 && sn.e_neg === 0 && !('e_str' in sn) && Object.keys(sn).length === 3, `跨局事件次數沒被清乾淨:${JSON.stringify(sn)}`);
-  // 舊存檔沒有技能點:依職級補發升級獎勵
-  store.set(key, JSON.stringify({ v: 1, xp: 300, runs: 3, skills: [], ach: [] }));
-  const old = loadProfile();
-  ok(old.sp === (levelFor(300).lv - 1) * SP_PER_LEVEL, `舊存檔補發技能點不對:${old.sp}`);
-  // 模擬學習流程
-  let prof = { ...old, sp: 4 };
-  const learn = (id: string): boolean => {
-    const k = skillById(id)!;
-    if (prof.skills.includes(id) || !prereqMet(k, prof.skills) || availableSp(prof) < k.cost) return false;
-    prof = { ...prof, skills: [...prof.skills, id] }; saveProfile(prof); return true;
-  };
-  ok(learn('soothe') && availableSp(prof) === 3, '學第一個技能後點數不對');
-  ok(!learn('social_sense'), '沒前置也學得會社群敏銳');
-  ok(learn('advocate') && availableSp(prof) === 1, '學第二層後點數不對');
-  ok(!learn('crisis_pr'), '點數不足(剩 1,要 2)卻學得會');
-  ok(!learn('soothe'), '重複學習同一個技能');
-  prof = { ...prof, skills: sanitizeSkills(prof.skills.filter((x) => x !== 'soothe')) };
-  ok(prof.skills.length === 0 && availableSp(prof) === 4, '取消起點技能後,點數沒有全額退回');
+  void STRATEGIES; void SHOP; void saveProfile; void LEVELS; void levelFor;
 }
 
 // 看輿情:喜好都摸清後仍可再看,掌握風向當天與隔天;客訴/輿情事件先給提示,有風險的選項更穩
@@ -485,7 +419,7 @@ ok(hasSkill(mk(['quick_report', 'template', 'forecast']), 'forecast'), '預測�
   // 選完會有一句反應(只在契合度不為 0 時),且不直接說出性格名稱
   { const t = withTraits('data', 'kind'); const uid = t.uid++;
     t.inbox.push({ uid, eventId: evB.id, arrived: t.day, deadline: t.day + 5, stage: 0, v: neutralV });
-    chooseOption(t, uid, optIndex(t, evB.id, '請教三成的依據'));
+    chooseOption(t, uid, optIndex(t, evB.id, '收到,馬上規劃'));
     ok(t.feed[0].includes('🧭') && !t.feed[0].includes('數據派'), `反應句不對:${t.feed[0]}`); }
   // 氣氛線索:中性不會有、非中性約六成出現
   { let withClue = 0; let nonNeutral = 0; let neutralWith = 0;

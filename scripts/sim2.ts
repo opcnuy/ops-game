@@ -3,7 +3,7 @@ import type { Difficulty, State } from '../src/types';
 
 // 「普通玩家」:每件事選中間價位或較便宜的選項,留一點點行動點數給活動;不是最佳解也不亂選
 function play(diff: Difficulty, seed: number, style: 'mid' | 'thrifty' | 'careful'): State {
-  const s = newGame('story', diff, seed, 5, style === 'careful' ? ['quick_report', 'soothe', 'auto_report'] : []);
+  const s = newGame('story', diff, seed, 5);
   let g = 0;
   while (!s.over && g++ < 100) {
     if ((!s.campaign || s.campaign.phase === 'done') && s.day >= 2 && s.ap >= 3)

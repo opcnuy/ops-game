@@ -22,7 +22,7 @@ const bad = sanitizePersona({ rigor: 'x', open: -3, evil: 99, fast: 1e12 }, 100)
 ok(Object.keys(bad).join() === 'fast' && bad.fast === 100, '讀檔過濾不對:' + JSON.stringify(bad));
 
 // 存檔往返
-const s0 = newGame('story', 'normal', 7, 1, [], {}, { rigor: 2 });
+const s0 = newGame('story', 'normal', 7, 1, {}, { rigor: 2 });
 chooseOption(s0, s0.inbox[0].uid, 0);
 save(s0);
 const back = load() as State;
@@ -33,7 +33,7 @@ const NEUTRAL = ((): number => { for (let v = 1; ; v++) if (moodOf({ uid: 0, eve
 function rate(level: number): number {
   let win = 0; const N = 3000;
   for (let i = 0; i < N; i++) {
-    const s = newGame('story', 'normal', 100 + i, 1, [], {}, level ? { fast: level } : {});
+    const s = newGame('story', 'normal', 100 + i, 1, {}, level ? { fast: level } : {});
     s.inbox = [{ uid: 99, eventId: 'e_adhoc_roi', arrived: 1, deadline: 9, v: NEUTRAL }];
     const idx = eventOptions(s, EVENTS.e_adhoc_roi, s.inbox[0]).findIndex((o) => o.label.startsWith('快速抓個大概'));
     const b = s.boss; s.ap = 6; chooseOption(s, 99, idx); if (s.boss > b) win++;
@@ -61,7 +61,7 @@ ok(decodeCard(encodeCard({ open: 99, private: 99, quiet: 99, generous: 99, rigor
 
 // 同事幫忙:擅長的做法少花 1 點,每天一次(Lv3 兩次);沒有同事不受影響
 const mkCol = (level: number): State => {
-  const s = newGame('story', 'normal', 11, 1, [], {}, {}, { style: 'rigor', level, title: 't' });
+  const s = newGame('story', 'normal', 11, 1, {}, {}, { style: 'rigor', level, title: 't' });
   s.inbox = [
     { uid: 90, eventId: 'e_adhoc_roi', arrived: 1, deadline: 9, v: NEUTRAL },
     { uid: 91, eventId: 'e_weekly', arrived: 1, deadline: 9, v: NEUTRAL },
@@ -81,13 +81,13 @@ chooseOption(c3, 90, rigorIdx(c3, 90));
 ok(costOf(c3, 91) === EVENTS.e_weekly.options.find((o) => o.style === 'rigor')!.ap, '同事不分等級,一天都只幫一次');
 c3.day++; c3.inbox.forEach((i) => { i.deadline = 99; });
 ok(costOf(c3, 91) === EVENTS.e_weekly.options.find((o) => o.style === 'rigor')!.ap - 1, '隔天同事應該又能幫忙');
-const none = newGame('story', 'normal', 11, 1, []);
+const none = newGame('story', 'normal', 11, 1);
 ok(none.colleague === undefined, '沒帶同事卻有同事');
 
 // 同事闖禍:幾局下來一定會出現對應的事件,而且是他擅長的那一種
 let trouble = 0;
 for (let k = 0; k < 40; k++) {
-  const s = newGame('story', 'normal', 700 + k, 1, [], {}, {}, { style: 'hustle', level: 3, title: 't' });
+  const s = newGame('story', 'normal', 700 + k, 1, {}, {}, { style: 'hustle', level: 3, title: 't' });
   for (let d = 0; d < 8 && !s.over; d++) { if (s.inbox.some((i) => i.eventId === 'col_hustle')) { trouble++; break; } s.inbox = []; endDay(s); }
 }
 console.log(`同事闖禍:40 局裡 ${trouble} 局出現`);
@@ -97,8 +97,8 @@ ok(trouble >= 20 && trouble <= 40, '同事闖禍的頻率不在預期內:' + tro
 const colIds = Object.values(EVENTS).filter((e) => e.colleague).map((e) => e.id);
 let withoutMate = 0, withMate = 0; const wrongStyle: string[] = [];
 for (let k = 0; k < 60; k++) {
-  const a = newGame('story', 'normal', 900 + k, 1, []);
-  const b = newGame('story', 'normal', 900 + k, 1, [], {}, {}, { style: 'rigor', level: 2, title: 't' });
+  const a = newGame('story', 'normal', 900 + k, 1);
+  const b = newGame('story', 'normal', 900 + k, 1, {}, {}, { style: 'rigor', level: 2, title: 't' });
   for (let d = 0; d < 9; d++) {
     if (a.inbox.some((i) => colIds.includes(i.eventId))) withoutMate++;
     for (const i of b.inbox) { const e = EVENTS[i.eventId]; if (e.colleague) { withMate++; if (e.colStyle && e.colStyle !== 'rigor') wrongStyle.push(e.id); } }
@@ -109,7 +109,7 @@ console.log(`同事專屬事件:沒帶同事 ${withoutMate} 次;帶同事 60 局
 ok(withoutMate === 0, '沒帶同事卻出現同事專屬事件');
 ok(withMate >= 60 && wrongStyle.length === 0, '帶同事時專屬事件頻率或風格不對:' + withMate + wrongStyle.join());
 // 同事專屬事件可以揭露老闆或社群性格
-const rv = newGame('story', 'normal', 5, 1, [], {}, {}, { style: 'private', level: 1, title: 't' });
+const rv = newGame('story', 'normal', 5, 1, {}, {}, { style: 'private', level: 1, title: 't' });
 rv.inbox = [{ uid: 70, eventId: 'col_g_lunch', arrived: 1, deadline: 9, v: NEUTRAL }]; rv.ap = 6;
 let learned = false;
 for (let k = 0; k < 30 && !learned; k++) { const c = JSON.parse(JSON.stringify(rv)) as State; c.rng = k * 977 + 3; chooseOption(c, 70, eventOptions(c, EVENTS.col_g_lunch, c.inbox[0]).findIndex((o) => o.style === 'private')); learned = !!c.traits?.known.boss; }

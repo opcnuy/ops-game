@@ -1,18 +1,13 @@
-import { sanitizeSkills, skillById } from './skills';
 import { storageKey } from './storage';
 import { decodeCard } from './colleague';
 import { ALL_UNLOCK, DEFAULT_UNLOCK, SHOP, curseById, roleById } from './cards';
 import { sanitizePersona, type PersonaPoints } from './persona';
 
-/** 跨局的職級與技能(存在玩家自己的瀏覽器) */
+/** 跨局的職級、資歷與解鎖(存在玩家自己的瀏覽器) */
 export interface Profile {
   v: 1;
   xp: number;
   runs: number;
-  /** 累計獲得的技能點(升級每級 +2,成就每個 +1) */
-  sp: number;
-  /** 已學會的技能 */
-  skills: string[];
   /** 已達成的成就 */
   ach: string[];
   /** 各事件跨局累計看過幾次(用來讓新局優先出現沒看過的事件) */
@@ -53,18 +48,23 @@ export function loadProfile(): Profile {
   try {
     const p = JSON.parse(localStorage.getItem(KEY) ?? 'null') as Partial<Profile> | null;
     if (p && p.v === 1 && typeof p.xp === 'number') {
-      // 舊存檔沒有技能點:依目前職級補發升級獎勵
       const n = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? Math.min(1e7, Math.max(0, v)) : d);
       const xp = n(p.xp, 0);
       const list = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string').slice(0, 100) : []);
-      return {
+      const prof: Profile = {
         v: 1, xp, runs: n(p.runs, 0),
-        sp: n(p.sp, (levelFor(xp).lv - 1) * SP_PER_LEVEL),
-        skills: sanitizeSkills(list(p.skills)), ach: list(p.ach), seen: sanitizeSeen(p.seen), persona: sanitizePersona(p.persona), ...sanitizeColleagues(p.colleagues, p.colleagueSel), ...sanitizeMeta(p.credits, p.unlock, p.role, p.curse),
+        ach: list(p.ach), seen: sanitizeSeen(p.seen), persona: sanitizePersona(p.persona), ...sanitizeColleagues(p.colleagues, p.colleagueSel), ...sanitizeMeta(p.credits, p.unlock, p.role, p.curse),
       };
+      // 舊版有技能樹與技能點:技能樹已併進策略,累計獲得的技能點一點換 10 資歷,只換一次
+      const oldSp = (p as { sp?: unknown }).sp;
+      if (oldSp !== undefined || (p as { skills?: unknown }).skills !== undefined) {
+        prof.credits = (prof.credits ?? 0) + Math.round(n(oldSp, 0) * 10);
+        saveProfile(prof);
+      }
+      return prof;
     }
   } catch { /* 讀不到就當新玩家 */ }
-  return { v: 1, xp: 0, runs: 0, sp: 0, skills: [], ach: [], credits: 0, unlock: [...DEFAULT_UNLOCK], role: 'intern' };
+  return { v: 1, xp: 0, runs: 0, ach: [], credits: 0, unlock: [...DEFAULT_UNLOCK], role: 'intern' };
 }
 
 /** 讀檔時逐項檢查:資歷要是合理的數字,解鎖清單只留認得的項目並補上預設,職位要是已解鎖的 */
@@ -87,7 +87,9 @@ export function buyItem(p: Profile, id: string): { ok: true; profile: Profile } 
   return { ok: true, profile: { ...p, credits: credits - item.cost, unlock: [...unlock, id] } };
 }
 
-export const SP_PER_LEVEL = 2;
+/** 升一級、每個成就第一次達成,各給多少資歷 */
+export const CREDITS_PER_LEVEL = 20;
+export const CREDITS_PER_ACH = 10;
 export const MAX_COLLEAGUES = 5;
 
 /** 讀檔時逐項檢查:只留能解開的代碼,選擇的編號也要在範圍內 */
@@ -115,11 +117,6 @@ export function mergeSeen(p: Profile, runSeen: Record<string, number>): Record<s
   return out;
 }
 
-export function spentSp(p: Profile): number {
-  return p.skills.reduce((n, id) => n + (skillById(id)?.cost ?? 0), 0);
-}
-
-export const availableSp = (p: Profile): number => p.sp - spentSp(p);
 
 export function saveProfile(p: Profile): void {
   try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* 略過 */ }

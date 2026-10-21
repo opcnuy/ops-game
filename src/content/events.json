@@ -35,9 +35,10 @@
      {
       "p": 1,
       "effects": {
-       "boss": -2
+       "boss": -1
       },
-      "result": "林總沉默三秒:「業界平均。」你決定不再追問。"
+      "result": "林總沉默三秒:「業界平均。」你決定不再追問。 不過你也從他的反應多摸清了他的脾氣。",
+      "reveal": "boss"
      }
     ],
     "style": "rigor"
@@ -56,7 +57,7 @@
   "from": "林總",
   "day": 2,
   "weight": 2,
-  "title": "「上禮拜活動到底賺不賺?」",
+  "title": "「上一檔活動到底賺不賺?」",
   "body": "現在是上午十一點。林總:「下午開會要講,你幫我抓個數字。」附註:他沒說要看哪個期間。",
   "deadline": 1,
   "ignore": {
@@ -152,7 +153,8 @@
   ],
   "minDay": 2,
   "brief": "老闆下午開會,臨時要你報上次活動賺不賺。",
-  "insight": "口頭給的大概數字,常會被當成正式數字引用。給數字時註明期間、口徑與是否含補償,事後才不會被追問。"
+  "insight": "口頭給的大概數字,常會被當成正式數字引用。給數字時註明期間、口徑與是否含補償,事後才不會被追問。",
+  "needsCampaign": "done"
  },
  {
   "id": "e_vendor_anomaly",
@@ -278,14 +280,14 @@
     "ap": 1,
     "outcomes": [
      {
-      "p": 0.6,
+      "p": 0.65,
       "effects": {
-       "boss": 2
+       "boss": 3
       },
       "result": "抽樣就看出問題了,你省下一天。"
      },
      {
-      "p": 0.4,
+      "p": 0.35,
       "effects": {
        "boss": -2
       },
@@ -454,7 +456,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 5
+       "boss": 4
       },
       "setFlag": "rushedTech",
       "result": "林總很滿意。阿宏在筆記本上寫了什麼,你沒看到。",
@@ -475,7 +477,18 @@
     "ap": 1,
     "outcomes": [
      {
-      "p": 1,
+      "p": 0.6,
+      "effects": {
+       "boss": 2,
+       "trust": 3
+      },
+      "result": "阿宏點頭,像是鬆了一口氣。林總的表情則沒有。",
+      "habit": {
+       "pushback": 1
+      }
+     },
+     {
+      "p": 0.4,
       "effects": {
        "boss": -5
       },
@@ -494,7 +507,8 @@
      {
       "p": 1,
       "effects": {
-       "boss": 2
+       "boss": 3,
+       "trust": 2
       },
       "result": "你們把 8 個功能砍到 5 個。最後一個是林總想要的。"
      }
@@ -613,7 +627,7 @@
      {
       "p": 1,
       "effects": {
-       "trust": 3
+       "trust": 4
       },
       "reveal": "reward",
       "result": "你把留言分類:大家其實很清楚自己想要什麼。"
@@ -640,7 +654,8 @@
    }
   ],
   "brief": "玩家做圖嘲笑活動獎勵太小氣。",
-  "insight": "迷因反映玩家的真實感受。幽默回應可以降溫,但也要檢視獎勵本身是不是真的太小,不然只是把問題包裝起來。"
+  "insight": "迷因反映玩家的真實感受。幽默回應可以降溫,但也要檢視獎勵本身是不是真的太小,不然只是把問題包裝起來。",
+  "needsCampaign": "any"
  },
  {
   "id": "e_adhoc_chart",
@@ -1201,8 +1216,8 @@
      {
       "p": 0.7,
       "effects": {
-       "boss": 3,
-       "trust": 1
+       "boss": 5,
+       "trust": 2
       },
       "result": "你展示三個類似案例,林總:「嗯……有道理。」",
       "habit": {
@@ -1229,9 +1244,9 @@
      {
       "p": 1,
       "effects": {
-       "boss": 5,
-       "trust": -3,
-       "players": 5
+       "boss": 4,
+       "trust": -4,
+       "players": 2
       },
       "result": "短期很爆炸,長期玩家問下次還送什麼。",
       "habit": {
@@ -1252,7 +1267,7 @@
      {
       "p": 1,
       "effects": {
-       "boss": 1,
+       "boss": 2,
        "trust": 1
       },
       "result": "不是全服,但至少有人得到了。林總勉強接受。"
@@ -1411,9 +1426,9 @@
     "ap": 2,
     "outcomes": [
      {
-      "p": 0.5,
+      "p": 0.7,
       "effects": {
-       "boss": 3
+       "boss": 5
       },
       "result": "林總意識到自己還沒想清楚,給了你一個明確方向。",
       "habit": {
@@ -1421,9 +1436,9 @@
       }
      },
      {
-      "p": 0.5,
+      "p": 0.3,
       "effects": {
-       "boss": -5
+       "boss": -3
       },
       "result": "林總:「你先做,我再看。」",
       "habit": {
@@ -1868,9 +1883,10 @@
     "ap": 3,
     "outcomes": [
      {
-      "p": 0.4,
+      "p": 0.55,
       "effects": {
-       "boss": 5
+       "boss": 9,
+       "trust": 2
       },
       "result": "預算保住了一半,林總說你很有膽量。",
       "habit": {
@@ -1878,9 +1894,9 @@
       }
      },
      {
-      "p": 0.6,
+      "p": 0.45,
       "effects": {
-       "boss": -4
+       "boss": -3
       },
       "result": "財務沒被說服,林總被問了兩次。",
       "habit": {
@@ -2438,7 +2454,14 @@
     "ap": 1,
     "outcomes": [
      {
-      "p": 1,
+      "p": 0.5,
+      "result": "其他玩家還是知道了。",
+      "effects": {
+       "trust": 5
+      }
+     },
+     {
+      "p": 0.5,
       "result": "其他玩家還是知道了。",
       "effects": {
        "trust": -5
@@ -2764,7 +2787,8 @@
   ],
   "weight": 2,
   "minDay": 3,
-  "insight": "過期補發要有一致的標準。一次性補發可行,但要說明是特例,避免變成慣例。"
+  "insight": "過期補發要有一致的標準。一次性補發可行,但要說明是特例,避免變成慣例。",
+  "needsCampaign": "any"
  },
  {
   "id": "e_leak",
@@ -3214,7 +3238,8 @@
   "weight": 2,
   "minDay": 4,
   "minLevel": 2,
-  "insight": "序號外流要快速判斷是否影響公平。停用、補發與公告,都要考慮已經使用過的玩家。"
+  "insight": "序號外流要快速判斷是否影響公平。停用、補發與公告,都要考慮已經使用過的玩家。",
+  "needsCampaign": "any"
  },
  {
   "id": "e_seasonal",
@@ -3254,20 +3279,21 @@
     "ap": 2,
     "outcomes": [
      {
-      "p": 0.5,
+      "p": 0.55,
       "result": "老闆被說服。",
       "effects": {
-       "boss": 2
+       "boss": 4,
+       "trust": 1
       },
       "habit": {
        "pushback": 1
       }
      },
      {
-      "p": 0.5,
+      "p": 0.45,
       "result": "老闆不太開心。",
       "effects": {
-       "boss": -5
+       "boss": -4
       },
       "habit": {
        "pushback": 1
@@ -3284,7 +3310,8 @@
       "p": 1,
       "result": "大家都很累,但效果好。",
       "effects": {
-       "boss": 6
+       "boss": 7,
+       "players": 2
       },
       "habit": {
        "overtime": 1
@@ -3640,14 +3667,14 @@
     "ap": 2,
     "outcomes": [
      {
-      "p": 0.5,
+      "p": 0.55,
       "result": "玩家覺得有趣。",
       "effects": {
-       "trust": 6
+       "trust": 7
       }
      },
      {
-      "p": 0.5,
+      "p": 0.45,
       "result": "被說不認真。",
       "effects": {
        "trust": -3
@@ -4543,10 +4570,14 @@
     "ap": 1,
     "outcomes": [
      {
-      "p": 1,
+      "p": 0.7,
+      "result": "玩家很不滿。"
+     },
+     {
+      "p": 0.3,
       "result": "玩家很不滿。",
       "effects": {
-       "trust": -3
+       "trust": -5
       }
      }
     ],
@@ -5572,9 +5603,9 @@
     "ap": 2,
     "outcomes": [
      {
-      "p": 0.6,
+      "p": 0.65,
       "effects": {
-       "boss": 3
+       "boss": 4
       },
       "result": "林總沉默了一下:「至少你很誠實。」",
       "habit": {
@@ -5582,9 +5613,9 @@
       }
      },
      {
-      "p": 0.4,
+      "p": 0.35,
       "effects": {
-       "boss": -5
+       "boss": -4
       },
       "result": "高層問:「那你打算怎麼辦?」你還沒想好。"
      }
@@ -5762,7 +5793,8 @@
    }
   ],
   "brief": "跨部門檢討會上,每個人都說問題不是自己的。",
-  "insight": "有效的檢討會聚焦在流程與事實,不追究個人。用時間線說明事件經過,能把討論拉回解決問題。"
+  "insight": "有效的檢討會聚焦在流程與事實,不追究個人。用時間線說明事件經過,能把討論拉回解決問題。",
+  "needsCampaign": "done"
  },
  {
   "id": "e_review_nextq",
@@ -7917,7 +7949,8 @@
   "boss": true,
   "answers": [
    "boss",
-   "data"
+   "data",
+   "steady"
   ],
   "deadline": 1,
   "weight": 0,
@@ -8860,5 +8893,190 @@
    }
   ],
   "insight": "一個人撐全場很帥,但能分工的事不要硬扛。"
+ },
+ {
+  "id": "boss_rival",
+  "kind": "輿情",
+  "from": "玩家社群",
+  "title": "首領:競品大動作",
+  "boss": true,
+  "answers": [
+   "community",
+   "trust"
+  ],
+  "deadline": 1,
+  "weight": 0,
+  "brief": "競品砸大錢搶玩家,還在公開場合嘲諷你們的活動。",
+  "body": "競品砸大錢搶玩家,還在公開場合嘲諷你們的活動,社群開始動搖。",
+  "ignore": {
+   "effects": {
+    "trust": -10,
+    "players": -5
+   },
+   "result": "你沒有回應,玩家被競品一波波帶走。"
+  },
+  "options": [
+   {
+    "label": "發起反擊活動",
+    "ap": 1,
+    "style": "hustle",
+    "outcomes": [
+     {
+      "p": 0.55,
+      "effects": {
+       "players": 3,
+       "trust": 2
+      },
+      "result": "反擊活動很有梗,玩家紛紛回流。"
+     },
+     {
+      "p": 0.45,
+      "effects": {
+       "players": -2,
+       "boss": -3
+      },
+      "result": "活動倉促,被說是在硬撐面子。"
+     }
+    ]
+   },
+   {
+    "label": "呼籲玩家一起撐",
+    "ap": 1,
+    "style": "open",
+    "outcomes": [
+     {
+      "p": 0.6,
+      "effects": {
+       "trust": 7
+      },
+      "result": "老玩家站出來替你們說話。"
+     },
+     {
+      "p": 0.4,
+      "effects": {
+       "trust": 1
+      },
+      "result": "呼籲沒人理,有點尷尬。"
+     }
+    ]
+   },
+   {
+    "label": "不理會",
+    "ap": 0,
+    "style": "quiet",
+    "outcomes": [
+     {
+      "p": 0.35,
+      "effects": {
+       "trust": 0
+      },
+      "result": "風頭自己過了。"
+     },
+     {
+      "p": 0.65,
+      "effects": {
+       "players": -4,
+       "trust": -4
+      },
+      "result": "沉默被當成認輸,流失更多玩家。"
+     }
+    ]
+   }
+  ],
+  "insight": "面對競品,先穩住自己的核心玩家,再談反擊;不要被帶著節奏走。"
+ },
+ {
+  "id": "boss_leak",
+  "kind": "技術",
+  "from": "技術",
+  "title": "首領:資料外流",
+  "boss": true,
+  "answers": [
+   "speed",
+   "risk",
+   "data"
+  ],
+  "deadline": 1,
+  "weight": 0,
+  "brief": "趕工上線的功能出了錯,部分玩家資料外洩。",
+  "body": "趕工上線的功能出了錯,部分玩家資料外洩,媒體已經來電。",
+  "ignore": {
+   "effects": {
+    "trust": -12,
+    "boss": -6
+   },
+   "result": "沒人處理,事件被媒體搶先報導。"
+  },
+  "options": [
+   {
+    "label": "立刻公告並關閉功能",
+    "ap": 1,
+    "style": "open",
+    "outcomes": [
+     {
+      "p": 0.7,
+      "effects": {
+       "trust": 4,
+       "boss": -2
+      },
+      "result": "迅速公告,損害控制在小範圍。"
+     },
+     {
+      "p": 0.3,
+      "effects": {
+       "trust": -3,
+       "boss": -4
+      },
+      "result": "公告太倉促,細節講錯。"
+     }
+    ]
+   },
+   {
+    "label": "悄悄修補",
+    "ap": 1,
+    "style": "quiet",
+    "outcomes": [
+     {
+      "p": 0.4,
+      "effects": {
+       "boss": 3
+      },
+      "result": "修好了,沒人發現。"
+     },
+     {
+      "p": 0.6,
+      "effects": {
+       "trust": -8,
+       "boss": -6
+      },
+      "result": "被媒體挖出來,還被說隱瞞。"
+     }
+    ]
+   },
+   {
+    "label": "找法務與公關處理",
+    "ap": 2,
+    "style": "private",
+    "outcomes": [
+     {
+      "p": 0.6,
+      "effects": {
+       "boss": 5,
+       "trust": 3
+      },
+      "result": "專業團隊處理得很漂亮。"
+     },
+     {
+      "p": 0.4,
+      "effects": {
+       "boss": -3,
+       "trust": -2
+      },
+      "result": "流程太慢,輿論已經發酵。"
+     }
+    ]
+   }
+  ],
+  "insight": "個資事件要先止血、再通報、最後檢討;隱瞞的代價永遠比揭露大。"
  }
 ]

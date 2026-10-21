@@ -2,7 +2,7 @@
 import {
   CONTENT, DIFFS, ENDING_STYLES, PHASES, STORY_DAYS, EVENTS, HABITS, chooseOption, doAction, endDay, eventOptions, goalMet, load, endingStyle, makeReport, newGame, optionCost, planCampaign, spendToday, submitReport,
 } from '../src/engine';
-import { SKILLS, prereqMet } from '../src/skills';
+import { STRATEGIES } from '../src/cards';
 import { LEVELS, mergeSeen } from '../src/profile';
 import variants from '../src/content/variants.json';
 import optLabels from '../src/content/optlabels.json';
@@ -67,10 +67,10 @@ for (const [g, list] of Object.entries(CONTENT) as [string, { id: string; name: 
   }
   if (!list.some((x) => (x.minLevel ?? 1) === 1)) fail(`${g} 沒有 Lv1 就能用的項目`);
 }
-for (const k of SKILLS) {
-  for (const r of [...(k.requires ?? []), ...(k.requiresAny ?? [])]) if (!SKILLS.some((x) => x.id === r)) fail(`技能 ${k.id} 前置不存在:${r}`);
-  if (k.tier > 1 && !k.requires && !k.requiresAny) fail(`技能 ${k.id} 不是起點卻沒有前置`);
-  if (k.tier === 1 && !prereqMet(k, [])) fail(`起點技能 ${k.id} 不應有前置`);
+for (const k of STRATEGIES) {
+  if (!k.name || !k.icon || !k.good(1)) fail(`策略 ${k.id} 缺文字或圖示`);
+  if (!k.evolve && !k.pure && !k.bad(1)) fail(`策略 ${k.id} 不是純好型卻沒有代價`);
+  for (const [id] of k.evolve?.from ?? []) if (!STRATEGIES.some((x) => x.id === id)) fail(`進化 ${k.id} 的材料不存在:${id}`);
 }
 if (LEVELS.some((l, i) => i > 0 && l.xp <= LEVELS[i - 1].xp)) fail('職級經驗門檻沒有遞增');
 // 變體文字、選項措辭、額外選項:id 與選項數量要對得上,機率要加總為 1
@@ -88,7 +88,7 @@ for (const [kind, opts] of Object.entries(extra.pools as Record<string, { label:
   if (!KINDS.includes(kind as EventKind)) fail(`extraOptions 種類不合法:${kind}`);
   for (const o of opts) if (Math.abs(sum(o.outcomes.map((x) => x.p)) - 1) > 0.001) fail(`extraOptions ${kind}/${o.label} 機率加總 ≠ 1`);
 }
-console.log(`內容檢查:${ids.size} 個事件、${SKILLS.length} 個技能、${LEVELS.length} 個職級`);
+console.log(`內容檢查:${ids.size} 個事件、${STRATEGIES.length} 個策略、${LEVELS.length} 個職級`);
 
 /* ---------- 2. 大量隨機對局的不變量 ---------- */
 function checkState(s: State, where: string): void {
@@ -112,13 +112,14 @@ function checkState(s: State, where: string): void {
 let games = 0, endings = 0, interludes = 0, chains = 0, reports = 0, anyOver = 0;
 const modes: Mode[] = ['story', 'endless'];
 const diffs: Difficulty[] = ['easy', 'normal', 'hard'];
-const skillSets = [[], ['quick_report', 'soothe', 'auto_report'], SKILLS.map((k) => k.id)];
+const skillSets: Record<string, number>[] = [{}, { quick_report: 3, auto_report: 1 }, Object.fromEntries(STRATEGIES.map((k) => [k.id, 1]))];
 for (const mode of modes) for (const diff of diffs) for (const level of [1, 3, 5]) for (const skills of skillSets) for (let seed = 1; seed <= 6; seed++) {
-  const s = newGame(mode, diff, seed * 977 + level, level, skills);
+  const s = newGame(mode, diff, seed * 977 + level, level);
+  s.cardPick = undefined; s.pendingPicks = 0; s.strat = { ...skills };
   games++;
   const cap = mode === 'story' ? 25 : 45;
   for (let step = 0; step < cap && !s.over; step++) {
-    const tag = `${mode}/${diff}/Lv${level}/技能${skills.length}/seed${seed}/day${s.day}`;
+    const tag = `${mode}/${diff}/Lv${level}/策略${Object.keys(skills).length}/seed${seed}/day${s.day}`;
     checkState(s, tag);
     if (s.day >= 2 && (!s.campaign || s.campaign.phase === 'done') && s.ap >= 3) {
       const err = planCampaign(s, { mechanic: 'signin', reward: 'shard', bundle: 'none', promo: 'none', delay: 1 + (seed % 3) });
@@ -128,7 +129,7 @@ for (const mode of modes) for (const diff of diffs) for (const level of [1, 3, 5
     doAction(s, 'intel');
     // 日報
     s.pendingReports = Math.max(s.pendingReports, step % 3);
-    if (s.pendingReports > 0 && (s.ap > 0 || skills.includes('auto_report'))) {
+    if (s.pendingReports > 0 && (s.ap > 0 || (skills.auto_report ?? 0) > 0)) {
       const q = makeReport(s);
       const r = submitReport(s, q, step % q.options.length);
       if (!r.ok) fail(`${tag} 日報交不出去:${r.text}`);
@@ -165,7 +166,7 @@ console.log(`對局檢查:${games} 局、${endings} 局到結局、玩了 ${inte
 
 /* ---------- 3. 存檔往返 ---------- */
 {
-  const s = newGame('story', 'normal', 42, 3, ['soothe']);
+  const s = newGame('story', 'normal', 42, 3);
   for (let i = 0; i < 6; i++) endDay(s);
   const back = JSON.parse(JSON.stringify(s)) as State;
   for (let i = 0; i < 5; i++) { endDay(s); endDay(back); }
@@ -186,7 +187,7 @@ console.log(`對局檢查:${games} 局、${endings} 局到結局、玩了 ${inte
     }
   }
   // 累計最多的風格決定結局;太少或並列都不下定論
-  const mkEnd = (totals: Record<string, number>, good: boolean) => { const s = newGame('story', 'normal', 5, 1, []); s.styleTotals = totals; return endingStyle(s, good); };
+  const mkEnd = (totals: Record<string, number>, good: boolean) => { const s = newGame('story', 'normal', 5, 1); s.styleTotals = totals; return endingStyle(s, good); };
   const a = mkEnd({ transparency: 4, blame: 1 }, true);
   if (a?.name !== '公開透明派' || a.text !== ENDING_STYLES.transparent.good) fail(`風格判斷不對:${JSON.stringify(a)}`);
   if (mkEnd({ transparency: 4 }, false)?.text !== ENDING_STYLES.transparent.rough) fail('結局不好時應該用 rough 的說法');
@@ -196,7 +197,7 @@ console.log(`對局檢查:${games} 局、${endings} 局到結局、玩了 ${inte
   // 實際對局:全部標題都能產生,且風格欄位格式正確
   const got = new Set<string>(); let styled = 0, ended = 0;
   for (let seed = 1; seed <= 200; seed++) {
-    const s = newGame('story', 'normal', seed, 3, []);
+    const s = newGame('story', 'normal', seed, 3);
     while (!s.over) {
       let n = 0;
       for (const it of [...s.inbox]) { if (n++ >= 2 + (seed % 3)) break; for (let o = 0; o < EVENTS[it.eventId].options.length; o++) if (chooseOption(s, it.uid, o) === null) break; }
@@ -216,7 +217,7 @@ console.log(`對局檢查:${games} 局、${endings} 局到結局、玩了 ${inte
   const firstDays = (pastSeen: Record<string, number>): number => {
     let hit = 0;
     for (let seed = 1; seed <= 60; seed++) {
-      const s = newGame('story', 'normal', seed, 5, [], pastSeen);
+      const s = newGame('story', 'normal', seed, 5, pastSeen);
       for (let d = 0; d < 5; d++) endDay(s);
       hit += fresh.filter((id) => (s.seen[id] ?? 0) > 0).length;
     }
@@ -228,13 +229,13 @@ console.log(`對局檢查:${games} 局、${endings} 局到結局、玩了 ${inte
   // 同一局內仍然「抽完一輪才重複」:有足夠事件時,10 天內同一個隨機事件不該重複出現
   let dup = 0;
   for (let seed = 1; seed <= 60; seed++) {
-    const s = newGame('story', 'normal', seed, 5, [], past);
+    const s = newGame('story', 'normal', seed, 5, past);
     for (let d = 0; d < STORY_DAYS; d++) endDay(s);
     dup += Object.entries(s.seen).filter(([id, n]) => n > 1 && (EVENTS[id]?.weight ?? 0) > 0).length;
   }
   if (dup > 0) fail(`有 ${dup} 次在同一局內重複抽到同一個隨機事件,跨局偏好不該破壞單局不重複`);
   // 職級資料:累計、上限與竄改檢查
-  const merged = mergeSeen({ v: 1, xp: 0, runs: 0, sp: 0, skills: [], ach: [], seen: { a: 98, b: 1 } }, { a: 5, c: 2 });
+  const merged = mergeSeen({ v: 1, xp: 0, runs: 0, ach: [], seen: { a: 98, b: 1 } }, { a: 5, c: 2 });
   if (merged.a !== 99 || merged.b !== 1 || merged.c !== 2) fail(`跨局累計不對:${JSON.stringify(merged)}`);
 }
 void DIFFS;
@@ -248,12 +249,12 @@ console.log('\n✅ 全部通過');
   (globalThis as unknown as { localStorage: unknown }).localStorage = {
     getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => void mem.set(k, v), removeItem: (k: string) => void mem.delete(k),
   };
-  const base = newGame('story', 'normal', 7, 1, []);
+  const base = newGame('story', 'normal', 7, 1);
   const evil = JSON.parse(JSON.stringify(base));
   evil.dayLine = '<img src=x onerror=alert(1)>';
   evil.log = [{ day: 1, text: '<script>alert(1)</script>' }, 'bad', null];
   evil.inbox.push({ uid: 99, eventId: '__proto__', arrived: 1, deadline: 1 });
-  evil.players = 'NaN'; evil.ap = 9999; evil.skills = ['<b>', 'quick_report'];
+  evil.players = 'NaN'; evil.ap = 9999; evil.strat = { '<b>': 3, quick_report: 99 };
   evil.over = { title: '"><svg onload=1>', body: 'x' };
   mem.set(Array.from(mem.keys())[0] ?? 'ops-game-save-v1', '');
   mem.set('ops-game-save-v1', JSON.stringify(evil));

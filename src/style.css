@@ -385,112 +385,8 @@ button.primary .cost { opacity: 0.85; }
 .spgain ul { font-weight: 400; margin: 4px 0 0; padding-left: 18px; font-size: 0.88rem; }
 .cost.down { color: var(--good); font-weight: 700; }
 
-/* ---------- RPG 技能樹 ---------- */
-.skills-page { padding-bottom: 150px; }
-.tree-card h3 { margin-bottom: 10px; }
-.tree { position: relative; display: flex; flex-direction: column; gap: 34px; padding: 6px 0 4px; }
-.tier { position: relative; z-index: 1; display: grid; gap: 14px; justify-items: center; }
-.tier.cols-1 { grid-template-columns: 1fr; }
-.tier.cols-2 { grid-template-columns: 1fr 1fr; }
-.tree-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: visible; }
-.tree-lines path { fill: none; stroke: var(--line); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 2 7; }
-.tree-lines path.open { stroke: var(--muted); stroke-dasharray: none; }
-.tree-lines path.on { stroke: var(--accent); stroke-width: 4; stroke-dasharray: none; }
-
-.node { width: 100%; max-width: 150px; min-height: 92px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 10px 6px; border-radius: 18px; text-align: center; position: relative; z-index: 1; background: var(--panel); }
-.node .ni { font-size: 1.7rem; line-height: 1.1; }
-.node .nn { font-weight: 700; font-size: 0.86rem; }
-.node .nc { font-size: 0.75rem; color: var(--muted); }
-.node.owned { border: 2px solid var(--accent); background: var(--chip); box-shadow: 0 0 0 4px rgba(242, 201, 76, 0.18), var(--shadow); }
-.node.owned .nc { color: var(--accent); font-weight: 700; }
-.node.can { border: 2px dashed var(--accent); animation: nodePulse 1.8s ease-in-out infinite; }
-.node.poor { border-style: solid; }
-.node.locked { border-style: dashed; opacity: 0.8; }
-.node.locked .nn, .node.locked .nc { color: var(--muted); }
-.node.sel { outline: 3px solid var(--ink); outline-offset: 2px; }
-.node.learned { animation: nodeLearn 0.6s ease; }
-@keyframes nodePulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(242, 201, 76, 0.45); } 50% { box-shadow: 0 0 0 8px rgba(242, 201, 76, 0); } }
-@keyframes nodeLearn { 0% { transform: scale(0.85); } 50% { transform: scale(1.12); } 100% { transform: scale(1); } }
-
-.skill-detail { position: fixed; left: 0; right: 0; bottom: 0; z-index: 7; background: var(--bg); border-top: 1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
-.sd-inner { max-width: 760px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.sd-text { min-width: 0; }
-.sd-text b { display: block; }
-.sd-text p { margin: 2px 0 0; font-size: 0.9rem; }
-.sd-text .warn { color: var(--bad); font-size: 0.78rem; }
-.sd-inner > button { flex: none; max-width: 46%; }
-@media (max-width: 520px) { .node { max-width: 128px; min-height: 86px; } .sd-inner { flex-direction: column; align-items: stretch; } .sd-inner > button { max-width: none; } }
-.sd-inner > button:disabled { opacity: 0.85; }
-
-/* ---------- 技能樹:壓縮版面 ---------- */
-.skills-page { max-width: 980px; padding-bottom: 96px; }
 .skills-head { padding: 6px 0; margin-bottom: 8px; }
 .sp b { font-size: 1.3rem; }
-.line-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
-.line-tabs button { flex: 1; padding: 7px 6px; border-radius: 999px; font-size: 0.88rem; white-space: nowrap; }
-.line-tabs button.sel { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
-.line-tabs em { font-style: normal; background: var(--chip); color: var(--ink); border-radius: 999px; padding: 0 6px; margin-left: 3px; font-size: 0.74rem; }
-.trees { display: grid; gap: 10px; }
-.tree-card { padding: 10px 12px; margin-bottom: 0; }
-.tree-card:not(.cur) { display: none; }
-.tree-card h3 { margin-bottom: 4px; font-size: 0.95rem; }
-.tree { gap: 22px; padding: 2px 0 0; }
-.tier { gap: 10px; }
-.node { max-width: 132px; min-height: 66px; padding: 7px 6px; border-radius: 14px; gap: 0; }
-.node .ni { font-size: 1.3rem; }
-.node .nn { font-size: 0.8rem; }
-.node .nc { font-size: 0.7rem; }
-.skills-info { margin-top: 10px; padding: 8px 12px; }
-.skills-info summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; }
-.skills-info p { margin: 6px 0; font-size: 0.82rem; }
-.ach { font-size: 0.82rem; gap: 4px; }
-.skill-detail { padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px)); }
-.sd-inner { flex-direction: row !important; align-items: center !important; gap: 10px; }
-.sd-text { flex: 1; min-width: 0; font-size: 0.9rem; }
-.sd-desc { font-size: 0.82rem; color: var(--muted); margin-top: 1px; }
-.sd-desc .warn, .sd-inner .warn { color: var(--bad); }
-.sd-inner > button { max-width: none !important; white-space: nowrap; padding: 8px 12px; }
-@media (min-width: 860px) {
-  .trees { grid-template-columns: repeat(3, 1fr); }
-  .tree-card:not(.cur) { display: block; }
-  .line-tabs { display: none; }
-}
-
-/* ---------- 技能樹:只留圖示 ---------- */
-.tree { gap: 18px; padding: 4px 0 2px; }
-.tier { gap: 8px; }
-.node { width: 52px; height: 52px; min-height: 0; max-width: none; padding: 0; border-radius: 50%; }
-.node .ni { font-size: 1.5rem; }
-.node .nn { display: none; }
-.node .nc { position: absolute; right: -6px; bottom: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: var(--ink); color: var(--bg); font-size: 0.72rem; font-weight: 700; line-height: 20px; text-align: center; }
-.node.owned .nc { background: var(--accent); color: var(--accent-ink); }
-.node.locked .nc { background: var(--muted); color: var(--bg); }
-.tree-card { padding: 8px 12px 12px; }
-@media (max-width: 520px) { .node { width: 50px; height: 50px; max-width: none; min-height: 0; } }
-.tier.cols-2 { grid-template-columns: repeat(2, 56px); justify-content: center; column-gap: 56px; }
-.tier.cols-1 { grid-template-columns: 56px; justify-content: center; }
-
-/* ---------- 單張技能樹:共同起點 + 三條分支 ---------- */
-.line-tabs { display: none !important; }
-.trees { display: block !important; }
-.tree-all { display: flex; flex-direction: column; gap: 10px; padding: 4px 0 2px; }
-.root-row { display: flex; justify-content: center; position: relative; z-index: 1; }
-.node.root { width: 46px; height: 46px; cursor: default; display: flex; align-items: center; justify-content: center; }
-.cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.col { display: flex; flex-direction: column; align-items: center; gap: 16px; position: relative; z-index: 1; }
-.col-label { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; font-size: 0.72rem; white-space: nowrap; position: relative; z-index: 2; margin-bottom: 2px; }
-.col .tier { gap: 6px; }
-.col .tier.cols-2 { grid-template-columns: repeat(2, 46px); column-gap: 10px; justify-content: center; }
-.col .tier.cols-1 { grid-template-columns: 46px; justify-content: center; }
-.col .node { width: 46px; height: 46px; }
-.col .node .ni { font-size: 1.35rem; }
-@media (min-width: 860px) {
-  .col .tier.cols-2 { column-gap: 30px; }
-  .col .node { width: 52px; height: 52px; }
-  .col .tier.cols-2 { grid-template-columns: repeat(2, 52px); }
-  .col .tier.cols-1 { grid-template-columns: 52px; }
-}
-
 /* ---------- 像素場景模式 ---------- */
 #scene { position: fixed; left: 0; top: 0; z-index: 0; display: none; image-rendering: pixelated; image-rendering: crisp-edges; }
 body.scene-mode { overflow: hidden; background: #1c2230; }
@@ -1057,7 +953,6 @@ body.scene-mode.on-skills #app, body.on-skills #app { position: static; max-widt
 
 body.split .start { animation: none; transform: none; }
 .st-head h1 { text-align: left; }
-body.on-skills .skill-detail { position: sticky; left: auto; right: auto; bottom: 8px; margin-top: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
 @media (max-width: 520px) {
   .opts3 { grid-template-columns: repeat(3, 1fr); }
   .opts3 .opt { display: grid; grid-template-columns: none; text-align: center; padding: 8px 4px; }
@@ -1236,9 +1131,49 @@ body.scene-mode, body.on-skills { background: var(--bg); }
 .strat-modal .sdetail { display: grid; gap: 6px; }
 .strat-modal .sd b em { font-style: normal; font-size: 0.72rem; color: var(--accent-ink); background: var(--tc, var(--gold)); border-radius: 4px; padding: 0 6px; margin-left: 6px; }
 
-.title-row { grid-template-columns: repeat(3, 1fr); }
+.title-row { grid-template-columns: repeat(4, 1fr); }
 .persona-modal { width: min(520px, 100%); }
 
 /* 突發事件 */
 .alert-note { background: rgba(224, 96, 90, 0.16); border: 1px solid var(--crimson); border-radius: 10px; padding: 8px 12px; font-size: 0.86rem; color: #ffd9d6; animation: fadeIn 0.3s ease both; }
 .mail.sudden { border-color: var(--crimson); box-shadow: 0 0 0 1px var(--crimson), 0 0 12px rgba(224, 96, 90, 0.3); }
+
+/* 首領專屬畫面 */
+.boss-bg { background: radial-gradient(ellipse at 50% 40%, rgba(120, 20, 30, 0.55), rgba(8, 3, 16, 0.92) 70%); }
+.bossintro { width: min(460px, 100%); text-align: center; border: 2px solid var(--crimson); border-top: 2px solid var(--gold); box-shadow: 0 0 40px rgba(224, 96, 90, 0.35); padding: 24px 22px 18px; }
+.bossintro.win { border-color: var(--gold); box-shadow: 0 0 40px rgba(242, 201, 76, 0.4); }
+.boss-skull { font-size: 3.6rem; line-height: 1; animation: bossPulse 1.6s ease-in-out infinite; }
+.boss-tag { margin-top: 6px; font-size: 0.8rem; letter-spacing: 0.4em; color: var(--crimson); font-weight: 700; }
+.bossintro.win .boss-tag { color: var(--gold); }
+.bossintro h2 { font-size: 1.7rem; letter-spacing: 0.06em; color: var(--gold); text-shadow: 2px 2px 0 #0b0614; margin: 6px 0 10px; }
+.boss-brief { color: var(--ink); line-height: 1.6; margin: 6px 0; }
+.boss-why { color: var(--warn); font-size: 0.9rem; margin: 6px 0; }
+.boss-counter { margin: 12px 0; padding: 10px; background: var(--chip); border: 1px solid var(--line); border-radius: 10px; }
+.bps { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin: 8px 0; }
+.bp { padding: 2px 10px; border: 1px solid var(--line); border-radius: 999px; font-size: 0.82rem; color: var(--muted); }
+.bp.on { border-color: var(--gold); color: var(--ink); }
+.bp b { color: var(--gold); font-weight: 600; }
+.boss-bonus { font-weight: 600; color: var(--teal); font-size: 0.9rem; }
+.boss-go { width: 100%; padding: 12px; font-size: 1.05rem; letter-spacing: 0.1em; }
+.boss-bar { margin: 8px 0; padding: 6px 10px; border-left: 3px solid var(--crimson); background: rgba(224, 96, 90, 0.12); border-radius: 0 8px 8px 0; font-size: 0.84rem; color: #ffd9d6; }
+body.split .dialog-ui.boss { border-color: var(--crimson); box-shadow: 0 0 18px rgba(224, 96, 90, 0.3); }
+@keyframes bossPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+@media (prefers-reduced-motion: reduce) { .boss-skull { animation: none; } }
+
+/* 提示卡 */
+.toast { display: none !important; }
+#toasts { position: fixed; z-index: 45; left: 50%; bottom: calc(104px + env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(92vw, 430px); pointer-events: none; }
+body.split.split-wide #toasts { left: calc(var(--pane-w) + (100vw - var(--pane-w)) / 2); }
+.toast-card { pointer-events: auto; cursor: pointer; display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-left: 4px solid var(--gold); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55); text-align: left; line-height: 1.45; animation: toastUp 0.25s ease both; }
+.toast-card.warn { border-left-color: var(--crimson); }
+.toast-card.out { opacity: 0; transform: translateY(8px); transition: opacity 0.2s ease, transform 0.2s ease; }
+.tc-i { flex: none; font-size: 1.3rem; line-height: 1.2; }
+.tc-b { display: grid; gap: 2px; min-width: 0; }
+.tc-b b { font-size: 0.95rem; color: var(--gold); font-weight: 600; }
+.toast-card.warn .tc-b b { color: #ffb3ad; }
+.tc-b span { font-size: 0.84rem; color: var(--ink); opacity: 0.88; }
+@keyframes toastUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+.ar-title small { margin-left: 8px; font-weight: 400; color: var(--muted); }
+.ach { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.86rem; }
+.ach li { padding: 6px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
