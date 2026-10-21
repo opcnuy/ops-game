@@ -1177,3 +1177,26 @@ body.split.split-wide #toasts { left: calc(var(--pane-w) + (100vw - var(--pane-w
 .ar-title small { margin-left: 8px; font-weight: 400; color: var(--muted); }
 .ach { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.86rem; }
 .ach li { padding: 6px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+
+/* 商店(示意) */
+.title-row { grid-template-columns: repeat(5, 1fr); }
+@media (max-width: 520px) { .title-row { grid-template-columns: repeat(3, 1fr); } }
+.shop-note { margin: 8px 2px 0; padding: 8px 12px; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); font-size: 0.84rem; }
+.shopi.buyable { cursor: default; grid-template-columns: auto 1fr auto; }
+.shopi .shc { display: flex; align-items: center; }
+.mini { padding: 6px 12px; border-radius: 999px; font-size: 0.86rem; white-space: nowrap; }
+.mini.sel { border-color: var(--accent); background: var(--chip); color: var(--accent); }
+.mini.buy { background: var(--gold); color: var(--accent-ink); border-color: var(--gold); font-weight: 700; }
+.buy-modal { width: min(420px, 100%); }
+.buy-item { display: flex; gap: 12px; align-items: center; margin: 4px 0 8px; }
+.buy-item .shi { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; background: var(--chip); border: 2px solid var(--line); border-radius: 10px; }
+.buy-price { font-size: 1.6rem; font-weight: 700; color: var(--gold); margin: 6px 0; }
+.reroll-row { margin-top: 12px; display: flex; justify-content: center; }
+.reroll-row button { padding: 8px 18px; border-radius: 999px; }
+.reroll-row small { color: var(--muted); margin-left: 4px; }
+.shopi.buyable.owned { opacity: 1; }
+.shopi.buyable.owned .shb { opacity: 0.75; }
+/* 主頁那排五顆按鈕:三顆一行,不要擠到文字換行 */
+.title-row { display: flex !important; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.title-row button { flex: 0 0 calc(33.333% - 6px); white-space: nowrap; }
+@media (max-width: 520px) { .title-row { grid-template-columns: none; } }

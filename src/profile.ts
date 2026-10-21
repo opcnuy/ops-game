@@ -1,5 +1,6 @@
 import { storageKey } from './storage';
 import { decodeCard } from './colleague';
+import { emptyShop, sanitizeShop, type ShopState } from './shop';
 import { ALL_UNLOCK, DEFAULT_UNLOCK, SHOP, curseById, roleById } from './cards';
 import { sanitizePersona, type PersonaPoints } from './persona';
 
@@ -23,6 +24,8 @@ export interface Profile {
   role?: string;
   /** 下一局要帶的挑戰(沒選就是空的) */
   curse?: string;
+  /** 商店(示意用):外觀與便利的購買、重抽券、月卡 */
+  shop?: ShopState;
 }
 
 export interface LevelDef {
@@ -53,7 +56,7 @@ export function loadProfile(): Profile {
       const list = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string').slice(0, 100) : []);
       const prof: Profile = {
         v: 1, xp, runs: n(p.runs, 0),
-        ach: list(p.ach), seen: sanitizeSeen(p.seen), persona: sanitizePersona(p.persona), ...sanitizeColleagues(p.colleagues, p.colleagueSel), ...sanitizeMeta(p.credits, p.unlock, p.role, p.curse),
+        ach: list(p.ach), seen: sanitizeSeen(p.seen), persona: sanitizePersona(p.persona), ...sanitizeColleagues(p.colleagues, p.colleagueSel), ...sanitizeMeta(p.credits, p.unlock, p.role, p.curse), shop: sanitizeShop((p as { shop?: unknown }).shop),
       };
       // 舊版有技能樹與技能點:技能樹已併進策略,累計獲得的技能點一點換 10 資歷,只換一次
       const oldSp = (p as { sp?: unknown }).sp;
@@ -64,7 +67,7 @@ export function loadProfile(): Profile {
       return prof;
     }
   } catch { /* 讀不到就當新玩家 */ }
-  return { v: 1, xp: 0, runs: 0, ach: [], credits: 0, unlock: [...DEFAULT_UNLOCK], role: 'intern' };
+  return { v: 1, xp: 0, runs: 0, ach: [], credits: 0, unlock: [...DEFAULT_UNLOCK], role: 'intern', shop: emptyShop() };
 }
 
 /** 讀檔時逐項檢查:資歷要是合理的數字,解鎖清單只留認得的項目並補上預設,職位要是已解鎖的 */
@@ -90,7 +93,7 @@ export function buyItem(p: Profile, id: string): { ok: true; profile: Profile } 
 /** 升一級、每個成就第一次達成,各給多少資歷 */
 export const CREDITS_PER_LEVEL = 20;
 export const CREDITS_PER_ACH = 10;
-export const MAX_COLLEAGUES = 5;
+export const MAX_COLLEAGUES = 8;
 
 /** 讀檔時逐項檢查:只留能解開的代碼,選擇的編號也要在範圍內 */
 function sanitizeColleagues(list: unknown, sel: unknown): { colleagues: string[]; colleagueSel: number } {

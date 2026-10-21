@@ -93,6 +93,8 @@ export const STAGES: Stage[] = [
   { sky: ['#f7c27a', '#fbd9a0', '#fde9c4'], wall: '#eddcc3', wallLine: '#e0cdb2', bld: '#9b7f86', bld2: '#826a75', desk: ['#c28a55', '#b07a48', '#8a5c34'], stars: false, lit: false },
   { sky: ['#5a4a8a', '#c8627a', '#f6a56b'], wall: '#c9b3a8', wallLine: '#bba396', bld: '#4d3f66', bld2: '#3d3355', desk: ['#a87448', '#966538', '#744a28'], stars: false, lit: true },
   { sky: ['#0f1630', '#1b2548', '#2a3560'], wall: '#7c829c', wallLine: '#70768f', bld: '#161d38', bld2: '#10162c', desk: ['#7a5636', '#6a4a2e', '#503820'], stars: true, lit: true },
+  // 5:櫻花(外觀主題)
+  { sky: ['#f6c9d8', '#fbdce6', '#fdeaf0'], wall: '#f6e4ea', wallLine: '#ecd3dc', bld: '#c28aa3', bld2: '#a8718a', desk: ['#d7a27a', '#c68f66', '#a4724d'], stars: false, lit: false },
 ];
 
 export const stageFor = (timeFrac: number): number => clamp(Math.floor(timeFrac * 5), 0, 4);
@@ -287,7 +289,7 @@ function paintBackground(ctx: Ctx, L: SceneLayout, st: Stage, mate?: Style): voi
 const bgCache = new Map<string, HTMLCanvasElement>();
 
 /** 畫整個場景。timeFrac:0 = 一天開始,1 = 一天結束 */
-export interface OfficeExtra { ap: number; maxAp: number; series: number[]; frame?: number }
+export interface OfficeExtra { ap: number; maxAp: number; series: number[]; frame?: number; /** 外觀主題:固定用某個時段的色盤 */ stage?: number; /** 桌上有沒有貓 */ pet?: boolean }
 
 export function renderOffice(canvas: HTMLCanvasElement, L: SceneLayout, timeFrac: number, mate?: Style, extra?: OfficeExtra): void {
   if (canvas.width !== L.W || canvas.height !== L.H) {
@@ -296,7 +298,7 @@ export function renderOffice(canvas: HTMLCanvasElement, L: SceneLayout, timeFrac
   }
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
-  const stage = stageFor(timeFrac);
+  const stage = extra?.stage ?? stageFor(timeFrac);
   const key = `${L.split ? 's' : ''}${L.W}x${L.H}:${stage}:${mate ?? ''}`;
   let bg = bgCache.get(key);
   if (!bg) {
@@ -317,6 +319,26 @@ export function renderOffice(canvas: HTMLCanvasElement, L: SceneLayout, timeFrac
   line(ctx, c.cx, c.cy, c.cx + Math.round(Math.cos(mAng) * (c.r - 2)), c.cy + Math.round(Math.sin(mAng) * (c.r - 2)), '#2a2f3a');
   line(ctx, c.cx, c.cy, c.cx + Math.round(Math.cos(hAng) * (c.r - 4)), c.cy + Math.round(Math.sin(hAng) * (c.r - 4)), '#c0392b');
   if (L.split && extra) paintLive(ctx, L, extra, mate);
+  if (L.split && extra?.pet) drawCat(ctx, L, extra.frame ?? 0);
+}
+
+/** 外觀:桌上的貓。坐在螢幕旁,尾巴會甩 */
+function drawCat(ctx: Ctx, L: SceneLayout, f: number): void {
+  const { mon, deskY, W } = L;
+  const x = mon.x >= 40 ? mon.x - 30 : Math.min(W - 14, mon.x + mon.w + 4);
+  const y = deskY + 1;
+  const fur = '#e8a15a', dark = '#b9742f', white = '#f6ead6', eye = '#2a2f3a';
+  rect(ctx, x + 1, y - 7, 8, 7, fur);          // 身體
+  rect(ctx, x + 2, y - 4, 6, 4, white);        // 肚子
+  rect(ctx, x + 6, y - 11, 6, 6, fur);         // 頭
+  rect(ctx, x + 6, y - 13, 2, 2, dark);        // 耳朵
+  rect(ctx, x + 10, y - 13, 2, 2, dark);
+  rect(ctx, x + 8, y - 9, 1, 1, f % 12 === 0 ? fur : eye); // 眼睛(偶爾眨)
+  rect(ctx, x + 10, y - 9, 1, 1, f % 12 === 0 ? fur : eye);
+  rect(ctx, x + 9, y - 7, 1, 1, '#d46a6a');    // 鼻子
+  const tail = f % 6 < 3;                      // 尾巴左右甩
+  rect(ctx, x - 1, y - (tail ? 6 : 3), 2, tail ? 5 : 2, dark);
+  rect(ctx, x - (tail ? 1 : 3), y - (tail ? 8 : 4), 2, 2, dark);
 }
 
 /** 分割版面才有的即時內容:螢幕上的人數走勢、飄過窗外的雲、同事的小動作、桌前的咖啡杯(剩幾點行動點數)與蒸氣 */

@@ -186,14 +186,14 @@ function paintPantry(ctx: Ctx, L: SceneLayout, mate?: Style): void {
 
 const roomCache = new Map<string, HTMLCanvasElement>();
 
-export function renderRoom(canvas: HTMLCanvasElement, L: SceneLayout, room: Room, timeFrac: number, crowd = false, mate?: Style, frame = 0): void {
+export function renderRoom(canvas: HTMLCanvasElement, L: SceneLayout, room: Room, timeFrac: number, crowd = false, mate?: Style, frame = 0, forceStage?: number): void {
   if (canvas.width !== L.W || canvas.height !== L.H) {
     canvas.width = L.W;
     canvas.height = L.H;
   }
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
-  const stage = stageFor(timeFrac);
+  const stage = forceStage ?? stageFor(timeFrac);
   const key = `${L.split ? 's' : ''}${L.W}x${L.H}:${room}:${stage}:${crowd ? 'c' : ''}:${mate ?? ''}`;
   let bg = roomCache.get(key);
   if (!bg) {

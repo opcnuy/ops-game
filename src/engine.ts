@@ -340,7 +340,7 @@ export function gainXp(s: State, n: number): number {
 }
 
 /** 抽候選:進化優先,其次是已有可升級的,再來是新的(槽位未滿);有「時間管理」多一張 */
-function drawPick(s: State): void {
+function drawPick(s: State, avoid: string[] = []): void {
   if (s.cardPick || s.over || (s.pendingPicks ?? 0) <= 0) return;
   const owned = (id: string): number => stratLv(s, id);
   const base = STRATEGIES.filter((c) => !c.evolve);
@@ -356,6 +356,8 @@ function drawPick(s: State): void {
     else if (owned(c.id) === 0 && slots < MAX_SLOTS && open(c.id)) pool.push({ id: c.id, w: c.pure ? 1.2 : 2 });
   }
   const want = 3 + ((s.unlock ?? ALL_UNLOCK).includes('perk_pick') ? 1 : 0);
+  // 重抽:盡量換掉目前這幾張(候選不夠多時才允許重複)
+  if (avoid.length && pool.filter((x) => !avoid.includes(x.id)).length >= want) for (const a of avoid) { const i = pool.findIndex((x) => x.id === a); if (i >= 0) pool.splice(i, 1); }
   const picks: string[] = evo.slice(0, 1).map((c) => c.id);
   while (picks.length < want && pool.length) {
     let r = rand(s) * pool.reduce((a, c) => a + c.w, 0);
@@ -378,6 +380,17 @@ function onGain(s: State, id: string, lv: number): string {
   if (id === 'insight' && lv === 1) return ' ' + revealIntel(s, 'boss');
   if (id === 'insight' && lv === 2) return ' ' + revealIntel(s, 'community');
   return '';
+}
+
+/** 重抽目前的升級候選(花不花券由呼叫端決定);換不出新的就維持原樣並回傳 false */
+export function rerollPick(s: State): boolean {
+  const prev = s.cardPick;
+  if (!prev || s.over) return false;
+  s.cardPick = undefined;
+  drawPick(s, prev);
+  if (!s.cardPick) { s.cardPick = prev; return false; }
+  s.rerolls = (s.rerolls ?? 0) + 1;
+  return true;
 }
 
 export function pickCard(s: State, id: string): string | null {
@@ -463,6 +476,7 @@ function sanitizeState(raw: unknown): State | null {
   s.sudden = (Array.isArray(r.sudden) ? (r.sudden as { at?: unknown; fired?: unknown }[]) : []).slice(0, 4)
     .filter((x) => x && (x.at === 'pm' || x.at === 'eve')).map((x) => ({ at: x.at as 'pm' | 'eve', fired: x.fired === true }));
   s.alert = typeof r.alert === 'string' ? cleanText(r.alert, 100) : undefined;
+  s.rerolls = num(r.rerolls, 0, 999, 0);
   s.bossIntro = r.bossIntro === undefined ? undefined : num(r.bossIntro, 0, 1e9, 0);
   const br = r.bossResult as { title?: unknown; win?: unknown; text?: unknown; eff?: unknown; xp?: unknown } | undefined;
   s.bossResult = br && typeof br === 'object' && typeof br.title === 'string'

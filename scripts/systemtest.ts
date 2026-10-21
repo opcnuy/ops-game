@@ -1,4 +1,6 @@
 // 活動搭配、餘波、策略、檔案室、導演、首領、突發事件等系統的檢查
+import { PRODUCTS, THEMES, canFast, colleagueSlots, emptyShop, fastOn, monthActive, purchase, sanitizeShop, totalSpent } from '../src/shop';
+import { rerollPick } from '../src/engine';
 import { ALL_UNLOCK, DEFAULT_UNLOCK, ROLES, SHOP, STRATEGIES } from '../src/cards';
 import { optionCost } from '../src/engine';
 import { dominantTheme, makeReport, paceOf, submitReport, threatLevel } from '../src/engine';
@@ -181,6 +183,34 @@ ok(SCOUT_CARDS.every((c) => c.name && c.result), '輿情卡缺欄位');
     let leaked = 0;
     for (let i = 0; i < 40; i++) { late.cardPick = undefined; late.pendingPicks = 0; gainXp(late, 1000); for (const id of late.cardPick as string[] | undefined ?? []) if (STRATEGIES.find((c) => c.id === id)?.needsCampaign) leaked++; late.strat = { revenue: 2 }; }
     ok(leaked === 0, '後期不該再抽到活動類策略:' + leaked);
+  }
+  // 商店(示意):買斷只能買一次、券與月卡累加、禮包一次給齊、竄改的存檔被清掉、重抽
+  {
+    const now = 1_700_000_000_000;
+    let sh = emptyShop();
+    const buy = (id: string, at = now): boolean => { const r = purchase(sh, id, at); if (r.ok) sh = r.shop; return r.ok; };
+    ok(buy('pet_cat') && sh.pet && !buy('pet_cat'), '買斷商品不該能重複買');
+    ok(buy('tickets10') && buy('tickets10') && sh.tickets === 20, '重抽券應該能累加');
+    ok(buy('month') && monthActive(sh, now) && !monthActive(sh, now + 31 * 86400000), '月卡應有 30 天');
+    const until = sh.monthUntil; buy('month');
+    ok(sh.monthUntil === until + 30 * 86400000, '月卡續買應往後疊加');
+    ok(!canFast(emptyShop(), now) && canFast(sh, now) && fastOn({ ...sh, fast: true }, now) && !fastOn({ ...sh, fast: false }, now), '快速模式的條件不對');
+    ok(colleagueSlots(emptyShop()) === 5 && (buy('slots'), colleagueSlots(sh) === 8), '同事欄位擴充不對');
+    const st = purchase(emptyShop(), 'starter', now);
+    ok(st.ok && st.shop.tickets === 10 && st.shop.owned.includes('pet_cat') && st.shop.owned.includes('theme_sakura') && st.shop.pet, '首購禮包應一次給齊');
+    ok(st.ok && !purchase(st.shop, 'starter', now).ok, '首購禮包只能買一次');
+    ok(totalSpent(sh) === sh.log.reduce((a, x) => a + x.price, 0) && sh.log.length === 6, '購買紀錄不對');
+    ok(!purchase(sh, 'not_here').ok, '不存在的商品應被擋下');
+    ok(PRODUCTS.every((p) => p.price > 0 && p.name && p.desc) && Object.keys(THEMES).every((id) => PRODUCTS.some((p) => p.id === id)), '商品資料不完整');
+    // 竄改:沒買卻套用主題、亂填券與月卡、不認得的商品
+    const bad = sanitizeShop({ owned: ['theme_dusk', 'evil', 5, 'tickets10'], theme: 'theme_night', pet: true, fast: true, tickets: -5, monthUntil: 'x', log: [{ id: 'evil', price: 9, ts: 1 }, { id: 'fast', price: 60, ts: 5 }] });
+    ok(bad.owned.join() === 'theme_dusk' && bad.theme === '' && !bad.pet && bad.tickets === 0 && bad.monthUntil === 0 && bad.log.length === 1, '竄改的商店存檔沒被清乾淨:' + JSON.stringify(bad));
+    // 重抽:換出不同的候選,數量不變;沒有候選就回傳 false
+    const g = newGame('story', 'normal', 91, 5);
+    const before = [...g.cardPick!];
+    ok(rerollPick(g) && g.cardPick!.length === before.length && g.cardPick!.some((id) => !before.includes(id)) && g.rerolls === 1, '重抽應換出新的候選:' + before.join() + ' → ' + g.cardPick?.join());
+    g.cardPick = undefined;
+    ok(!rerollPick(g), '沒有候選時不能重抽');
   }
   // 挑戰
   const base = newGame('story', 'normal', 31, 1);

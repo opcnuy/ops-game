@@ -204,6 +204,8 @@ export interface State {
   sprintUsed?: { day: number; n: number };
   /** 首領:已經播過登場畫面的那一件(uid),與剛打完的結果(給結果畫面) */
   bossIntro?: number;
+  /** 這局重抽過幾次(月卡每局有免費額度) */
+  rerolls?: number;
   bossResult?: { title: string; win: boolean; text: string; eff: string; xp: number };
   xp?: number;
   lv?: number;

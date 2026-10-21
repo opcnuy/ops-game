@@ -3,6 +3,7 @@ import { colleagueBlurb, decodeCard, encodeCard } from './colleague';
 import { PERSONA_FOCUS_BONUS, PERSONA_INFO, PERSONA_STEPS, STYLES, mergePersona, personaLevel, personaLevels, personaTitle } from './persona';
 import { BUFFS, scoutCard } from './scout';
 import { BOSS_TRAITS, COMMUNITY_TRAITS } from './traits';
+import { MONTH_FREE_REROLLS, PRODUCTS, THEMES, canFast, colleagueSlots, emptyShop, fastOn, monthActive, productById, purchase, totalSpent, type ShopState } from './shop';
 import { CURSES, ROLES, SHOP, STRATEGIES, THEME_LABEL, curseById, roleById, strategyById, xpNeed } from './cards';
 import { computeSplitLayout } from './scene/office';
 const clampN = (n: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, n));
@@ -13,7 +14,7 @@ import type { Room } from './scene/rooms';
 import { createFadeCanvas, dissolve } from './scene/fade';
 import { storageKey } from './storage';
 import {
-  CAMPAIGN_TARGET, RAPPORT_NEED, combosFor, CONTENT, DIFFS, activeBuffs, bossTrait, communityTrait, pickScout, pickCard, stratLv, threatLevel, paceOf, bossInfo, pulseActive, pulseHint, EVENTS, computeRunXp, PHASES, LIVE_DAYS, phaseOf, GOAL_INFO, STORY_DAYS, chooseOption, clearSave, doAction, endDay,
+  CAMPAIGN_TARGET, RAPPORT_NEED, combosFor, CONTENT, DIFFS, activeBuffs, bossTrait, communityTrait, pickScout, pickCard, rerollPick, stratLv, threatLevel, paceOf, bossInfo, pulseActive, pulseHint, EVENTS, computeRunXp, PHASES, LIVE_DAYS, phaseOf, GOAL_INFO, STORY_DAYS, chooseOption, clearSave, doAction, endDay,
   HABITS, find, goalMet, goalValue, reportFree, makeReport, submitReport, itemOptions, eventOptions, styleFit, eventText, load, newGame, optionCost, planCampaign, planCost, save, spendToday, weekdayLabel,
 } from './engine';
 import type { ActionKind, ReportQuiz } from './engine';
@@ -25,8 +26,12 @@ const app = document.getElementById('app') as HTMLDivElement;
 
 let S: State | null = load();
 let profile = loadProfile();
-let screen: 'start' | 'game' | 'archive' = 'start';
-type ModalKind = 'none' | 'newgame' | 'strats' | 'persona' | 'boss' | 'bossresult' | 'summary' | 'intro' | 'settings' | 'gamemenu' | 'report' | 'rank' | 'scout' | 'colleague' | 'cards';
+let screen: 'start' | 'game' | 'archive' | 'shop' = 'start';
+let buyId = '';
+const shopOf = (): ShopState => profile.shop ?? emptyShop();
+const fastNow = (): boolean => fastOn(shopOf());
+function setShop(next: ShopState): void { profile = { ...profile, shop: next }; saveProfile(profile); }
+type ModalKind = 'none' | 'newgame' | 'strats' | 'persona' | 'boss' | 'bossresult' | 'buy' | 'upsell' | 'summary' | 'intro' | 'settings' | 'gamemenu' | 'report' | 'rank' | 'scout' | 'colleague' | 'cards';
 let modal: ModalKind = 'none';
 let summary: DaySummary | null = null;
 /** 還有沒做完的事時,第一次按「結束今天」只會進入待確認,再按一次才真的結束 */
@@ -323,7 +328,7 @@ function renderColleague(): string {
       ${colMsg ? `<p class="muted">${esc(colMsg)}</p>` : ''}</div>
     <div class="col-list"><b>這局要帶的同事</b>${rows || '<p class="muted">還沒有收到同事卡。</p>'}
       ${list.length ? `<button class="${sel < 0 ? 'sel' : ''}" data-act="col-sel" data-i="-1">${sel < 0 ? '✅ ' : ''}不帶同事</button>` : ''}</div>
-    <p class="muted">同事每天幫你分擔一次擅長的做法,偶爾闖禍。最多保留 ${MAX_COLLEAGUES} 張。</p>
+    <p class="muted">同事每天幫你分擔一次擅長的做法,偶爾闖禍。最多保留 ${colleagueSlots(shopOf())} 張。</p>
     <div class="actions"><button class="primary" data-act="close-colleague">完成</button></div>
   </div></div>`;
 }
@@ -355,9 +360,9 @@ function renderRank(): string {
 }
 
 /** 主頁可開的彈窗(設定、職級詳情) */
-const START_MODALS: ModalKind[] = ['settings', 'rank', 'colleague', 'newgame', 'persona'];
+const START_MODALS: ModalKind[] = ['settings', 'rank', 'colleague', 'newgame', 'persona', 'buy'];
 function renderStartModal(): string {
-  return modal === 'settings' ? renderSettings() : modal === 'rank' ? renderRank() : modal === 'colleague' ? renderColleague() : modal === 'newgame' ? renderNewGame() : modal === 'persona' ? renderPersonaModal() : '';
+  return modal === 'settings' ? renderSettings() : modal === 'rank' ? renderRank() : modal === 'colleague' ? renderColleague() : modal === 'newgame' ? renderNewGame() : modal === 'persona' ? renderPersonaModal() : modal === 'buy' ? renderBuyModal() : '';
 }
 
 function renderSettings(): string {
@@ -367,8 +372,26 @@ function renderSettings(): string {
     <div class="modal-head"><h2>⚙️ 設定</h2><button class="x" data-act="close-settings" aria-label="關閉">✕</button></div>
     <div class="set-row"><div class="set-text"><b>因果提示</b><p class="muted">顯示事件的前因。自動:困難隱藏。</p></div>
       ${seg<Butterfly>([['auto', '自動'], ['on', '顯示'], ['off', '隱藏']], butterfly, 'bf', 'v')}</div>
+    ${renderLookSettings()}
     <div class="actions"><button class="primary" data-act="close-settings">完成</button></div>
   </div></div>`;
+}
+
+/** 設定裡的外觀與快速模式:沒買的顯示上鎖,點了去商店 */
+function renderLookSettings(): string {
+  const sh = shopOf();
+  const themes = Object.entries(THEMES).map(([id, th]) => {
+    const has = sh.owned.includes(id);
+    return `<button class="${sh.theme === id ? 'sel' : ''}" data-act="${has ? 'set-theme' : 'open-shop'}" data-id="${id}">${has ? '' : '🔒 '}${th.name}</button>`;
+  }).join('');
+  const petHas = sh.owned.includes('pet_cat');
+  const fastHas = canFast(sh);
+  return `<div class="set-row"><div class="set-text"><b>辦公室外觀</b></div>
+      <div class="seg"><button class="${sh.theme ? '' : 'sel'}" data-act="set-theme" data-id="">預設</button>${themes}</div></div>
+    <div class="set-row"><div class="set-text"><b>貓咪</b></div>
+      <div class="seg"><button class="${petHas && sh.pet ? 'sel' : ''}" data-act="${petHas ? 'toggle-pet' : 'open-shop'}">${petHas ? (sh.pet ? '擺出來' : '收起來') : '🔒 商店'}</button></div></div>
+    <div class="set-row"><div class="set-text"><b>快速模式</b><p class="muted">跳過轉場與動畫。</p></div>
+      <div class="seg"><button class="${fastHas && sh.fast ? 'sel' : ''}" data-act="${fastHas ? 'toggle-fast' : 'open-shop'}">${fastHas ? (sh.fast ? '開' : '關') : '🔒 商店'}</button></div></div>`;
 }
 
 /** 主頁:標題畫面。像素辦公室鋪滿整個畫面,只放遊戲名和幾個入口;模式與難度等按下「開始」才選 */
@@ -385,15 +408,69 @@ function renderStart(): string {
       ${has ? `<button class="primary" data-act="continue">繼續遊戲<small>${S!.mode === 'story' ? '劇情' : '無限'} · ${DIFFS[S!.difficulty].label} · ${weekdayLabel(S!.day)}</small></button>` : ''}
       <button class="${has ? '' : 'primary'}" data-act="open-new">${has ? '新遊戲' : '開始遊戲'}</button>
       <div class="title-row">
+        <button data-act="open-shop">🛍️ 商店</button>
         <button data-act="archive">🗂️ 檔案${buyable > 0 ? ` <em>${buyable}</em>` : ''}</button>
         <button data-act="open-persona">🎭 風格</button>
         <button data-act="open-colleague">👥 同事</button>
         <button data-act="open-settings">⚙️ 設定</button>
       </div>
-      <button class="title-rank" data-act="open-rank" title="${nextHint()}"><b>${cur.title}</b> Lv ${cur.lv}${pt ? ` · ${esc(pt.title)}` : ''}<span class="xpbar mini"><span style="--to:${xpPercent(profile.xp)}%"></span></span></button>
+      <button class="title-rank" data-act="open-rank" title="${nextHint()}"><b>${monthActive(shopOf()) ? '👑 ' : ''}${cur.title}</b> Lv ${cur.lv}${pt ? ` · ${esc(pt.title)}` : ''}<span class="xpbar mini"><span style="--to:${xpPercent(profile.xp)}%"></span></span></button>
     </nav>
     <p class="title-foot">所有遊戲、角色與數字皆為虛構</p>
   </div>${renderStartModal()}`;
+}
+
+/** 商店(示意用):只賣外觀與便利,不賣數值。購買不會扣款 */
+function renderShop(): string {
+  const sh = shopOf();
+  const now = Date.now();
+  const days = Math.max(0, Math.ceil((sh.monthUntil - now) / 86400000));
+  const card = (id: string): string => {
+    const p = productById(id);
+    if (!p) return '';
+    const owned = p.once && sh.owned.includes(id);
+    let right: string;
+    if (p.once && owned) {
+      right = p.kind === 'theme' ? `<button class="mini ${sh.theme === id ? 'sel' : ''}" data-act="set-theme" data-id="${id}">${sh.theme === id ? '使用中' : '套用'}</button>`
+        : p.kind === 'pet' ? `<button class="mini ${sh.pet ? 'sel' : ''}" data-act="toggle-pet">${sh.pet ? '擺出來' : '收起來'}</button>`
+        : id === 'fast' ? `<button class="mini ${sh.fast ? 'sel' : ''}" data-act="toggle-fast">${sh.fast ? '開' : '關'}</button>` : '<span class="muted">已擁有</span>';
+    } else right = `<button class="mini buy" data-act="ask-buy" data-id="${id}">NT$${p.price}</button>`;
+    const extra = id === 'month' && monthActive(sh, now) ? `<small class="good">剩 ${days} 天</small>` : id.startsWith('tickets') ? '' : '';
+    return `<div class="shopi buyable ${owned ? 'owned' : ''}"><span class="shi">${p.icon}</span><span class="shb"><b>${esc(p.name)}</b><small>${esc(p.desc)}</small>${extra}</span><span class="shc">${right}</span></div>`;
+  };
+  const group = (title: string, ids: string[]): string => `<h3 class="ar-title">${title}</h3><div class="shop">${ids.map(card).join('')}</div>`;
+  const log = sh.log.slice(-5).reverse().map((x) => `<li>${esc(productById(x.id)?.name ?? x.id)} <span class="muted">NT$${x.price} · ${new Date(x.ts).toLocaleDateString('zh-TW')}</span></li>`).join('');
+  return `<div class="page archive">
+    <header class="skills-head"><button class="ghost" data-act="back">← 返回</button>
+      <div class="sp"><b>${sh.tickets}</b><small>重抽券</small></div><span></span></header>
+    <p class="shop-note">🧪 示意用:不會真的付款或扣款,購買只記在這個瀏覽器的測試存檔裡。只賣外觀與便利,不賣數值。</p>
+    ${group('組合', ['starter', 'month'])}${group('外觀', ['theme_dusk', 'theme_night', 'theme_sakura', 'pet_cat'])}${group('便利', ['fast', 'slots', 'tickets10', 'tickets30'])}
+    ${log ? `<h3 class="ar-title">購買紀錄<small>累計 NT$${totalSpent(sh)}(示意)</small></h3><ul class="ach">${log}</ul>` : ''}
+  </div>`;
+}
+
+/** 購買確認:示意用,確認後直接入帳 */
+function renderBuyModal(): string {
+  const p = productById(buyId);
+  if (!p) return '';
+  return `<div class="modal-bg"><div class="modal buy-modal">
+    <div class="modal-head"><h2>確認購買</h2><button class="x" data-act="cancel-buy" aria-label="關閉">✕</button></div>
+    <div class="buy-item"><span class="shi">${p.icon}</span><div><b>${esc(p.name)}</b><div class="muted">${esc(p.desc)}</div></div></div>
+    <div class="buy-price">NT$${p.price}</div>
+    <p class="muted">示意用:不會扣款。</p>
+    <div class="actions"><button data-act="cancel-buy">取消</button><button class="primary" data-act="confirm-buy">確認購買</button></div>
+  </div></div>`;
+}
+
+/** 重抽券用完時:順手推薦兩個商品 */
+function renderUpsell(): string {
+  const items = ['tickets10', 'month'].map((id) => productById(id)!);
+  return `<div class="modal-bg"><div class="modal buy-modal">
+    <div class="modal-head"><h2>重抽券用完了</h2><button class="x" data-act="close-upsell" aria-label="關閉">✕</button></div>
+    <div class="shop">${items.map((p) => `<div class="shopi buyable"><span class="shi">${p.icon}</span><span class="shb"><b>${esc(p.name)}</b><small>${esc(p.desc)}</small></span><span class="shc"><button class="mini buy" data-act="ask-buy" data-id="${p.id}">NT$${p.price}</button></span></div>`).join('')}</div>
+    <p class="muted">示意用:不會扣款。</p>
+    <div class="actions"><button class="primary" data-act="close-upsell">先不用</button></div>
+  </div></div>`;
 }
 
 /** 檔案室:用資歷解鎖職位、策略與進化配方(解鎖的是選擇,不是數值) */
@@ -491,7 +568,15 @@ function renderCards(s: State): string {
       const tag = (c.evolve ? '進化' : cur ? `Lv${cur}→${next}` : '新') + (c.pure ? ' · 穩定' : '');
       return `<button class="lc ${c.tone}${c.evolve ? ' evo' : ''}" data-act="pick-card" data-id="${c.id}"><span class="lci">${c.icon}</span><span class="lcb"><b>${esc(c.name)}<em>${tag}</em></b><span>👍 ${esc(c.good(next))}</span>${c.bad(next) ? `<span>👎 ${esc(c.bad(next))}</span>` : ''}</span></button>`;
     }).join('')}</div>
+    <div class="reroll-row"><button data-act="reroll">🔄 重抽 <small>${rerollLabel(s)}</small></button></div>
   </div></div>`;
+}
+
+/** 重抽的標示:月卡每局頭兩次免費,其餘用重抽券 */
+function rerollLabel(s: State): string {
+  const sh = shopOf();
+  if (monthActive(sh) && (s.rerolls ?? 0) < MONTH_FREE_REROLLS) return `免費 ${MONTH_FREE_REROLLS - (s.rerolls ?? 0)}`;
+  return sh.tickets > 0 ? `券 ${sh.tickets}` : '券 0';
 }
 
 /** 把目前展開的事件卡捲到頂部(固定列下方) */
@@ -992,14 +1077,14 @@ async function goPlace(next: Place, apply?: () => void): Promise<void> {
   if (transitioning) return;
   transitioning = true;
   try {
-    await dissolve(fadeCanvas, 160, 'in');
+    if (!fastNow()) await dissolve(fadeCanvas, 160, 'in');
     place = next;
     apply?.();
     sceneKey = '';
     // 換場後不讓剛點過的按鈕留著焦點,否則數字鍵與空白鍵會被當成在操作那顆按鈕
     (document.activeElement as HTMLElement | null)?.blur?.();
     render();
-    await dissolve(fadeCanvas, 240, 'out');
+    if (!fastNow()) await dissolve(fadeCanvas, 240, 'out');
   } finally {
     transitioning = false;
     fadeCanvas.style.display = 'none';
@@ -1098,7 +1183,10 @@ function syncSplit(s: State | null): void {
   const cap = !s ? '' : place === 'desk' ? sceneCaption(s) : '';
   if (sceneCap.textContent !== cap) sceneCap.textContent = cap;
   sceneCap.style.display = cap ? 'block' : 'none';
-  const key = `s${pw}x${ph}:${place}${crowd ? ':plan' : ''}:${ap}/${maxAp}:${Math.round(t * 100)}:${mate ?? ''}:${s ? s.history.length : 0}:${s ? Math.round(s.players) : 0}`;
+  const sh = shopOf();
+  const forceStage = THEMES[sh.theme]?.stage;
+  const pet = sh.pet && sh.owned.includes('pet_cat');
+  const key = `s${pw}x${ph}:${place}${crowd ? ':plan' : ''}:${ap}/${maxAp}:${Math.round(t * 100)}:${mate ?? ''}:${s ? s.history.length : 0}:${s ? Math.round(s.players) : 0}:${forceStage ?? ''}:${pet ? 'p' : ''}`;
   if (key === sceneKey) return;
   const layoutChanged = !sceneKey.startsWith(`s${pw}x${ph}:`);
   sceneKey = key;
@@ -1115,8 +1203,8 @@ function syncSplit(s: State | null): void {
   document.body.classList.toggle('at-desk', place === 'desk');
   const where = place;
   splitDraw = () => {
-    if (where === 'desk') renderOffice(sceneCanvas, L, t, mate, { ap, maxAp, series: s ? [...s.history.map((h) => h.players), s.players] : [], frame: animFrame });
-    else renderRoom(sceneCanvas, L, where as Room, t, crowd, mate, animFrame);
+    if (where === 'desk') renderOffice(sceneCanvas, L, t, mate, { ap, maxAp, series: s ? [...s.history.map((h) => h.players), s.players] : [], frame: animFrame, stage: forceStage, pet });
+    else renderRoom(sceneCanvas, L, where as Room, t, crowd, mate, animFrame, forceStage);
   };
   splitDraw();
 }
@@ -1127,7 +1215,7 @@ function syncScene(): void {
   const scene = screen === 'start' || inGame;
   document.body.classList.toggle('split', inGame);
   document.body.classList.toggle('title', screen === 'start');
-  document.body.classList.toggle('on-skills', screen === 'archive');
+  document.body.classList.toggle('on-skills', screen === 'archive' || screen === 'shop');
   document.body.dataset.tension = inGame && S ? String(tensionLevel(S)) : '0';
   if (!scene) return;
   sceneVars();
@@ -1146,9 +1234,9 @@ window.addEventListener('resize', () => {
 });
 
 function render(): void {
-  if (screen === 'archive') {
+  if (screen === 'archive' || screen === 'shop') {
     const y = window.scrollY;
-    app.innerHTML = renderArchive();
+    app.innerHTML = screen === 'shop' ? renderShop() + (modal === 'buy' ? renderBuyModal() : '') : renderArchive();
     window.scrollTo(0, y);
     lastScreen = 'skills';
     syncScene();
@@ -1180,6 +1268,8 @@ function render(): void {
   else if (modal === 'cards') html += renderCards(s);
   else if (modal === 'strats') html += renderStratModal(s);
   else if (modal === 'persona') html += renderPersonaModal();
+  else if (modal === 'buy') html += renderBuyModal();
+  else if (modal === 'upsell') html += renderUpsell();
   else if (modal === 'boss') html += renderBossIntro(s);
   else if (modal === 'bossresult') html += renderBossResult(s);
   else if (modal === 'gamemenu') html += renderGameMenu();
@@ -1438,6 +1528,26 @@ app.addEventListener('click', (e) => {
       tab = 'inbox'; openUid = uid; render(); scrollToOpenCard(); return;
     }
     case 'boss-result-close': { if (s) { s.bossResult = undefined; save(s); } modal = 'none'; render(); return; }
+    case 'open-shop': screen = 'shop'; modal = 'none'; window.scrollTo(0, 0); render(); return;
+    case 'ask-buy': buyId = el.dataset.id ?? ''; modal = 'buy'; render(); return;
+    case 'cancel-buy': modal = screen === 'game' ? (s?.cardPick ? 'none' : 'none') : 'none'; buyId = ''; render(); return;
+    case 'confirm-buy': {
+      const r = purchase(shopOf(), buyId);
+      if (r.ok) { setShop(r.shop); flash(`🛍️ 已獲得:${r.gain}`); } else flash(r.msg);
+      modal = 'none'; buyId = ''; render(); return;
+    }
+    case 'close-upsell': modal = 'none'; render(); return;
+    case 'set-theme': { const id = el.dataset.id ?? ''; const sh = shopOf(); if (!id || sh.owned.includes(id)) { setShop({ ...sh, theme: id }); sceneKey = ''; } render(); return; }
+    case 'toggle-pet': { const sh = shopOf(); if (sh.owned.includes('pet_cat')) { setShop({ ...sh, pet: !sh.pet }); sceneKey = ''; } render(); return; }
+    case 'toggle-fast': { const sh = shopOf(); if (canFast(sh)) setShop({ ...sh, fast: !sh.fast }); render(); return; }
+    case 'reroll': {
+      if (!s?.cardPick) return;
+      const sh = shopOf();
+      const free = monthActive(sh) && (s.rerolls ?? 0) < MONTH_FREE_REROLLS;
+      if (!free && sh.tickets <= 0) { modal = 'upsell'; render(); return; }
+      if (rerollPick(s)) { if (!free) setShop({ ...sh, tickets: sh.tickets - 1 }); save(s); } else flash('沒有別的候選了');
+      render(); return;
+    }
     case 'open-persona': modal = 'persona'; render(); return;
     case 'strat-open': modal = 'strats'; render(); return;
     case 'pick-card': if (s && el.dataset.id && pickCard(s, el.dataset.id) === null) { modal = 'none'; save(s); render(); } return;
@@ -1469,7 +1579,7 @@ app.addEventListener('click', (e) => {
       const list = profile.colleagues ?? [];
       const norm = raw.toUpperCase().trim();
       if (!c) colMsg = '這段代碼看起來不對,請確認有沒有複製完整。';
-      else if (list.length >= MAX_COLLEAGUES) colMsg = `最多保留 ${MAX_COLLEAGUES} 張,請先移除一張。`;
+      else if (list.length >= colleagueSlots(shopOf())) colMsg = `最多保留 ${colleagueSlots(shopOf())} 張,請先移除一張(商店可擴充欄位)。`;
       else if (list.some((x) => decodeCard(x)?.title === c.title && x.replace(/[^0-9A-Z]/g, '') === norm.replace(/[^0-9A-Z]/g, ''))) colMsg = '這張已經收過了。';
       else { profile = { ...profile, colleagues: [...list, norm], colleagueSel: list.length }; saveProfile(profile); colMsg = `收到了:${c.title}。這局會帶他一起。`; }
       render(); return;
@@ -1484,6 +1594,7 @@ app.addEventListener('click', (e) => {
     }
     case 'close-menu': case 'close-rank': case 'close-settings': modal = 'none'; render(); return;
     case 'bf': setButterfly(el.dataset.v as Butterfly); render(); return;
+    case 'back': screen = 'start'; modal = 'none'; buyId = ''; render(); return;
     case 'archive': screen = 'archive'; window.scrollTo(0, 0); render(); return;
     case 'buy': {
       const r = buyItem(profile, el.dataset.id ?? '');
@@ -1564,12 +1675,12 @@ app.addEventListener('click', (e) => {
     };
     const card = el.closest('.mail');
     const risky = el.dataset.risky === '1';
-    if (card && !reduceMotion && risky) {
+    if (card && !reduceMotion && !fastNow() && risky) {
       busy = true;
       el.classList.add('rolling');
       setTimeout(() => card.classList.add('leaving'), 330);
       setTimeout(apply, 560);
-    } else if (card && !reduceMotion) { busy = true; card.classList.add('leaving'); setTimeout(apply, 230); } else apply();
+    } else if (card && !reduceMotion && !fastNow()) { busy = true; card.classList.add('leaving'); setTimeout(apply, 230); } else apply();
   } else if (act === 'report') {
     if (s.pendingReports <= 0) return;
     reportQuiz = makeReport(s);
