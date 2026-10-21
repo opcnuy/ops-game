@@ -1433,7 +1433,7 @@ export function endDay(s: State): DaySummary {
       if (ev.kind === '插曲') return false; // 插曲過期就悄悄消失,沒有懲罰也不記拖延
       if (stratLv(s, 'buffer') && !s.flags.bufferUsed && !it.stage && Object.values(ev.ignore.effects).some((v) => (v ?? 0) < 0)) {
         s.flags.bufferUsed = true;
-        lines.push(`🕰️ 「${ev.title}」逾期了,但你事先留了緩衝,對方沒有追究。(這局只有一次)`);
+        lines.push(`🕰️ ${quoted(ev.title)}逾期了,但你事先留了緩衝,對方沒有追究。(這局只有一次)`);
         return false;
       }
       const mult = stratLv(s, 'evo_iron') ? 0 : DIFFS[s.difficulty].ignoreMult * (1 + 0.2 * stratLv(s, 'all_hands')) * Math.max(0.1, 1 - 0.12 * stratLv(s, 'lowkey')) * (1 + 0.03 * threat(s)) * (it.sudden ? 0.35 : 1);
@@ -1445,16 +1445,16 @@ export function endDay(s: State): DaySummary {
         for (const k of Object.keys(pen) as (keyof Effects)[]) if ((pen[k] ?? 0) < 0) pen[k] = Math.round((pen[k] as number) * 1.5);
         applyEffects(s, pen);
         addHabits(s, { ...(ev.ignore.habit ?? {}), procrastinate: 1 });
-        lines.push(`🔥 「${ev.title}」第二次逾期,這件事不了了之,對方很失望。${effectNote(pen)}`);
+        lines.push(`🔥 ${quoted(ev.title)}第二次逾期,這件事不了了之,對方很失望。${effectNote(pen)}`);
         addMoment(s, 6 + impactOf(pen) / 2, '🔥', `${quoted(ev.title)}拖到第二次逾期,最後不了了之。`);
       } else {
         applyEffects(s, pen);
         addHabits(s, { ...(ev.ignore.habit ?? {}), procrastinate: 1 });
         if (hurts) {
           s.followUps.push({ eventId: it.eventId, day: s.day + 1, stage: 1 });
-          lines.push(`⏰ 「${ev.title}」逾期:${ev.ignore.result}${effectNote(pen)}\n對方明天會再來催,而且處理會更費力。`);
+          lines.push(`⏰ ${quoted(ev.title)}逾期:${ev.ignore.result}${effectNote(pen)}\n對方明天會再來催,而且處理會更費力。`);
           if (impactOf(pen) >= 5) addMoment(s, impactOf(pen), '⏰', `${quoted(ev.title)}沒處理到逾期:${ev.ignore.result}`);
-        } else lines.push(`⏰ 「${ev.title}」逾期:${ev.ignore.result}`);
+        } else lines.push(`⏰ ${quoted(ev.title)}逾期:${ev.ignore.result}`);
       }
       return false;
     }

@@ -839,7 +839,7 @@ function renderPlanRoom(s: State, hud: string): string {
   const last = planStep === steps.length - 1;
   const cost = planCost(sel, s);
   const summary = last
-    ? `<div class="plan-sum">玩法「${find(CONTENT.mechanics, sel.mechanic).name}」・獎勵「${find(CONTENT.rewards, sel.reward).name}」・商品「${find(CONTENT.bundles, sel.bundle).name}」・宣傳「${find(CONTENT.promos, sel.promo).name}」</div>${comboLine()}`
+    ? `<div class="plan-sum"><span>玩法「${find(CONTENT.mechanics, sel.mechanic).name}」</span><span>獎勵「${find(CONTENT.rewards, sel.reward).name}」</span><span>商品「${find(CONTENT.bundles, sel.bundle).name}」</span><span>宣傳「${find(CONTENT.promos, sel.promo).name}」</span></div>${comboLine()}`
     : '';
   return `<div class="game roomplay">${hud}
     <div class="room-label">📹 會議室</div>
@@ -1009,7 +1009,7 @@ function renderIntro(): string {
   return `<div class="modal-bg"><div class="modal">
     <h2>歡迎上班</h2>
     <p>你是這款遊戲的<b>${LEVELS[S!.level - 1].title}</b>(Lv ${S!.level}・${DIFFS[S!.difficulty].label}難度)。每天有 ${S!.maxAp} 點行動點數,可以用來:</p>
-    <p>・處理收件匣的事 ・規劃活動 ・看輿情、填日報</p>
+    <p class="chips"><span>處理收件匣</span><span>規劃活動</span><span>看輿情</span><span>填日報</span></p>
     <p>點數不會累積,沒處理的事會變成麻煩。看好人數、留存、營收、信任與老闆。</p>
     <hr><p><b>${S!.mode === 'story' ? '試用期結束時要達成:' : '第一次考核(第 10 天)要達成:'}</b><br>${S!.goals.map((g) => '・' + goalText(g)).join('<br>')}</p>
     <p class="muted">同樣的選擇,結果會因老闆與玩家的脾氣不同。</p>
@@ -1051,7 +1051,7 @@ function renderAward(s: State): string {
 function renderMoments(s: State): string {
   const top = [...(s.moments ?? [])].sort((a, b) => b.w - a.w || b.day - a.day).slice(0, 4).sort((a, b) => a.day - b.day);
   if (!top.length) return '';
-  return `<div class="moments"><h3>這一局的難忘時刻</h3>${top.map((m) => `<p><span class="md">第 ${m.day} 天</span> ${esc(m.icon)} ${esc(m.text)}</p>`).join('')}</div><hr>`;
+  return `<div class="moments"><h3>這一局的難忘時刻</h3>${top.map((m) => `<p><span class="md">第 ${m.day} 天</span><span class="mt">${esc(m.icon)} ${esc(m.text)}</span></p>`).join('')}</div><hr>`;
 }
 
 function renderOver(s: State): string {
@@ -1061,7 +1061,7 @@ function renderOver(s: State): string {
     <p>${s.over!.body}</p>
     ${s.over!.style ? `<p class="over-style">這一局的你:<b>${esc(s.over!.style.name)}</b><br>${esc(s.over!.style.text)}</p>` : ''}
     <hr>
-    <p>${s.goals.map((g) => `${goalMet(s, g) ? '✅' : '❌'} ${goalText(g)}(結果 ${fmt(goalValue(s, g.key), GOAL_INFO[g.key].digits)})`).join('<br>')}</p>
+    <div class="goal-res">${s.goals.map((g) => `<div><span>${goalMet(s, g) ? '✅' : '❌'} ${goalText(g)}</span><b>${fmt(goalValue(s, g.key), GOAL_INFO[g.key].digits)}</b></div>`).join('')}</div>
     <hr>
     ${renderMoments(s)}
     <p class="muted">${s.mode === 'story' ? '試用期' : '你撐了'} ${s.day - 1} 天 · 玩家 ${fmt(s.players)} 人 · 單日最高營收 ${fmt(peak, 1)} 萬點</p>
